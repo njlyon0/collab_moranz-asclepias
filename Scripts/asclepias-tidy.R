@@ -14,7 +14,7 @@ setwd("~/Documents/_Publications/2021_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
 
 # Call any needed libraries here (good to centralize this step)
-library(readxl); library(tidyverse); library(stringr)
+library(readxl); library(tidyverse); library(stringr); library(writexl)
 
 ## ------------------------------------------------ ##
                 # 2012 Tidying ####
@@ -675,21 +675,41 @@ milkweed.v2$Site <- gsub("Ringgold South", "RIS", milkweed.v2$Site)
 milkweed.v2$Site <- as.factor(milkweed.v2$Site)
 sort(unique(milkweed.v2$Site))
 
-# Patch names (this one is messed up because of my shorcut earlier)
+# Patch names
+  ## Note that we don't care about Whittaker (i.e., the numbers) transects
 sort(unique(milkweed.v2$Patch))
-milkweed.v2$Patch <- gsub("Center-", "C", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("East-", "E", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("West-", "W", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("North-", "N", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("South-", "S", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("CNA", "C", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("WNA", "W", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^C1$|^C2$|^C3$|^Center-1$|^Center-1 and 2$|^Center-1,2,3$|^Center-2$|^Center-3$",
+                          "C", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^E1$|^E2$|^East-1$|^East-2$|^East-1 \\& 2$",
+                          "E", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^N1$|^N2$|^North-1$|^North-1 and 2$|^North-1and2$|^North-2$|^North-2 and 3$|^North-N1W1$|^North-N2W2$",
+                          "N", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^S1$|^S2$|^S3$|^South-1$|^South-1 \\& 2$|^South-1 and 2$|^South-1 and 3$|^South-1,2$|^South-1and2$|^South-1and3$|^South-2$|^South-3$",
+                          "S", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^W1$|^W2$|^W3$|^West-1$|^West-1 and 2$|^West-2$|^West-NA$",
+                          "W", milkweed.v2$Patch)
+## Fixes requiring judgement calls
+  ### Richardson briefly had it's West patch called the "Y" patch
+milkweed.v2$Patch <- gsub("^Y-1$", "W", milkweed.v2$Patch)
+  ### The remaining issues have the correct information in the Plant.ID column (thankfully)
+milkweed.v2$Patch <- ifelse(test = (milkweed.v2$Patch == "East and Center-1 &2" |
+                                      milkweed.v2$Patch == "East and Center-NA" |
+                                      milkweed.v2$Patch == "multiple-2" |
+                                      milkweed.v2$Patch == "North & Center-1 & 2"), 
+                            yes = milkweed.v2$Plant.ID, no = milkweed.v2$Patch)
+  ### Now just revise the Plant.IDs to have only the patch letter
+milkweed.v2$Patch <- gsub("^GIL-C-2013-901$|^GIL-C-2013-902$|^GIL-C1-13-R1-001$|^GILC1001$|^GILC1002$|^GILC1003$",
+                          "C", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^LTRC1001$|^LTRC2001$|^LTRC2003$|^LTRC2007$|^LTRC2008$|^LTRC2009$|^LTRC2015$",
+                          "C", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^GILN1001$", "N", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^LTRE1001$|^LTRE2001$|^LTRE2002$|^LTRE2003$|^LTRE2004$",
+                          "E", milkweed.v2$Patch)
+milkweed.v2$Patch <- gsub("^LTRW2001$",
+                          "W", milkweed.v2$Patch)
+  ### This is a blank row we'll remove later
 milkweed.v2$Patch <- gsub("NA-NA", "", milkweed.v2$Patch)
 sort(unique(milkweed.v2$Patch))
-  ## This is not completely resolved but is better
-  ## I'll return later to fix it the rest of the way
-
-#milkweed.v2$Patch <- gsub("", "", milkweed.v2$Patch)
 
 # Plant.ID code and plant number
 sort(unique(milkweed.v2$Plant.ID))
@@ -723,8 +743,8 @@ sort(unique(milkweed.v2$Num.Monarch.Larvae))
 sort(unique(milkweed.v2$Tot.Monarch.Immatures))
 sort(unique(milkweed.v2$Monarch.Immature.Evidence))
 
-# Make (yet another) new dataframe to silo our progress
-milkweed.v3 <- milkweed.v2
+# There are some rows that were entirely empty that we should ditch now
+milkweed.v3 <- milkweed.v2[complete.cases(milkweed.v2[, "Site"]), ]
 
 ## ------------------------------------------------ ##
         # Explanatory Variable Retrieval ####
@@ -736,12 +756,72 @@ milkweed.v3 <- milkweed.v2
   ## (3) Stocking rate (e.g., none, standard, intensive)
   ## (4) Julian day
 
-# I will create index files that tie these things to the sites/patches/etc. and use those to drag them in
-  ## Then we're ready for analysis!
+# Bring in the index file that connects sites/patches with treatments
+julian.index <- read_excel("./Data/-Asclepias-Indices.xlsx", sheet = "Julian")
+mgmt.index <- read_excel("./Data/-Asclepias-Indices.xlsx", sheet = "Site Management")
+str(mgmt.index)
 
+# The following lines will do these three things:
+  ## (1) Create the necessary concatenated column in the data file
+  ## (2) Pull in the variable of interest from the index file
+  ## (3) Check for (and resolve) any errors
+
+# Time since fire (hereafter 'TSF') needs a column including 'Site-Patch-Year'
+  ## Make concatenated index code
+milkweed.v3$TSF.Index.Code <- with(milkweed.v3, paste0(Site, "-", Patch, "-", Year))
+sort(unique(milkweed.v3$TSF.Index.Code))
+  ## Bring in desired variable
+milkweed.v3$TSF <- mgmt.index$TSF[match(milkweed.v3$TSF.Index.Code, mgmt.index$Pasture.Patch.Year)]
+  ## Check it
+sort(unique(milkweed.v3$TSF))
+summary(milkweed.v3$TSF)
+  ## Looks good! On to the next one!
+
+# Management method
+  ### Index code not needed because it correlates with site
+  ### Desired variable
+milkweed.v3$Management <- as.factor(mgmt.index$Management.Method[match(milkweed.v3$Site, mgmt.index$Pasture)])
+  ### Check it
+sort(unique(milkweed.v3$Management))
+summary(milkweed.v3$Management)
+
+# Stocking rate needs 'Year-Site'
+  ### Stocking can use the TSF index code
+  ### Desired variable
+milkweed.v3$Stocking <- as.factor(mgmt.index$Stocking.Type[match(milkweed.v3$TSF.Index.Code, mgmt.index$Pasture.Patch.Year)])
+  ### Check
+sort(unique(milkweed.v3$Stocking))
+summary(milkweed.v3$Stocking)
+
+# Julian day just needs 'Date'!
+str(julian.index)
+sort(unique(milkweed.v3$Date))
+milkweed.v3$Julian <- julian.index$Julian[match(milkweed.v3$Date, julian.index$Date)]
+sort(unique(milkweed.v3$Julian))
+summary(milkweed.v3$Julian)
+
+# Once we have all of these columns, pare down to just the columns we need
+  ## I.e., ditch the various concatenated index columns we needed to bring in the new variables
+milkweed.v4 <- milkweed.v3 %>%
+  select(Year:Date, Julian, Site:Plant.Num, Management,
+         TSF, Stocking, Avg.Height:Monarch.Immature.Evidence)
+
+# Check what we ditched (should be just the unneeded index code)
+setdiff(names(milkweed.v3), names(milkweed.v4))
+  ## Looks good!
+
+# Remove any accidental rows
+milkweed.v5 <- milkweed.v4 %>%
+  filter(Plant.ID != "(accidental row)" & Plant.ID != "accidental row" &
+           Plant.ID != "Accidental row" & Plant.ID != "ACCIDENTAL ROW")
+
+# Save the tidy data for ease of analysis later on
+write_xlsx(list(Data = milkweed.v5),
+           path = "./Data/Asclepias-TIDY.xlsx",
+           col_names = T, format_headers = T)
 
 ## ------------------------------------------------ ##
-               # Acknolwedgements ####
+               # Acknowledgements ####
 ## ------------------------------------------------ ##
 # Important to remember who helped!
 sort(unique(tolower(mkwd.12.v0$Observer)))

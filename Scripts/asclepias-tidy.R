@@ -14,7 +14,7 @@ setwd("~/Documents/_Publications/2021_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
 
 # Call any needed libraries here (good to centralize this step)
-library(readxl); library(tidyverse); library(stringr); library(writexl)
+library(readxl); library(tidyverse); library(stringr); library(vegan); library(writexl)
 
 ## ------------------------------------------------ ##
                 # 2012 Tidying ####
@@ -35,13 +35,31 @@ names(mkwd.12.v0)
 names(mkwd.12.v0)
   ## Prune and re-order based on what we want
 mkwd.12.v1 <- mkwd.12.v0 %>%
-  select(Year, Date, Pasture, PatchWhit, `2012PlantIDCode`, PlantNumAuto,
+  select(Year, Date, Pasture, PatchWhit, `2012PlantIDCode`, `2012PlantIDCode_2nd Rnd`,
          `Length zAVERAGE`, `# buds zAVERAGE`, `# flowers zAVERAGE`,
-         `# buds TOTAL`, `# flowers TOTAL`, `bloom status zAVERAGE`) %>%
+         `# buds TOTAL`, `# flowers TOTAL`, `bloom status zAVERAGE`,
+         TrimbStemsAbud, TrimbStemsBflower, TrimbStemsCdone, TrimbStemsDnoflowers, TrimbStemsFbudflowerdone,
+         `# of UNbit stems w axillary`, AsclWithin1m, AsclWithin2m, BfliesNectaring, `Crab spiders?`,
+           GrazingLawn, `height on 1st longest`, `height on 2nd longest`, `height on 3rd longest`,
+         Comments, `major issues`, MonarchImmatures1, MonarchImmatures2,
+         ShrubsWithin1m, TotalNumBittenStems) %>%
   rename(Year = Year, Date = Date, Site = Pasture, Patch = PatchWhit,
-         Plant.ID = `2012PlantIDCode`, Plant.Num = PlantNumAuto,
+         Plant.ID.R1 = `2012PlantIDCode`, Plant.ID.R2 = `2012PlantIDCode_2nd Rnd`,
          Avg.Height = `Length zAVERAGE`, Avg.Bud = `# buds zAVERAGE`, Avg.Flr = `# flowers zAVERAGE`,
-         Tot.Bud = `# buds TOTAL`, Tot.Flr = `# flowers TOTAL`, Avg.Bloom.Status = `bloom status zAVERAGE`)
+         Tot.Bud = `# buds TOTAL`, Tot.Flr = `# flowers TOTAL`, Avg.Bloom.Status = `bloom status zAVERAGE`,
+         Num.Stems.Budding = TrimbStemsAbud, Num.Stems.Flowering = TrimbStemsBflower,
+         Num.Stems.PostFlower = TrimbStemsCdone, Num.Stems.Nonflowering = TrimbStemsDnoflowers, 
+         Num.Stems.ALL.Flowering.Stages = TrimbStemsFbudflowerdone,
+         Num.Unbit.Stems.w.Axillary.Shoots = `# of UNbit stems w axillary`, 
+         ASCTUB.Abun.1m = AsclWithin1m, ASCTUB.Abun.2m = AsclWithin2m, 
+         BfliesNectaring = BfliesNectaring, Crab.Spider.Abun = `Crab spiders?`,
+         GrazingLawn = GrazingLawn, 
+         Height.1st.Longest = `height on 1st longest`, 
+         Height.2nd.Longest = `height on 2nd longest`, 
+         Height.3rd.Longest = `height on 3rd longest`,
+         Comments = Comments, Major.Issues = `major issues`, 
+         MonarchImmatures1 = MonarchImmatures1, MonarchImmatures2 = MonarchImmatures2,
+         Shrub.Abun.1m = ShrubsWithin1m, Tot.Bitten.Stems = TotalNumBittenStems)
 
 # How's that look?
 names(mkwd.12.v1)
@@ -65,11 +83,11 @@ mkwd.12.v2 <- mkwd.12.v1
 mkwd.13.16.v0 <- read.csv("./Data/Asclepias-2016-RAW-plants.csv")
 mkwd.13.16.meta <- read_excel("./Data/Asclepias-2016-RAW.xlsx", sheet = "Metadata")
 
-# Maybe 2013-16 will be cleaner?
+# Get some diagnostics to understand the scope of tidying ahead of us
 str(mkwd.13.16.v0)
 summary(mkwd.13.16.v0)
 names(mkwd.13.16.v0)
-  ## Not really... time for a pivot in approach
+  ## Time for a pivot in approach
 
 # To combine 2012 with the other years we first need to get 2013-16 into a single datafile
   ## The legacy of MS Access lives on in it's current form
@@ -81,9 +99,38 @@ names(mkwd.13.16.v1)
 names(mkwd.13.16.v1)
 mkwd.13.16.v2 <- mkwd.13.16.v1 %>%
     ## Needed columns
-  select(YearVis, Date, Pasture, Patch, Whittaker, PlantNumAuto, PlantID.Code.from.2012,
+  select(YearVis, Date, Pasture, Patch, Whittaker, PlantID.Code.from.2012,
          Length.St1:LengthSt3, Buds.St.1:Buds.St.3, Flow.St.1:Flow.St.3,
-         BlooStatus.St.1:BlooStatus.St.3, Monarch.immatures2., total...bitten.stems)
+         BlooStatus.St.1:BlooStatus.St.3, Monarch.immatures2., total...bitten.stems,
+         TRIMBSBUD:TRIMBS.NOflow, Ascl.within.1.m., Ascl.within.2.m,
+         Grazing.lawn., Bflies.nectaring., Crab.spiders., Shrubs.within.1.m.,
+         X..of.bitten.stems.flower.this.year, X..bitten.stems.w.axillary, X..of.UNbit.stems.w.axillary,
+         X..of.axillary.shoots, X..of.BITTEN.Axillary.shoots) %>%
+  rename(YearVis = YearVis, Date = Date, Pasture = Pasture, Patch = Patch, Whittaker = Whittaker,
+         Plant.ID.R1 = PlantID.Code.from.2012, 
+         Length.St1 = Length.St1, Length.St2 = LengthSt2, Length.St3 = LengthSt3,
+         Buds.St.1 = Buds.St.1, Buds.St.2 = Buds.St.2, Buds.St.3 = Buds.St.3,
+         Flow.St.1 = Flow.St.1, Flow.St.2 = Flow.St.2, Flow.St.3 = Flow.St.3,
+         BlooStatus.St.1 = BlooStatus.St.1, BlooStatus.St.2 = BlooStatus.St.2, BlooStatus.St.3 = BlooStatus.St.3,
+         MonarchImmatures2 = Monarch.immatures2., Tot.Bitten.Stems = total...bitten.stems,
+         Num.Stems.Budding = TRIMBSBUD,
+         Num.Stems.Flowering = TRIMBSFLOW,
+         Num.Stems.PostFlower = TRIMBSDONE,
+         Num.Stems.Nonflowering = TRIMBS.NOflow,
+         ASCTUB.Abun.1m = Ascl.within.1.m.,
+         ASCTUB.Abun.2m = Ascl.within.2.m,
+         GrazingLawn = Grazing.lawn., 
+         BfliesNectaring = Bflies.nectaring.,
+         Crab.Spider.Abun = Crab.spiders.,
+         Shrub.Abun.1m = Shrubs.within.1.m.,
+         Num.Flowering.Stems.Bitten = X..of.bitten.stems.flower.this.year,
+         Num.Bitten.Stems.w.Axillary.Shoots = X..bitten.stems.w.axillary,
+         Num.Unbit.Stems.w.Axillary.Shoots = X..of.UNbit.stems.w.axillary,
+         Num.Axillary.Shoots.Tot = X..of.axillary.shoots,
+         Num.Axillary.Shoots.Bitten = X..of.BITTEN.Axillary.shoots)
+
+#Num.Stems.ALL.Flowering.Stages = TrimbStemsFbudflowerdone,
+
 names(mkwd.13.16.v2)
 
 # Have some tidying to do before we can combine 2012 and 2013-16
@@ -106,17 +153,17 @@ mkwd.13.16.v2$Length.St1 <- as.numeric(gsub("\\(dead\\)", "", mkwd.13.16.v2$Leng
 sort(unique(mkwd.13.16.v2$Length.St1))
 
   ## Stem 2
-sort(unique(mkwd.13.16.v2$LengthSt2))
-mkwd.13.16.v2$LengthSt2 <- as.numeric(gsub("not meas", "", mkwd.13.16.v2$LengthSt2))
-sort(unique(mkwd.13.16.v2$LengthSt2))
+sort(unique(mkwd.13.16.v2$Length.St2))
+mkwd.13.16.v2$Length.St2 <- as.numeric(gsub("not meas", "", mkwd.13.16.v2$Length.St2))
+sort(unique(mkwd.13.16.v2$Length.St2))
 
   ## Stem 3
-sort(unique(mkwd.13.16.v2$LengthSt3))
-mkwd.13.16.v2$LengthSt3 <- as.numeric(gsub("not meas", "", mkwd.13.16.v2$LengthSt3))
-sort(unique(mkwd.13.16.v2$LengthSt3))
+sort(unique(mkwd.13.16.v2$Length.St3))
+mkwd.13.16.v2$Length.St3 <- as.numeric(gsub("not meas", "", mkwd.13.16.v2$Length.St3))
+sort(unique(mkwd.13.16.v2$Length.St3))
 
 # Get the average length of the stems
-mkwd.13.16.v2$Avg.Height <- rowMeans(select(mkwd.13.16.v2, Length.St1:LengthSt3))
+mkwd.13.16.v2$Avg.Height <- rowMeans(select(mkwd.13.16.v2, Length.St1:Length.St3))
 sort(unique(mkwd.13.16.v2$Avg.Height))
 
 # Bud number checks
@@ -150,7 +197,7 @@ sort(unique(mkwd.13.16.v2$Avg.Bud))
   ## Stem 1
 sort(unique(mkwd.13.16.v2$Flow.St.1))
 mkwd.13.16.v2$Flow.St.1 <- gsub("no data", "", mkwd.13.16.v2$Flow.St.1)
-    ### Note the judgement call
+    ### Note the judgement call (this is the same judgement call made everywhere "dozens" was entered)
 mkwd.13.16.v2$Flow.St.1 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Flow.St.1))
 sort(unique(mkwd.13.16.v2$Flow.St.1))
 
@@ -190,7 +237,7 @@ sort(unique(mkwd.13.16.v2$Avg.Bloom.Status))
 mkwd.13.16.v3 <- mkwd.13.16.v2
 
 # Monarch immatures checks
-sort(unique(mkwd.13.16.v3$Monarch.immatures2.))
+sort(unique(mkwd.13.16.v3$MonarchImmatures2))
 ## This combines eggs and larvae (caterpillars) but we want them separated
 
 # NOTE:
@@ -201,13 +248,13 @@ sort(unique(mkwd.13.16.v3$Monarch.immatures2.))
 # These subsections will edit the same column into three new columns
   ## (1) number of monarch eggs
   ## (2) number of monarch larvae (i.e., caterpillars)
-  ## (3) presence/absence of monarch immatures (incl. frass/plant damage)
+  ## (3) presence/absence of *evidence of* monarch immatures (incl. frass/plant damage)
 
 ## ------------------------------------------------ ##
               # Monarch Egg Tidying ####
 ## ------------------------------------------------ ##
 # Tidy Monarch eggs first
-mkwd.13.16.v3$Num.Monarch.Eggs <- tolower(mkwd.13.16.v3$Monarch.immatures2.)
+mkwd.13.16.v3$Num.Monarch.Eggs <- tolower(mkwd.13.16.v3$MonarchImmatures2)
 sort(unique(mkwd.13.16.v3$Num.Monarch.Eggs))
 mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
                                        "2", mkwd.13.16.v3$Num.Monarch.Eggs)
@@ -329,7 +376,7 @@ sort(unique(mkwd.13.16.v3$Num.Monarch.Eggs))
             # Monarch Larvae Tidying ####
 ## ------------------------------------------------ ##
 # Tidy Monarch larvae next
-mkwd.13.16.v3$Num.Monarch.Larvae <- tolower(mkwd.13.16.v3$Monarch.immatures2.)
+mkwd.13.16.v3$Num.Monarch.Larvae <- tolower(mkwd.13.16.v3$MonarchImmatures2)
 sort(unique(mkwd.13.16.v3$Num.Monarch.Larvae))
 mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
                                        "0", mkwd.13.16.v3$Num.Monarch.Larvae)
@@ -402,7 +449,7 @@ mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe; some buds have been chewed on$
 mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
 mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe frass|^maybe$|^frass$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
 mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
-                                       "3", mkwd.13.16.v3$Num.Monarch.Larvae)
+                                       "8", mkwd.13.16.v3$Num.Monarch.Larvae)
 mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^did not measure$|^did not assess$",
                                        "", mkwd.13.16.v3$Num.Monarch.Larvae)
 mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^5 monarch eggs$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
@@ -454,7 +501,7 @@ sort(unique(mkwd.13.16.v3$Num.Monarch.Larvae))
   ## I don't want to lose that data so we're going to collect that here
 
 # Last round of tidying the same qualitative observations
-mkwd.13.16.v3$Monarch.Immature.Evidence <- tolower(mkwd.13.16.v3$Monarch.immatures2.)
+mkwd.13.16.v3$Monarch.Immature.Evidence <- tolower(mkwd.13.16.v3$MonarchImmatures2)
 sort(unique(mkwd.13.16.v3$Monarch.Immature.Evidence))
 mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
                                        "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
@@ -580,68 +627,123 @@ mkwd.13.16.v3$Tot.Monarch.Immatures <- (mkwd.13.16.v3$Num.Monarch.Eggs + mkwd.13
 sort(unique(mkwd.13.16.v3$Tot.Monarch.Immatures))
 
 # Total bitten stems
-sort(unique(mkwd.13.16.v3$total...bitten.stems))
-mkwd.13.16.v3$Num.Bitten.Stems <- mkwd.13.16.v3$total...bitten.stems
-  ## Note judgement call (at least 4 becomes 4)
-mkwd.13.16.v3$Num.Bitten.Stems <- gsub("at least 4", "4", mkwd.13.16.v3$Num.Bitten.Stems)
-mkwd.13.16.v3$Num.Bitten.Stems <- gsub("^na$", "", mkwd.13.16.v3$Num.Bitten.Stems)
-mkwd.13.16.v3$Num.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", "", mkwd.13.16.v3$Num.Bitten.Stems)
+sort(unique(mkwd.13.16.v3$Tot.Bitten.Stems))
+  ## Note judgement call ("at least 4" becomes 4)
+mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("at least 4", "4", mkwd.13.16.v3$Tot.Bitten.Stems)
+mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^na$", "", mkwd.13.16.v3$Tot.Bitten.Stems)
+mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", "", mkwd.13.16.v3$Tot.Bitten.Stems)
   ## Note judgement call (to me, these all imply that there were no stems)
-mkwd.13.16.v3$Num.Bitten.Stems <- gsub("^unk \\(likely they've atrophied\\)$", "0", mkwd.13.16.v3$Num.Bitten.Stems)
-mkwd.13.16.v3$Num.Bitten.Stems <- gsub("^unk \\(plant gone$", "0", mkwd.13.16.v3$Num.Bitten.Stems)
-mkwd.13.16.v3$Num.Bitten.Stems <- gsub("^unk \\(probably had stems that were eaten and atrophied\\)$", "0", mkwd.13.16.v3$Num.Bitten.Stems)
-sort(unique(mkwd.13.16.v3$Num.Bitten.Stems))
+mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(likely they've atrophied\\)$", "0", mkwd.13.16.v3$Tot.Bitten.Stems)
+mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(plant gone$", "0", mkwd.13.16.v3$Tot.Bitten.Stems)
+mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(probably had stems that were eaten and atrophied\\)$", "0", mkwd.13.16.v3$Tot.Bitten.Stems)
+sort(unique(mkwd.13.16.v3$Tot.Bitten.Stems))
 
 # Make R count it as a number
-mkwd.13.16.v3$Num.Bitten.Stems <- as.numeric(mkwd.13.16.v3$Num.Bitten.Stems)
-sort(unique(mkwd.13.16.v3$Num.Bitten.Stems))
+mkwd.13.16.v3$Tot.Bitten.Stems <- as.numeric(mkwd.13.16.v3$Tot.Bitten.Stems)
+sort(unique(mkwd.13.16.v3$Tot.Bitten.Stems))
 
 # "Patch" includes whittaker number in 2012 so let's make it include that here as well
 sort(unique(mkwd.13.16.v3$Patch))
 mkwd.13.16.v3$Patch <- paste0(mkwd.13.16.v3$Patch, "-", mkwd.13.16.v3$Whittaker)
 sort(unique(mkwd.13.16.v3$Patch))
 
+# Rather than use the "rename()" function, duplicate Pasture and Plant.ID with the right name
+mkwd.13.16.v3$Site <- mkwd.13.16.v3$Pasture
+mkwd.13.16.v3$Plant.ID <- mkwd.13.16.v3$Plant.ID.R1
+
 # Prune off the now-unnecessary columns and keep only the ones that we need
 names(mkwd.13.16.v3)
 mkwd.13.16.v4 <- mkwd.13.16.v3 %>%
-  select(Year, Date, Pasture, Patch, PlantID.Code.from.2012, PlantNumAuto,
-         Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud, Tot.Flr, Avg.Bloom.Status, Num.Bitten.Stems,
-         Num.Monarch.Eggs, Num.Monarch.Larvae, Tot.Monarch.Immatures, Monarch.Immature.Evidence) %>%
-  rename(Year = Year, Date = Date, Site = Pasture, Patch = Patch, Plant.ID = PlantID.Code.from.2012,
-         Plant.Num = PlantNumAuto,Avg.Height = Avg.Height, Avg.Bud = Avg.Bud, Avg.Flr = Avg.Flr,
-         Tot.Bud = Tot.Bud, Tot.Flr = Tot.Flr, Avg.Bloom.Status = Avg.Bloom.Status,
-         Num.Bitten.Stems = Num.Bitten.Stems, Num.Monarch.Eggs = Num.Monarch.Eggs,
-         Num.Monarch.Larvae = Num.Monarch.Larvae, Tot.Monarch.Immatures = Tot.Monarch.Immatures,
-         Monarch.Immature.Evidence = Monarch.Immature.Evidence)
+  select(Year, Date, Site, Patch, Plant.ID,
+         Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud, Tot.Flr, Avg.Bloom.Status, 
+         Num.Stems.Budding, Num.Stems.Flowering, Num.Stems.PostFlower, Num.Stems.Nonflowering,
+         Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m, BfliesNectaring,
+         Crab.Spider.Abun, GrazingLawn, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
+         Num.Bitten.Stems.w.Axillary.Shoots, Num.Axillary.Shoots.Tot, Num.Axillary.Shoots.Bitten,
+         Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
 
 ## ------------------------------------------------ ##
         # Data Joining (2012 + 2013-16) ####
 ## ------------------------------------------------ ##
-# Before we can join we need to add dummy columns to the 2012 data
-mkwd.12.v2$Num.Bitten.Stems <- NA
+# Before we can join we need to do two things:
+  ## 1) for any column in one dataframe but not the other, add a dummy column with the same name
+  ## 2) Ensure that all columns are in the same order
+
+# What is in the 2013-16 data that isn't in the 2012 data?
+setdiff(names(mkwd.13.16.v4), names(mkwd.12.v2))
+
+# Add them in as dummy columns
+  ## Rather than use the "rename()" function, duplicate Plant.ID with the right name
+mkwd.12.v2$Plant.ID <- mkwd.12.v2$Plant.ID.R1
+mkwd.12.v2$Num.Flowering.Stems.Bitten <- NA
+mkwd.12.v2$Num.Bitten.Stems.w.Axillary.Shoots <- NA
+mkwd.12.v2$Num.Axillary.Shoots.Tot <- NA
+mkwd.12.v2$Num.Axillary.Shoots.Bitten <- NA
 mkwd.12.v2$Num.Monarch.Eggs <- NA
 mkwd.12.v2$Num.Monarch.Larvae <- NA
-mkwd.12.v2$Tot.Monarch.Immatures <- NA
 mkwd.12.v2$Monarch.Immature.Evidence <- NA
+mkwd.12.v2$Tot.Monarch.Immatures <- NA
+
+# Check to make sure they transferred right
+setdiff(names(mkwd.13.16.v4), names(mkwd.12.v2))
+
+# Vice versa? (in 2012 but missing from 13-16)
+  ## Check
+setdiff(names(mkwd.12.v2), names(mkwd.13.16.v4))
+
+  ## Create
+mkwd.13.16.v4$Plant.ID.R2 <- NA
+mkwd.13.16.v4$Num.Stems.ALL.Flowering.Stages <- NA
+mkwd.13.16.v4$Height.1st.Longest <- NA
+mkwd.13.16.v4$Height.2nd.Longest <- NA
+mkwd.13.16.v4$Height.3rd.Longest <- NA
+mkwd.13.16.v4$Comments <- NA
+mkwd.13.16.v4$Major.Issues <- NA
+
+  ## Check again
+setdiff(names(mkwd.12.v2), names(mkwd.13.16.v4))
+      ### We're ditching the monarch immatures columns so this is fine
+
+# Reorder the 2012 column names
+mkwd.12.v3 <- mkwd.12.v2 %>%
+  select(Year, Date, Site, Patch, Plant.ID, Avg.Height, Avg.Bud, Avg.Flr,
+         Tot.Bud, Tot.Flr, Avg.Bloom.Status, Num.Stems.Budding, Num.Stems.Flowering,
+         Num.Stems.PostFlower, Num.Stems.Nonflowering, Num.Stems.ALL.Flowering.Stages,
+         Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m,
+         BfliesNectaring, Crab.Spider.Abun, GrazingLawn,
+         Comments, Major.Issues, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
+         Num.Bitten.Stems.w.Axillary.Shoots, Num.Axillary.Shoots.Tot, Num.Axillary.Shoots.Bitten,
+         Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
+
+# Reorder the 2013-16 columns too
+mkwd.13.16.v5 <- mkwd.13.16.v4 %>%
+  select(Year, Date, Site, Patch, Plant.ID, Avg.Height, Avg.Bud, Avg.Flr,
+         Tot.Bud, Tot.Flr, Avg.Bloom.Status, Num.Stems.Budding, Num.Stems.Flowering,
+         Num.Stems.PostFlower, Num.Stems.Nonflowering, Num.Stems.ALL.Flowering.Stages,
+         Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m,
+         BfliesNectaring, Crab.Spider.Abun, GrazingLawn,
+         Comments, Major.Issues, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
+         Num.Bitten.Stems.w.Axillary.Shoots, Num.Axillary.Shoots.Tot, Num.Axillary.Shoots.Bitten,
+         Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
 
 # Do both dataframes have the same columns in the same order?
-names(mkwd.12.v2)
-names(mkwd.13.16.v4)
+names(mkwd.12.v3)
+names(mkwd.13.16.v5)
 
-# Double check that in a more precise way
-setdiff(names(mkwd.12.v2), names(mkwd.13.16.v4))
-setdiff(names(mkwd.13.16.v4), names(mkwd.12.v2))
+# Triple check that in a more precise way
+setdiff(names(mkwd.12.v3), names(mkwd.13.16.v5))
+setdiff(names(mkwd.13.16.v5), names(mkwd.12.v3))
   ## Looks good!
 
 # Not the slickest way of doing this, but rbind the two dataframes together!
-milkweed.v1 <- rbind(mkwd.12.v2, mkwd.13.16.v4)
+milkweed.v1 <- rbind(mkwd.12.v3, mkwd.13.16.v5)
 str(milkweed.v1)
   ## Looks good!
 
 ## ------------------------------------------------ ##
-              # Full Data Tidying ####
+         # Full Data Tidying (Part 1) ####
 ## ------------------------------------------------ ##
-# So this job is half done as prerequisite to joining the two dataframes but let's finish it here
+# So this job is partially done as prerequisite to joining the two dataframes but let's finish it here
   ## Check each column individually and fix any errors that occur
   ## Also get each column in the format we want it (i.e., factor, numeric, etc.)
 names(milkweed.v1)
@@ -711,40 +813,1058 @@ milkweed.v2$Patch <- gsub("^LTRW2001$",
 milkweed.v2$Patch <- gsub("NA-NA", "", milkweed.v2$Patch)
 sort(unique(milkweed.v2$Patch))
 
-# Plant.ID code and plant number
+# Plant.ID code
 sort(unique(milkweed.v2$Plant.ID))
-sort(unique(milkweed.v2$Plant.Num))
-  ## Need Ray's help to figure this one out
+  ## Formatting is wonky and may need revisiting but good enough for now (may not use anyway)
+
+# Let's remove the accidental rows here
+milkweed.v3 <- milkweed.v2 %>%
+  filter(Plant.ID != "(accidental row)" & Plant.ID != "accidental row" &
+           Plant.ID != "Accidental row" & Plant.ID != "ACCIDENTAL ROW")
+sort(unique(milkweed.v3$Plant.ID))
 
 # Average height
-sort(unique(milkweed.v2$Avg.Height))
-milkweed.v2$Avg.Height <- gsub("no data", "", milkweed.v2$Avg.Height)
-milkweed.v2$Avg.Height <- as.numeric(milkweed.v2$Avg.Height)
-sort(unique(milkweed.v2$Avg.Height))
+sort(unique(milkweed.v3$Avg.Height))
+milkweed.v3$Avg.Height <- gsub("no data", "", milkweed.v3$Avg.Height)
+milkweed.v3$Avg.Height <- as.numeric(milkweed.v3$Avg.Height)
+sort(unique(milkweed.v3$Avg.Height))
 
 # Average number of buds or flowers
-sort(unique(milkweed.v2$Avg.Bud))
-sort(unique(milkweed.v2$Avg.Flr))
+sort(unique(milkweed.v3$Avg.Bud))
+sort(unique(milkweed.v3$Avg.Flr))
 
 # Total number of buds or flowers
-sort(unique(milkweed.v2$Tot.Bud))
-sort(unique(milkweed.v2$Tot.Flr))
+sort(unique(milkweed.v3$Tot.Bud))
+sort(unique(milkweed.v3$Tot.Flr))
 
 # Average bloom status
-sort(unique(milkweed.v2$Avg.Bloom.Status))
-milkweed.v2$Avg.Bloom.Status <- gsub("unknown", "", milkweed.v2$Avg.Bloom.Status)
-milkweed.v2$Avg.Bloom.Status <- as.numeric(milkweed.v2$Avg.Bloom.Status)
-sort(unique(milkweed.v2$Avg.Bloom.Status))
+sort(unique(milkweed.v3$Avg.Bloom.Status))
+milkweed.v3$Avg.Bloom.Status <- gsub("unknown", "", milkweed.v3$Avg.Bloom.Status)
+milkweed.v3$Avg.Bloom.Status <- as.numeric(milkweed.v3$Avg.Bloom.Status)
+sort(unique(milkweed.v3$Avg.Bloom.Status))
+
+# Number budding stems
+sort(unique(milkweed.v3$Num.Stems.Budding))
+milkweed.v3$Num.Stems.Budding <- gsub("could not find|plant|no sign of ", "",
+                                      milkweed.v3$Num.Stems.Budding)
+milkweed.v3$Num.Stems.Budding <- as.numeric(milkweed.v3$Num.Stems.Budding)
+sort(unique(milkweed.v3$Num.Stems.Budding))
+
+# Number flowering stems
+sort(unique(milkweed.v3$Num.Stems.Flowering))
+milkweed.v3$Num.Stems.Flowering <- as.numeric(milkweed.v3$Num.Stems.Flowering)
+sort(unique(milkweed.v3$Num.Stems.Flowering))
+
+# Number stems post flowering (but were once flowering)
+sort(unique(milkweed.v3$Num.Stems.PostFlower))
+milkweed.v3$Num.Stems.PostFlower <- as.numeric(milkweed.v3$Num.Stems.PostFlower)
+sort(unique(milkweed.v3$Num.Stems.PostFlower))
+
+# Number of stems that won't flower (at least that year)
+sort(unique(milkweed.v3$Num.Stems.Nonflowering))
+milkweed.v3$Num.Stems.Nonflowering <- gsub("1 \\(bitten off 8 \" from ground, presumably by deer",
+                                           "1", milkweed.v3$Num.Stems.Nonflowering)
+milkweed.v3$Num.Stems.Nonflowering <- gsub("1 dying", "1", milkweed.v3$Num.Stems.Nonflowering)
+milkweed.v3$Num.Stems.Nonflowering <- gsub("2- these particular stems are unusually weak",
+                                           "2", milkweed.v3$Num.Stems.Nonflowering)
+milkweed.v3$Num.Stems.Nonflowering <- as.numeric(milkweed.v3$Num.Stems.Nonflowering)
+sort(unique(milkweed.v3$Num.Stems.Nonflowering))
+
+# Number of stems in any flowering stage
+sort(unique(milkweed.v3$Num.Stems.ALL.Flowering.Stages))
+summary(milkweed.v3$Num.Stems.ALL.Flowering.Stages) # a lot of NAs, let's fix that
+milkweed.v3$Num.Stems.ALL.Flowering.Stages <- ifelse(is.na(milkweed.v3$Num.Stems.ALL.Flowering.Stages) == T,
+                                                     yes = with(milkweed.v3, (Num.Stems.Budding + Num.Stems.Flowering + Num.Stems.PostFlower)), 
+                                                     no = milkweed.v3$Num.Stems.ALL.Flowering.Stages)
+summary(milkweed.v3$Num.Stems.ALL.Flowering.Stages) # many NAs fixed!
+sort(unique(milkweed.v3$Num.Stems.ALL.Flowering.Stages))
+
+# Number of unbitten stems with axillary shoots
+sort(unique(milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots))
+milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots <- gsub("^n.a.$|^n\\/a$|^na$|^no data$|^u$|^unk$|^unknown$",
+                                                      "", milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots)
+milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots <- as.numeric(milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots)
+sort(unique(milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots))
+
+# Number of Asclepias tuberosa within 1 meter
+milkweed.v3$ASCTUB.Abun.1m <- tolower(milkweed.v3$ASCTUB.Abun.1m)
+sort(unique(milkweed.v3$ASCTUB.Abun.1m))
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^yes; one a. tuberosa with 1 flowering stem is 90cm to ssw$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+  ## Note judgement call
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^yes; number not recorded$",
+                                   "2", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^unk$|^uncertain$", NA, milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^tiny \\(5\" tall\\) a. tuberosa seedling only 40cm to sse$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^this plant is less than 1m from plants 105 and 106; ~20cm s$",
+                                   "2", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^there is 1 a. tuberosa \\(with 1 stem in bud\\) 35cm to se \\(~90 small green buds\\) and 1 a. tuberosa \\(1stem, bitten\\) 35cm to sw$",
+                                   "2", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^seedling 15cm tall 70cm to s$", "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^not recorded$|^no data$|^no$|^did not measure$|^did not assess$",
+                                   NA, milkweed.v3$ASCTUB.Abun.1m)
+  ### I double checked the raw data.
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^as on 6\\/29\\/2014$", "2", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^another robust a. tuberosa 1m to e and a smaller a. tuberosa 0.8m to wsw$",
+                                   "2", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^another a. tuberosa only 0.65m to wnw - named it paws1401$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+  ### Note judgement call
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 or more$", "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 at with 2 stems in bud only 80cm to ne$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with only 2 stems in bloom only 0.9m e$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with 3 stems in bloom \\(and 1 stem that won't bloom this year\\) only 1m to nnw$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with 2 stems in flower 1m to se; no other within 1.4m$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with 1 stem in bud only 60cm to w$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa 0.9m to e$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa \\(only 1 stem, not flowering\\) is 50cm ne of this plant$",
+                                   "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^0.65m wnw of paws1007$", "1", milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- gsub("^\\?$", NA, milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- as.numeric(milkweed.v3$ASCTUB.Abun.1m)
+sort(unique(milkweed.v3$ASCTUB.Abun.1m))
+
+# Number of Asclepias tuberosa within 2 meters
+milkweed.v3$ASCTUB.Abun.2m <- tolower(milkweed.v3$ASCTUB.Abun.2m)
+sort(unique(milkweed.v3$ASCTUB.Abun.2m))
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes; one$", "1", milkweed.v3$ASCTUB.Abun.2m)
+  ### Note judgement call
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes; number not recorded$|^yes; \\# unk$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes; 1 a. tuberosa 1.2m sw$", "1", milkweed.v3$ASCTUB.Abun.2m)
+  ### Note judgement call
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes, one plant 1.7m away, small plant with only 2 stems, neither will bloom; no monarch eggs on this neighbor$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+  ### Note judgement call
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes \\(\\# unk\\)$|^yes$|^1 or more$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^this plant is 1.7m ene of risc1002$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^there is another a. tuberosa 1.5m n of gps point \\(2 stems with no flowers this year\\) and 1 a. tuberosa 1.5m se of gps point \\(1 stem with no flowers\\)$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^seedling 18cm tall \\(two stems\\) 1.2m to wsw$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^one 2m to ene, another 2m to nnw; both are healthy;$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^n2006 1.1m to nnw$", "1", milkweed.v3$ASCTUB.Abun.2m)
+  ## Note judgement call
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^multiple a. tuberosa within 1.5 m \\!!$", "3", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^healthy a. tuberosa with 2 stems in early bud is 1.5m to the w; that plant, which is earlier phenologically, does not have monarch eggs$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^closest milkweed is 1.1m north$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+  ## Note judgement call
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^at least 1$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa with 1 stem \\(no flowers\\) is 30cm to w of plant$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa 1.6m s of a. tuberosa$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa 1.1m s and another 1.4m nw$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa 1.1m away$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^a. tuberosa 1.5m to ne, which has 2 stems, each stem having hundreds of buds and/or flowers$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^12 ~1.2m from w1003$", "12", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 robust a. tuberosa 1.15m n of this plant \\(with 13 stems that are done flowering\\) and plant pawe2045 is 1.3m s of this plant$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 other a. tuberosa only 95cm to sw, it will not bloom this year$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 milkweed within 1.1m to se$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a.t. is 2m to the s$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tubersosa with 2 stems in bloom only 1.4m ne$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa only 1.7m to e; it had 3 stems, but all were bitten by cattle, and none will bloom$",
+                                   "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.9m to s$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.5m to e \\(with 1 stem that won't flower this year\\); 1 a. tuberosa to s \\(with 1 stem in bud\\) with 13 buds and no signs of monarch immatures$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.5m to e$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.3 m to sw$", "1", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa \\(with 2 stems\\) 2.0 m nw, 1 a.tuberosa 2.0m sw \\(with 1 stem in bloom\\)$",
+                                   "2", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^no$|^no data$|^unk$|^unknown$|^not recorded$|^did not assess$|^did not measure$|^\\?$",
+                                   NA, milkweed.v3$ASCTUB.Abun.2m)
+# Non A. tuberosa congeners
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^no; a. syriaca, but protecte dby two branches of dead tree \\(1.3m n of a. tuberosa\\)$",
+                                   "0", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^no; 6 whorled milkweed \\(non-flowering\\)$",
+                                   "0", milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- gsub("^no; 1 asclep. hirtella approx. 2m to e$", "0", milkweed.v3$ASCTUB.Abun.2m)
+# Make R read the column as numbers
+milkweed.v3$ASCTUB.Abun.2m <- as.numeric(milkweed.v3$ASCTUB.Abun.2m)
+sort(unique(milkweed.v3$ASCTUB.Abun.2m))
+
+# Okay, now let's do a quick fix for if only one of the two values (1m versus 2m) was entered
+  ## If 1m is blank replace with 2m
+summary(milkweed.v3$ASCTUB.Abun.1m)
+milkweed.v3$ASCTUB.Abun.1m <- ifelse(is.na(milkweed.v3$ASCTUB.Abun.1m) == T,
+                                     yes = milkweed.v3$ASCTUB.Abun.2m,
+                                     no = milkweed.v3$ASCTUB.Abun.1m)
+summary(milkweed.v3$ASCTUB.Abun.1m) # Fixed some at least
+
+  ## Vice versa
+summary(milkweed.v3$ASCTUB.Abun.2m)
+milkweed.v3$ASCTUB.Abun.2m <- ifelse(is.na(milkweed.v3$ASCTUB.Abun.2m) == T,
+                                     yes = milkweed.v3$ASCTUB.Abun.1m,
+                                     no = milkweed.v3$ASCTUB.Abun.2m)
+summary(milkweed.v3$ASCTUB.Abun.2m) # We did our best
+
+# Preserve our work to this point
+milkweed.v4 <- milkweed.v3
+
+# This column includes the identity (species) and number of nectaring butterflies
+  ## We will do a partial cleaning of generally relevant stuff
+  ## and then duplicate this column once for each species recorded
+milkweed.v4$BfliesNectaring <- tolower(milkweed.v4$BfliesNectaring)
+sort(unique(milkweed.v4$BfliesNectaring))
+milkweed.v4$BfliesNectaring <- gsub("^ 0$", "0", milkweed.v4$BfliesNectaring)
+milkweed.v4$BfliesNectaring <- gsub("^did not assess$|^did not measure$|^n\\/a; no$|^na$|^no$|^too late$|^unk \\(not recorded\\)$",
+                                    NA, milkweed.v4$BfliesNectaring)
+milkweed.v4$BfliesNectaring <- gsub("upon arriving, ", "", milkweed.v4$BfliesNectaring)
+  ### Note judgement call (we only want to keep ones we can tie to a particular species
+milkweed.v4$BfliesNectaring <- gsub("^1$|^2$|^yes$|^yes \\(initial visit 7\\/3\\/2014\\)$", 
+                                    NA, milkweed.v4$BfliesNectaring)
+sort(unique(milkweed.v4$BfliesNectaring))
+
+# Make a new column for each species then clean them all
+milkweed.v4$black.swallowtail <- milkweed.v4$BfliesNectaring
+milkweed.v4$bronze.copper <- milkweed.v4$BfliesNectaring
+milkweed.v4$coral.hairstreak <- milkweed.v4$BfliesNectaring
+milkweed.v4$etb <- milkweed.v4$BfliesNectaring
+milkweed.v4$edward.hairstreak <- milkweed.v4$BfliesNectaring
+milkweed.v4$gray.copper <- milkweed.v4$BfliesNectaring
+milkweed.v4$great.spangled.frit <- milkweed.v4$BfliesNectaring
+milkweed.v4$juniper.hairstreak <- milkweed.v4$BfliesNectaring
+milkweed.v4$meadow.frit <- milkweed.v4$BfliesNectaring
+milkweed.v4$orange.sulphur <- milkweed.v4$BfliesNectaring
+milkweed.v4$pearl.crescent <- milkweed.v4$BfliesNectaring
+milkweed.v4$regal.frit <- milkweed.v4$BfliesNectaring
+milkweed.v4$tiger.swallowtail <- milkweed.v4$BfliesNectaring
+
+# Make a new dataframe to save our progress
+milkweed.v5 <- milkweed.v4
+
+## ------------------------------------------------ ##
+        # Nectaring Butterfly Cleaning ####
+## ------------------------------------------------ ##
+  ## Black swallowtail
+sort(unique(milkweed.v5$black.swallowtail))
+milkweed.v5$black.swallowtail <- gsub("^1 black swallowtail$",
+                                      "1", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 coral hairstreak nectaring on this plant$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 coral hairstreak was nectaring on longest stem$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 eastern tailed blue$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 great spangled nectaring as i arrived$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 orange sulphur at 6:40 pm$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^great spangled frit nectaring$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^n\\/a; yes, pearl crescent$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^pearl crescent, meadow frit.$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes, 1 pearl crescent$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                      "0", milkweed.v5$black.swallowtail)
+milkweed.v5$black.swallowtail <- as.numeric(milkweed.v5$black.swallowtail)
+sort(unique(milkweed.v5$black.swallowtail))
+
+# Bronze copper
+sort(unique(milkweed.v5$bronze.copper))
+milkweed.v5$bronze.copper <- gsub("^1 black swallowtail$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 coral hairstreak nectaring on this plant$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 coral hairstreak was nectaring on longest stem$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 eastern tailed blue$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 great spangled nectaring as i arrived$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 orange sulphur at 6:40 pm$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^great spangled frit nectaring$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^n\\/a; yes, pearl crescent$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^pearl crescent, meadow frit.$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes, 1 pearl crescent$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                      "0", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                      "1", milkweed.v5$bronze.copper)
+milkweed.v5$bronze.copper <- as.numeric(milkweed.v5$bronze.copper)
+sort(unique(milkweed.v5$bronze.copper))
+
+# Coral Hairstreak
+sort(unique(milkweed.v5$coral.hairstreak))
+milkweed.v5$coral.hairstreak <- gsub("^1 black swallowtail$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                  "1", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                  "1", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 eastern tailed blue$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 great spangled nectaring as i arrived$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                  "1", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 orange sulphur at 6:40 pm$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                  "1", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                  "2", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^great spangled frit nectaring$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^n\\/a; yes, pearl crescent$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^pearl crescent, meadow frit.$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes, 1 pearl crescent$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                  "1", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                  "0", milkweed.v5$coral.hairstreak)
+milkweed.v5$coral.hairstreak <- as.numeric(milkweed.v5$coral.hairstreak)
+sort(unique(milkweed.v5$coral.hairstreak))
+
+# Eastern Tailed-Blue
+sort(unique(milkweed.v5$etb))
+milkweed.v5$etb <- gsub("^1 black swallowtail$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 eastern tailed blue$",
+                                     "1", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 great spangled nectaring as i arrived$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 orange sulphur at 6:40 pm$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^great spangled frit nectaring$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^n\\/a; yes, pearl crescent$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^pearl crescent, meadow frit.$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes, 1 pearl crescent$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                     "0", milkweed.v5$etb)
+milkweed.v5$etb <- as.numeric(milkweed.v5$etb)
+sort(unique(milkweed.v5$etb))
+
+# Edward's Hairstreak
+sort(unique(milkweed.v5$edward.hairstreak))
+milkweed.v5$edward.hairstreak <- gsub("^1 black swallowtail$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 coral hairstreak and 1 great spangled$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 eastern tailed blue$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                        "1", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 great spangled$|^1 great spangled frit$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 great spangled nectaring as i arrived$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 orange sulphur at 6:40 pm$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^great spangled frit nectaring$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^n\\/a; yes, pearl crescent$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^pearl crescent, meadow frit.$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes, 1 pearl crescent$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes; 1 coral hairstreak nectaring$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                        "0", milkweed.v5$edward.hairstreak)
+milkweed.v5$edward.hairstreak <- as.numeric(milkweed.v5$edward.hairstreak)
+sort(unique(milkweed.v5$edward.hairstreak))
+
+# Gray Copper
+sort(unique(milkweed.v5$gray.copper))
+milkweed.v5$gray.copper <- gsub("^1 black swallowtail$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 eastern tailed blue$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                      "1", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                      "1", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 great spangled nectaring as i arrived$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                      "1", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 orange sulphur at 6:40 pm$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^great spangled frit nectaring$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^n\\/a; yes, pearl crescent$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^pearl crescent, meadow frit.$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes, 1 pearl crescent$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                      "1", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                      "0", milkweed.v5$gray.copper)
+milkweed.v5$gray.copper <- as.numeric(milkweed.v5$gray.copper)
+sort(unique(milkweed.v5$gray.copper))
+
+# Great Spangled Fritillary
+sort(unique(milkweed.v5$great.spangled.frit))
+milkweed.v5$great.spangled.frit <- gsub("^1 black swallowtail$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                "1", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 eastern tailed blue$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                "1", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                "1", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 great spangled nectaring as i arrived$",
+                                "1", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 orange sulphur at 6:40 pm$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^great spangled frit nectaring$",
+                                "1", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^n\\/a; yes, pearl crescent$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^pearl crescent, meadow frit.$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes, 1 pearl crescent$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                "0", milkweed.v5$great.spangled.frit)
+milkweed.v5$great.spangled.frit <- as.numeric(milkweed.v5$great.spangled.frit)
+sort(unique(milkweed.v5$great.spangled.frit))
+
+# Juniper Hairstreak
+sort(unique(milkweed.v5$juniper.hairstreak))
+milkweed.v5$juniper.hairstreak <- gsub("^1 black swallowtail$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 eastern tailed blue$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 great spangled nectaring as i arrived$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 orange sulphur at 6:40 pm$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^great spangled frit nectaring$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^n\\/a; yes, pearl crescent$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^pearl crescent, meadow frit.$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                        "1", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes, 1 pearl crescent$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                        "0", milkweed.v5$juniper.hairstreak)
+milkweed.v5$juniper.hairstreak <- as.numeric(milkweed.v5$juniper.hairstreak)
+sort(unique(milkweed.v5$juniper.hairstreak))
+
+# Meadow Fritillary
+sort(unique(milkweed.v5$meadow.frit))
+milkweed.v5$meadow.frit <- gsub("^1 black swallowtail$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 eastern tailed blue$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 great spangled nectaring as i arrived$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 orange sulphur at 6:40 pm$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^great spangled frit nectaring$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^n\\/a; yes, pearl crescent$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^pearl crescent, meadow frit.$",
+                                       "1", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes, 1 pearl crescent$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                       "0", milkweed.v5$meadow.frit)
+milkweed.v5$meadow.frit <- as.numeric(milkweed.v5$meadow.frit)
+sort(unique(milkweed.v5$meadow.frit))
+
+# Orange Sulphur
+sort(unique(milkweed.v5$orange.sulphur))
+milkweed.v5$orange.sulphur <- gsub("^1 black swallowtail$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 eastern tailed blue$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 great spangled nectaring as i arrived$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 orange sulphur at 6:40 pm$",
+                                "1", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^great spangled frit nectaring$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^n\\/a; yes, pearl crescent$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^pearl crescent, meadow frit.$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes, 1 pearl crescent$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                "0", milkweed.v5$orange.sulphur)
+milkweed.v5$orange.sulphur <- as.numeric(milkweed.v5$orange.sulphur)
+sort(unique(milkweed.v5$orange.sulphur))
+
+# Pearl Crescent
+sort(unique(milkweed.v5$pearl.crescent))
+milkweed.v5$pearl.crescent <- gsub("^1 black swallowtail$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 eastern tailed blue$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 great spangled nectaring as i arrived$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 orange sulphur at 6:40 pm$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^great spangled frit nectaring$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^n\\/a; yes, pearl crescent$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^pearl crescent, meadow frit.$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes, 1 pearl crescent$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                   "1", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                   "0", milkweed.v5$pearl.crescent)
+milkweed.v5$pearl.crescent <- as.numeric(milkweed.v5$pearl.crescent)
+sort(unique(milkweed.v5$pearl.crescent))
+
+# Regal Fritillary
+sort(unique(milkweed.v5$regal.frit))
+milkweed.v5$regal.frit <- gsub("^1 black swallowtail$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 eastern tailed blue$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 great spangled nectaring as i arrived$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                   "1", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                   "1", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 orange sulphur at 6:40 pm$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^great spangled frit nectaring$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^n\\/a; yes, pearl crescent$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^pearl crescent, meadow frit.$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes, 1 pearl crescent$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                   "0", milkweed.v5$regal.frit)
+milkweed.v5$regal.frit <- as.numeric(milkweed.v5$regal.frit)
+sort(unique(milkweed.v5$regal.frit))
+
+# Tiger Swallowtail
+sort(unique(milkweed.v5$tiger.swallowtail))
+milkweed.v5$tiger.swallowtail <- gsub("^1 black swallowtail$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 coral hairstreak and 1 great spangled$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 coral hairstreak nectaring on this plant$|^1 coral hairstreak was nectaring on longest stem$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 eastern tailed blue$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 edward's hairstreak nectaring on this plant when i arrived at 2:45pm$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 gray copper$|^1 gray copper at 6:40 pm$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 great spangled$|^1 great spangled frit$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 great spangled fritillary and 1 gray copper nectaring at 4:20 pm$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 great spangled nectaring as i arrived$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 male regal nectaring; 1 gray copper nectared during data collection$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 male regal, 1 pearl crescent, 1 coral hairstreak$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 orange sulphur at 6:40 pm$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 pearl cres.$|^1 pearl crescent$|^1 pearl crescent was nectaring on 2nd longest stem$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^1 pearl crescent, 1 coral hairstreak$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^2 coral hairstreaks nectaring when i arrived$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^great spangled frit nectaring$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^n\\/a; yes, pearl crescent$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^pearl crescent, meadow frit.$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes, 1 juniper hairstreak nectaring for 20 minutes \\(photos 1365, 1366 on iphone\\)$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes, 1 pearl crescent$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes; 1 coral hairstreak nectaring$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes; 1 gray copper nectaring on stem b when i arrived$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes; 1 pearl crescent nectaring at ~15\\:00 hrs; full sun; 84f; mild wind$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes; 1 tiger swallowtail nectaring$",
+                                   "1", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- gsub("^yes; bronze copper nectaring at this plant \\(i took multiple shots on my nikon in flower mode\\)$",
+                                   "0", milkweed.v5$tiger.swallowtail)
+milkweed.v5$tiger.swallowtail <- as.numeric(milkweed.v5$tiger.swallowtail)
+sort(unique(milkweed.v5$tiger.swallowtail))
+
+# Check the structure of all of these guys
+str(select(milkweed.v5, black.swallowtail:tiger.swallowtail))
+
+# Let's get a total butterfly abundance (and species richness) column
+bf.abun <- rowSums(select(milkweed.v5, black.swallowtail:tiger.swallowtail))
+bf.rich <- specnumber(select(milkweed.v5, black.swallowtail:tiger.swallowtail))
+
+# Add them back into the dataframe
+milkweed.v5$Nectaring.Bfly.Abun <- bf.abun
+milkweed.v5$Nectaring.Bfly.Rich <- bf.rich
+
+# Check 'em out real fast before moving on
+sort(unique(milkweed.v5$Nectaring.Bfly.Abun))
+sort(unique(milkweed.v5$Nectaring.Bfly.Rich))
+
+## ------------------------------------------------ ##
+          # Full Data Tidying (Part 2) ####
+## ------------------------------------------------ ##
+# Make (yet another) new version of the data to preserve our progress
+milkweed.v6 <- milkweed.v5
+  ## Keep the cleaning party going and move on to the next one!
+
+# Crab spider abundance
+milkweed.v5$Crab.Spider.Abun <- tolower(milkweed.v5$Crab.Spider.Abun)
+sort(unique(milkweed.v5$Crab.Spider.Abun))
+milkweed.v5$Crab.Spider.Abun <- gsub("^ no$|^no$", "0", milkweed.v5$Crab.Spider.Abun)
+milkweed.v5$Crab.Spider.Abun <- gsub("^1 yellow crab spider in blossom of this plant$|^1 yellow crab spider on stem b$|^1 yellow crab spider on stem c,$|^1 yellow crab spider with dead apis mellifera in its clutches$",
+                                     "1", milkweed.v5$Crab.Spider.Abun)
+milkweed.v5$Crab.Spider.Abun <- gsub("^1 crab spider in flower on stem a. yellow spider at \\@\\:45 pm$|^2 crab spider$",
+                                     "2", milkweed.v5$Crab.Spider.Abun)
+milkweed.v5$Crab.Spider.Abun <- gsub("^yes; 1 yellow crab spider hiding amidst blossoms$|^yes, on a$|^yes; 1 yellow crab spider hiding in blossoms$|^yes; yellow crab spider$",
+                                     "1", milkweed.v5$Crab.Spider.Abun)
+milkweed.v5$Crab.Spider.Abun <- gsub("^did not assess$|^did not measure$|^n\\/a; no$|^na$|^no data$|^presum no$|^unk \\(not recorded\\)$",
+                                     NA, milkweed.v5$Crab.Spider.Abun)
+milkweed.v5$Crab.Spider.Abun <- as.numeric(milkweed.v5$Crab.Spider.Abun)
+sort(unique(milkweed.v5$Crab.Spider.Abun))
+
+# The degree of grazing lawn
+milkweed.v5$GrazingLawn <- tolower(milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("no, but |yes |yes, |n\\/a; ", "", milkweed.v5$GrazingLawn)
+sort(unique(milkweed.v5$GrazingLawn))
+milkweed.v5$GrazingLawn <- gsub("^\\(mild\\)$|^//(minor//)$|^\\(very mild\\)$|^no; 9 cattle bedding spots within 12m radius$|^\\(minor\\)$",
+                                "mild", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^no; only 1m from cattle trail; 7 large areas flattened by sleeping ungulates within 12m radius$",
+                                "mild", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^\\(mod.\\)$|^\\(patchy\\)$|^a spotty lawn$|^moderate lawn$|^yes$|^partial$|^partial lawn$|^yes$",
+                                "moderate", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^moderate to severe$",
+                                "severe", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^.5 m away$|^\\(at edge\\)$|^1 m away$|^10 cm away from one$|^1m from one$|^2 m away$|^20 cm away$|^20 cm from one$",
+                                "within 5 meters", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^30 cm away$|^30cm away$|^30cm away$|^adjacent$|^adjacent to one$|^adjacent to small lawn$|^at edge$|^close$",
+                                "within 5 meters", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^no right next to one$|^near$|^near one$|^near small one$|next to one^$|^no \\(but near\\)$",
+                                "within 5 meters", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^no but 1 m away$|^no, 1 m away$|^on one side$|^only 30 cm away from one$|^within 1 m$",
+                                "within 5 meters", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^next to one$", "within 5 meters", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^in cattle path$|^maybe last year$|^no$",
+                                "no lawn", milkweed.v5$GrazingLawn)
+milkweed.v5$GrazingLawn <- gsub("^did not measure$|^no data$|^unk$",
+                                NA, milkweed.v5$GrazingLawn)
+sort(unique(milkweed.v5$GrazingLawn))
+
+# Make R see it as a factor
+milkweed.v5$GrazingLawn <- as.factor(milkweed.v5$GrazingLawn)
+sort(unique(milkweed.v5$GrazingLawn))
+
+
+
+# HERE NOW ####
+
+
+sort(unique(milkweed.v5$Comments))
+sort(unique(milkweed.v5$Major.Issues))
+sort(unique(milkweed.v5$Shrub.Abun.1m))
+sort(unique(milkweed.v5$Num.Flowering.Stems.Bitten))
+sort(unique(milkweed.v5$Num.Bitten.Stems.w.Axillary.Shoots))
+sort(unique(milkweed.v5$Num.Axillary.Shoots.Tot))
+sort(unique(milkweed.v5$Num.Axillary.Shoots.Bitten))
+
+sort(unique(milkweed.v5$Tot.Bitten.Stems))
+
 
 # I just made and cleaned the remaining columns so these are good to go now
-sort(unique(milkweed.v2$Num.Bitten.Stems))
-sort(unique(milkweed.v2$Num.Monarch.Eggs))
-sort(unique(milkweed.v2$Num.Monarch.Larvae))
-sort(unique(milkweed.v2$Tot.Monarch.Immatures))
-sort(unique(milkweed.v2$Monarch.Immature.Evidence))
+sort(unique(milkweed.v5$Num.Monarch.Eggs))
+sort(unique(milkweed.v5$Num.Monarch.Larvae))
+sort(unique(milkweed.v5$Tot.Monarch.Immatures))
+sort(unique(milkweed.v5$Monarch.Immature.Evidence))
 
 # There are some rows that were entirely empty that we should ditch now
-milkweed.v3 <- milkweed.v2[complete.cases(milkweed.v2[, "Site"]), ]
+milkweed.v5 <- milkweed.v5[complete.cases(milkweed.v5[, "Site"]), ]
 
 ## ------------------------------------------------ ##
         # Explanatory Variable Retrieval ####

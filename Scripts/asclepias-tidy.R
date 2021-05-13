@@ -1,5 +1,5 @@
 ## ---------------------------------------------------------------------------------------- ##
-                        # Moranz et al. Butterfly Milkweed Project
+               # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
 ## ---------------------------------------------------------------------------------------- ##
 # Code written by Nicholas J Lyon
 
@@ -126,7 +126,7 @@ mkwd.13.16.v2 <- mkwd.13.16.v1 %>%
          Num.Flowering.Stems.Bitten = X..of.bitten.stems.flower.this.year,
          Num.Bitten.Stems.w.Axillary.Shoots = X..bitten.stems.w.axillary,
          Num.Unbit.Stems.w.Axillary.Shoots = X..of.UNbit.stems.w.axillary,
-         Num.Axillary.Shoots.Tot = X..of.axillary.shoots,
+         Tot.Axillary.Shoots = X..of.axillary.shoots,
          Num.Axillary.Shoots.Bitten = X..of.BITTEN.Axillary.shoots)
 
 #Num.Stems.ALL.Flowering.Stages = TrimbStemsFbudflowerdone,
@@ -659,7 +659,7 @@ mkwd.13.16.v4 <- mkwd.13.16.v3 %>%
          Num.Stems.Budding, Num.Stems.Flowering, Num.Stems.PostFlower, Num.Stems.Nonflowering,
          Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m, BfliesNectaring,
          Crab.Spider.Abun, GrazingLawn, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-         Num.Bitten.Stems.w.Axillary.Shoots, Num.Axillary.Shoots.Tot, Num.Axillary.Shoots.Bitten,
+         Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, Num.Axillary.Shoots.Bitten,
          Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
 
 ## ------------------------------------------------ ##
@@ -677,7 +677,7 @@ setdiff(names(mkwd.13.16.v4), names(mkwd.12.v2))
 mkwd.12.v2$Plant.ID <- mkwd.12.v2$Plant.ID.R1
 mkwd.12.v2$Num.Flowering.Stems.Bitten <- NA
 mkwd.12.v2$Num.Bitten.Stems.w.Axillary.Shoots <- NA
-mkwd.12.v2$Num.Axillary.Shoots.Tot <- NA
+mkwd.12.v2$Tot.Axillary.Shoots <- NA
 mkwd.12.v2$Num.Axillary.Shoots.Bitten <- NA
 mkwd.12.v2$Num.Monarch.Eggs <- NA
 mkwd.12.v2$Num.Monarch.Larvae <- NA
@@ -712,7 +712,7 @@ mkwd.12.v3 <- mkwd.12.v2 %>%
          Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m,
          BfliesNectaring, Crab.Spider.Abun, GrazingLawn,
          Comments, Major.Issues, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-         Num.Bitten.Stems.w.Axillary.Shoots, Num.Axillary.Shoots.Tot, Num.Axillary.Shoots.Bitten,
+         Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, Num.Axillary.Shoots.Bitten,
          Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
 
 # Reorder the 2013-16 columns too
@@ -723,7 +723,7 @@ mkwd.13.16.v5 <- mkwd.13.16.v4 %>%
          Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m,
          BfliesNectaring, Crab.Spider.Abun, GrazingLawn,
          Comments, Major.Issues, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-         Num.Bitten.Stems.w.Axillary.Shoots, Num.Axillary.Shoots.Tot, Num.Axillary.Shoots.Bitten,
+         Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, Num.Axillary.Shoots.Bitten,
          Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
 
 # Do both dataframes have the same columns in the same order?
@@ -1950,15 +1950,15 @@ milkweed.v8$Num.Bitten.Stems.w.Axillary.Shoots <- as.numeric(milkweed.v8$Num.Bit
 sort(unique(milkweed.v8$Num.Bitten.Stems.w.Axillary.Shoots))
 
 # Total axillary shoots
-sort(unique(milkweed.v8$Num.Axillary.Shoots.Tot))
-milkweed.v8$Num.Axillary.Shoots.Tot <- gsub("^\\?$|^unk$|unknown|na|no data", NA, milkweed.v8$Num.Axillary.Shoots.Tot)
+sort(unique(milkweed.v8$Tot.Axillary.Shoots))
+milkweed.v8$Tot.Axillary.Shoots <- gsub("^\\?$|^unk$|unknown|na|no data", NA, milkweed.v8$Tot.Axillary.Shoots)
   ### Note judgement call
-milkweed.v8$Num.Axillary.Shoots.Tot <- gsub("dozens\\?", "24", milkweed.v8$Num.Axillary.Shoots.Tot)
-milkweed.v8$Num.Axillary.Shoots.Tot <- gsub("4 bitten, 2 unbitten", "6", milkweed.v8$Num.Axillary.Shoots.Tot)
-milkweed.v8$Num.Axillary.Shoots.Tot <- gsub("3 tiny ones", "3", milkweed.v8$Num.Axillary.Shoots.Tot)
-milkweed.v8$Num.Axillary.Shoots.Tot <- gsub("7 \\(6\\+1\\)", "7", milkweed.v8$Num.Axillary.Shoots.Tot)
-milkweed.v8$Num.Axillary.Shoots.Tot <- as.numeric(milkweed.v8$Num.Axillary.Shoots.Tot)
-sort(unique(milkweed.v8$Num.Axillary.Shoots.Tot))
+milkweed.v8$Tot.Axillary.Shoots <- gsub("dozens\\?", "24", milkweed.v8$Tot.Axillary.Shoots)
+milkweed.v8$Tot.Axillary.Shoots <- gsub("4 bitten, 2 unbitten", "6", milkweed.v8$Tot.Axillary.Shoots)
+milkweed.v8$Tot.Axillary.Shoots <- gsub("3 tiny ones", "3", milkweed.v8$Tot.Axillary.Shoots)
+milkweed.v8$Tot.Axillary.Shoots <- gsub("7 \\(6\\+1\\)", "7", milkweed.v8$Tot.Axillary.Shoots)
+milkweed.v8$Tot.Axillary.Shoots <- as.numeric(milkweed.v8$Tot.Axillary.Shoots)
+sort(unique(milkweed.v8$Tot.Axillary.Shoots))
 
 # Number of axillary shoots that are bitten
 sort(unique(milkweed.v8$Num.Axillary.Shoots.Bitten))

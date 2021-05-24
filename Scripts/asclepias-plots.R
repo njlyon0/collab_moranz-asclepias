@@ -111,7 +111,7 @@ ggplot(mkwd, aes(x = Stocking, y = Num.Stems.ALL.Flowering.Stages, fill = Stocki
   geom_text(label = "a", x = 0.8, y = 6, size = 6) +
   geom_text(label = "a", x = 1.8, y = 5, size = 6) +
   geom_text(label = "b", x = 2.8, y = 5, size = 6) +
-  labs(x = "Stocking Treatment", y = "Average Height (cm)") +
+  labs(x = "Stocking Treatment", y = "Number Flowering Stems (ANY STAGE)") +
   scale_fill_manual(values = stk_colors) +
   pref_theme
 ## Save the plot!

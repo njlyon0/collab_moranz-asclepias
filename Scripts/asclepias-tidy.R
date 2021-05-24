@@ -1978,6 +1978,10 @@ sort(unique(milkweed.v8$Monarch.Immature.Evidence))
 # There are some rows that were entirely empty that we should ditch now
 milkweed.v9 <- milkweed.v8[complete.cases(milkweed.v8[, "Site"]), ]
 
+# Also, let's quickly make a buds + flowers column
+milkweed.v9$Tot.Bud.n.Flr <- rowSums(select(milkweed.v9, Tot.Bud, Tot.Flr))
+sort(unique(milkweed.v9$Tot.Bud.n.Flr))
+
 ## ------------------------------------------------ ##
         # Explanatory Variable Retrieval ####
 ## ------------------------------------------------ ##
@@ -2036,7 +2040,8 @@ summary(milkweed.v9$Julian)
   ## I.e., ditch the various concatenated index columns we needed to bring in the new variables
 milkweed.v10 <- milkweed.v9 %>%
   select(Year:Date, Julian, Site:Plant.ID, TSF:Stocking, GrazingLawn,
-         Avg.Height:ASCTUB.Abun.2m, Crab.Spider.Abun, Shrub.Abun.1m:Nectaring.Bfly.Rich)
+         Avg.Height:Tot.Flr, Tot.Bud.n.Flr, Avg.Bloom.Status:ASCTUB.Abun.2m,
+         Crab.Spider.Abun, Shrub.Abun.1m:Nectaring.Bfly.Rich)
 
 # Check what we ditched (should be just the unneeded index code)
 setdiff(names(milkweed.v9), names(milkweed.v10))

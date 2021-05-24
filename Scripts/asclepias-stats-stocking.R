@@ -4,8 +4,7 @@
 # Code written by Nicholas J Lyon
 
 # PURPOSE ####
-  ## This code does all of the univariate* analysis for the project
-  ## * = Note that as of May 2021 no multivariate analysis is planned
+  ## This code analyzes essentially all of the variables against 'stocking rate' x 'time since fire'
 
 # Clear the environment
 rm(list = ls())

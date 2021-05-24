@@ -1982,6 +1982,17 @@ milkweed.v9 <- milkweed.v8[complete.cases(milkweed.v8[, "Site"]), ]
 milkweed.v9$Tot.Bud.n.Flr <- rowSums(select(milkweed.v9, Tot.Bud, Tot.Flr))
 sort(unique(milkweed.v9$Tot.Bud.n.Flr))
 
+# Also also, let's get a ratio of bitten stems versus total stems
+  ## There is no "total stems" column so I am adding total reproductive vs. nonreproductive stems
+milkweed.v9$Ratio.Bitten.vs.Total.Stems <- with(milkweed.v9, (Tot.Bitten.Stems / (Num.Stems.ALL.Flowering.Stages + Num.Stems.Nonflowering)))
+  ## Check for issues
+sort(unique(milkweed.v9$Ratio.Bitten.vs.Total.Stems))
+  ## Fix 'em
+milkweed.v9$Ratio.Bitten.vs.Total.Stems <- ifelse(test = milkweed.v9$Ratio.Bitten.vs.Total.Stems == "Inf" | milkweed.v9$Ratio.Bitten.vs.Total.Stems > 1,
+                                                  yes = NA, no = milkweed.v9$Ratio.Bitten.vs.Total.Stems)
+  ## Check again
+sort(unique(milkweed.v9$Ratio.Bitten.vs.Total.Stems))
+
 ## ------------------------------------------------ ##
         # Explanatory Variable Retrieval ####
 ## ------------------------------------------------ ##
@@ -2040,8 +2051,8 @@ summary(milkweed.v9$Julian)
   ## I.e., ditch the various concatenated index columns we needed to bring in the new variables
 milkweed.v10 <- milkweed.v9 %>%
   select(Year:Date, Julian, Site:Plant.ID, TSF:Stocking, GrazingLawn,
-         Avg.Height:Tot.Flr, Tot.Bud.n.Flr, Avg.Bloom.Status:ASCTUB.Abun.2m,
-         Crab.Spider.Abun, Shrub.Abun.1m:Nectaring.Bfly.Rich)
+         Avg.Height:Tot.Flr, Tot.Bud.n.Flr, Ratio.Bitten.vs.Total.Stems,
+         Avg.Bloom.Status:ASCTUB.Abun.2m, Crab.Spider.Abun, Shrub.Abun.1m:Nectaring.Bfly.Rich)
 
 # Check what we ditched (should be just the unneeded index code)
 setdiff(names(milkweed.v9), names(milkweed.v10))
@@ -2079,14 +2090,14 @@ sort(unique(tolower(mkwd.12.v0$Observer)))
 
 sort(unique(tolower(mkwd.13.16.meta$Observer)))
   ## Anna Holtermann
-  ## Jake Mortensen
   ## Audrey McCombs
+  ## Chaz Abarr
   ## Gatha [last name?]
+  ## Jake Mortensen
+  ## Jessica Williams
   ## John Delaney
   ## Karin Grimlund
   ## Marina Osier
-  ## Jessica Williams
-  ## Chaz Abarr
   ## Shannon Rusk
   ## Veronica Mecko [Meeko?]
 

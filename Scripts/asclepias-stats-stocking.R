@@ -78,8 +78,6 @@ summary(glmmTMB(Log.Avg.Bud ~ TSF * Stocking + Year + (1|Site), data = mkwd, fam
 summary(glmmTMB(Log.Avg.Bud ~ TSF * Stocking + Year + (1|Site), data = mkwd.lvl2, family = gaussian()))
   ## year = sig & TSF*SLS = sig
 
-
-
 # Average number of flowers? (on the three longest stems)
   ## Data are heavily skewed, try log transformation
 multi.hist(mkwd$Avg.Flr)

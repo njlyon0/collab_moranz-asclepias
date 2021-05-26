@@ -76,28 +76,40 @@ mkwd.12.v2 <- mkwd.12.v1
 ## ------------------------------------------------ ##
             # 2013-16 Data Tidying ####
 ## ------------------------------------------------ ##
+# Two notes before we get down to business (sing Mulan to yourself while reading that last bit):
+  ## 1) Despite the 2016 data in theory including the 2013-16 data (see file name) it **does not**
+    ### For some reason, each year's data file *may* include data that can only be found in that file
+    ### This is a nightmare obviously
+    ### Doubly so because each year has inconsistent column names
+    ### This precludes the possibility of uploading each year and rbind()-ing them together
+    ### I think the best path forward is as follows:
+      #### Tidy using the pipeline I have already established
+      #### At the very end, give the opportunity for NAs to be filled with their respective data
+
+## 2) Though the data are in Excel files (see the "Data" folder), all data uploads are .csv files
+    ### The below data is a .csv file directly (unmodified) from the Excel sheet "Plants"
+    ### Much of these files are numbers stored as text so the csv file preserves more data than the xlsx
+    ### Something about "read_excel()" deletes those numbers stored as text
+
 # Read in the data
-  ## The below data is a .csv file directly (unmodified) from the Excel sheet "Plants"
-  ## Much of that data is numbers stored as text so the simpler csv file actually preserves more data
-  ## Something about "read_excel()" deletes those numbers stored as text
-mkwd.13.16.v0 <- read.csv("./Data/Asclepias-2016-RAW-plants.csv")
+mkwd.16.v0 <- read.csv("./Data/Asclepias-2016-RAW-plants.csv")
 mkwd.13.16.meta <- read_excel("./Data/Asclepias-2016-RAW.xlsx", sheet = "Metadata")
 
 # Get some diagnostics to understand the scope of tidying ahead of us
-str(mkwd.13.16.v0)
-summary(mkwd.13.16.v0)
-names(mkwd.13.16.v0)
+str(mkwd.16.v0)
+summary(mkwd.16.v0)
+names(mkwd.16.v0)
   ## Time for a pivot in approach
 
 # To combine 2012 with the other years we first need to get 2013-16 into a single datafile
   ## The legacy of MS Access lives on in it's current form
 mkwd.13.16.meta$AsclepTransID <- mkwd.13.16.meta$AsclepTransIDauto
-mkwd.13.16.v1 <- left_join(mkwd.13.16.v0, mkwd.13.16.meta, by = "AsclepTransID")
-names(mkwd.13.16.v1)
+mkwd.16.v1 <- left_join(mkwd.16.v0, mkwd.13.16.meta, by = "AsclepTransID")
+names(mkwd.16.v1)
 
 # Now prune back to just what we need from this dataset
-names(mkwd.13.16.v1)
-mkwd.13.16.v2 <- mkwd.13.16.v1 %>%
+names(mkwd.16.v1)
+mkwd.16.v2 <- mkwd.16.v1 %>%
     ## Needed columns
   select(YearVis, Date, Pasture, Patch, Whittaker, PlantID.Code.from.2012,
          Length.St1:LengthSt3, Buds.St.1:Buds.St.3, Flow.St.1:Flow.St.3,
@@ -131,113 +143,113 @@ mkwd.13.16.v2 <- mkwd.13.16.v1 %>%
 
 #Num.Stems.ALL.Flowering.Stages = TrimbStemsFbudflowerdone,
 
-names(mkwd.13.16.v2)
+names(mkwd.16.v2)
 
 # Have some tidying to do before we can combine 2012 and 2013-16
   ## We need averages of all of the 'stems 1-3' variables
   ## To get that we need to ensure that those columns are all numbers so that they can BE averaged
 
 # The year column is missing 2013 (but the date column isn't!)
-mkwd.13.16.v2$Year <- as.factor(str_sub(mkwd.13.16.v2$Date, 1, 4))
-unique(mkwd.13.16.v2$Year)
+mkwd.16.v2$Year <- as.factor(str_sub(mkwd.16.v2$Date, 1, 4))
+unique(mkwd.16.v2$Year)
 
 # Make date a character so it doesn't get messed up when binding to the other dataframe
-mkwd.13.16.v2$Date <- as.character(mkwd.13.16.v2$Date)
-sort(unique(mkwd.13.16.v2$Date))
+mkwd.16.v2$Date <- as.character(mkwd.16.v2$Date)
+sort(unique(mkwd.16.v2$Date))
 
 # Stem length checks
   ## Stem 1
-sort(unique(mkwd.13.16.v2$Length.St1))
-mkwd.13.16.v2$Length.St1 <- gsub("no data|not meas", "", mkwd.13.16.v2$Length.St1)
-mkwd.13.16.v2$Length.St1 <- as.numeric(gsub("\\(dead\\)", "", mkwd.13.16.v2$Length.St1))
-sort(unique(mkwd.13.16.v2$Length.St1))
+sort(unique(mkwd.16.v2$Length.St1))
+mkwd.16.v2$Length.St1 <- gsub("no data|not meas", "", mkwd.16.v2$Length.St1)
+mkwd.16.v2$Length.St1 <- as.numeric(gsub("\\(dead\\)", "", mkwd.16.v2$Length.St1))
+sort(unique(mkwd.16.v2$Length.St1))
 
   ## Stem 2
-sort(unique(mkwd.13.16.v2$Length.St2))
-mkwd.13.16.v2$Length.St2 <- as.numeric(gsub("not meas", "", mkwd.13.16.v2$Length.St2))
-sort(unique(mkwd.13.16.v2$Length.St2))
+sort(unique(mkwd.16.v2$Length.St2))
+mkwd.16.v2$Length.St2 <- as.numeric(gsub("not meas", "", mkwd.16.v2$Length.St2))
+sort(unique(mkwd.16.v2$Length.St2))
 
   ## Stem 3
-sort(unique(mkwd.13.16.v2$Length.St3))
-mkwd.13.16.v2$Length.St3 <- as.numeric(gsub("not meas", "", mkwd.13.16.v2$Length.St3))
-sort(unique(mkwd.13.16.v2$Length.St3))
+sort(unique(mkwd.16.v2$Length.St3))
+mkwd.16.v2$Length.St3 <- as.numeric(gsub("not meas", "", mkwd.16.v2$Length.St3))
+sort(unique(mkwd.16.v2$Length.St3))
 
 # Get the average length of the stems
-mkwd.13.16.v2$Avg.Height <- rowMeans(select(mkwd.13.16.v2, Length.St1:Length.St3))
-sort(unique(mkwd.13.16.v2$Avg.Height))
+mkwd.16.v2$Avg.Height <- rowMeans(select(mkwd.16.v2, Length.St1:Length.St3))
+sort(unique(mkwd.16.v2$Avg.Height))
 
 # Bud number checks
   ## Stem 1
-sort(unique(mkwd.13.16.v2$Buds.St.1))
-mkwd.13.16.v2$Buds.St.1 <- gsub("no data|not counted|not recorded|too early|tiny",
-                                "", mkwd.13.16.v2$Buds.St.1)
+sort(unique(mkwd.16.v2$Buds.St.1))
+mkwd.16.v2$Buds.St.1 <- gsub("no data|not counted|not recorded|too early|tiny",
+                                "", mkwd.16.v2$Buds.St.1)
   ### Note the judgement call here
-mkwd.13.16.v2$Buds.St.1 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Buds.St.1))
-sort(unique(mkwd.13.16.v2$Buds.St.1))
+mkwd.16.v2$Buds.St.1 <- as.numeric(gsub("dozens", 24, mkwd.16.v2$Buds.St.1))
+sort(unique(mkwd.16.v2$Buds.St.1))
 
   ## Stem 2
-sort(unique(mkwd.13.16.v2$Buds.St.2))
-mkwd.13.16.v2$Buds.St.2 <- gsub("not counted|to early|too early|tiny", "", mkwd.13.16.v2$Buds.St.2)
-mkwd.13.16.v2$Buds.St.2 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Buds.St.2))
-sort(unique(mkwd.13.16.v2$Buds.St.2))
+sort(unique(mkwd.16.v2$Buds.St.2))
+mkwd.16.v2$Buds.St.2 <- gsub("not counted|to early|too early|tiny", "", mkwd.16.v2$Buds.St.2)
+mkwd.16.v2$Buds.St.2 <- as.numeric(gsub("dozens", 24, mkwd.16.v2$Buds.St.2))
+sort(unique(mkwd.16.v2$Buds.St.2))
 
   ## Stem 3
-sort(unique(mkwd.13.16.v2$Buds.St.3))
-mkwd.13.16.v2$Buds.St.3 <- gsub("not counted|too early|\\?", "", mkwd.13.16.v2$Buds.St.3)
-mkwd.13.16.v2$Buds.St.3 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Buds.St.3))
-sort(unique(mkwd.13.16.v2$Buds.St.3))
+sort(unique(mkwd.16.v2$Buds.St.3))
+mkwd.16.v2$Buds.St.3 <- gsub("not counted|too early|\\?", "", mkwd.16.v2$Buds.St.3)
+mkwd.16.v2$Buds.St.3 <- as.numeric(gsub("dozens", 24, mkwd.16.v2$Buds.St.3))
+sort(unique(mkwd.16.v2$Buds.St.3))
 
 # Bud summarization
-mkwd.13.16.v2$Tot.Bud <- rowSums(select(mkwd.13.16.v2, Buds.St.1:Buds.St.3))
-sort(unique(mkwd.13.16.v2$Tot.Bud))
-mkwd.13.16.v2$Avg.Bud <- rowMeans(select(mkwd.13.16.v2, Buds.St.1:Buds.St.3))
-sort(unique(mkwd.13.16.v2$Avg.Bud))
+mkwd.16.v2$Tot.Bud <- rowSums(select(mkwd.16.v2, Buds.St.1:Buds.St.3))
+sort(unique(mkwd.16.v2$Tot.Bud))
+mkwd.16.v2$Avg.Bud <- rowMeans(select(mkwd.16.v2, Buds.St.1:Buds.St.3))
+sort(unique(mkwd.16.v2$Avg.Bud))
 
 # Flower number checks
   ## Stem 1
-sort(unique(mkwd.13.16.v2$Flow.St.1))
-mkwd.13.16.v2$Flow.St.1 <- gsub("no data", "", mkwd.13.16.v2$Flow.St.1)
+sort(unique(mkwd.16.v2$Flow.St.1))
+mkwd.16.v2$Flow.St.1 <- gsub("no data", "", mkwd.16.v2$Flow.St.1)
     ### Note the judgement call (this is the same judgement call made everywhere "dozens" was entered)
-mkwd.13.16.v2$Flow.St.1 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Flow.St.1))
-sort(unique(mkwd.13.16.v2$Flow.St.1))
+mkwd.16.v2$Flow.St.1 <- as.numeric(gsub("dozens", 24, mkwd.16.v2$Flow.St.1))
+sort(unique(mkwd.16.v2$Flow.St.1))
 
   ## Stem 2
-sort(unique(mkwd.13.16.v2$Flow.St.2))
-mkwd.13.16.v2$Flow.St.2 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Flow.St.2))
-sort(unique(mkwd.13.16.v2$Flow.St.2))
+sort(unique(mkwd.16.v2$Flow.St.2))
+mkwd.16.v2$Flow.St.2 <- as.numeric(gsub("dozens", 24, mkwd.16.v2$Flow.St.2))
+sort(unique(mkwd.16.v2$Flow.St.2))
 
   ## Stem 3
-sort(unique(mkwd.13.16.v2$Flow.St.3))
-mkwd.13.16.v2$Flow.St.3 <- as.numeric(gsub("dozens", 24, mkwd.13.16.v2$Flow.St.3))
-sort(unique(mkwd.13.16.v2$Flow.St.3))
+sort(unique(mkwd.16.v2$Flow.St.3))
+mkwd.16.v2$Flow.St.3 <- as.numeric(gsub("dozens", 24, mkwd.16.v2$Flow.St.3))
+sort(unique(mkwd.16.v2$Flow.St.3))
 
 # Flower summarization
-mkwd.13.16.v2$Tot.Flr <- rowSums(select(mkwd.13.16.v2, Flow.St.1:Flow.St.3))
-sort(unique(mkwd.13.16.v2$Tot.Flr))
-mkwd.13.16.v2$Avg.Flr <- rowMeans(select(mkwd.13.16.v2, Flow.St.1:Flow.St.3))
-sort(unique(mkwd.13.16.v2$Avg.Flr))
+mkwd.16.v2$Tot.Flr <- rowSums(select(mkwd.16.v2, Flow.St.1:Flow.St.3))
+sort(unique(mkwd.16.v2$Tot.Flr))
+mkwd.16.v2$Avg.Flr <- rowMeans(select(mkwd.16.v2, Flow.St.1:Flow.St.3))
+sort(unique(mkwd.16.v2$Avg.Flr))
 
 # Bloom status checks
   ## Stem 1
-sort(unique(mkwd.13.16.v2$BlooStatus.St.1))
-mkwd.13.16.v2$BlooStatus.St.1 <- as.numeric(gsub("\\?", "", mkwd.13.16.v2$BlooStatus.St.1))
-sort(unique(mkwd.13.16.v2$BlooStatus.St.1))
+sort(unique(mkwd.16.v2$BlooStatus.St.1))
+mkwd.16.v2$BlooStatus.St.1 <- as.numeric(gsub("\\?", "", mkwd.16.v2$BlooStatus.St.1))
+sort(unique(mkwd.16.v2$BlooStatus.St.1))
 
   ## Stem 2
-sort(unique(mkwd.13.16.v2$BlooStatus.St.2))
+sort(unique(mkwd.16.v2$BlooStatus.St.2))
 
   ## Stem 3
-sort(unique(mkwd.13.16.v2$BlooStatus.St.3))
+sort(unique(mkwd.16.v2$BlooStatus.St.3))
 
 # Bloom status summarization
-mkwd.13.16.v2$Avg.Bloom.Status <- rowMeans(select(mkwd.13.16.v2, BlooStatus.St.1:BlooStatus.St.3))
-sort(unique(mkwd.13.16.v2$Avg.Bloom.Status))
+mkwd.16.v2$Avg.Bloom.Status <- rowMeans(select(mkwd.16.v2, BlooStatus.St.1:BlooStatus.St.3))
+sort(unique(mkwd.16.v2$Avg.Bloom.Status))
 
 # We've done a lot of fixing so far so let's preserve that by making a new data file
-mkwd.13.16.v3 <- mkwd.13.16.v2
+mkwd.16.v3 <- mkwd.16.v2
 
 # Monarch immatures checks
-sort(unique(mkwd.13.16.v3$MonarchImmatures2))
+sort(unique(mkwd.16.v3$MonarchImmatures2))
 ## This combines eggs and larvae (caterpillars) but we want them separated
 
 # NOTE:
@@ -254,244 +266,244 @@ sort(unique(mkwd.13.16.v3$MonarchImmatures2))
               # Monarch Egg Tidying ####
 ## ------------------------------------------------ ##
 # Tidy Monarch eggs first
-mkwd.13.16.v3$Num.Monarch.Eggs <- tolower(mkwd.13.16.v3$MonarchImmatures2)
-sort(unique(mkwd.13.16.v3$Num.Monarch.Eggs))
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; three second instar monarch larvae, one on each of the stems, all three are eating flower buds \\(and were somewhat hidden in the cluster of buds\\); all three stems are the most advanced phenologically for this plant \\(all have a few red tipped buds\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; three 4th or 5th instar$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; strangely, one egg on upper surface of leaf \\(10\" below flowers\\)$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; small monarch frass on each stem; some buds eaten away$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; monarch egg on upper surface of a leaf approx. 8\" off ground on stem a \\(and 10\" below flower\\)$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; monarch egg on stem a; frass on stem b and c$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; lots of leaves missing\\/chewed up by insects, and some large monarch frass; did not see larvae$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- tolower(mkwd.16.v3$MonarchImmatures2)
+sort(unique(mkwd.16.v3$Num.Monarch.Eggs))
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
+                                       "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; three second instar monarch larvae, one on each of the stems, all three are eating flower buds \\(and were somewhat hidden in the cluster of buds\\); all three stems are the most advanced phenologically for this plant \\(all have a few red tipped buds\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; three 4th or 5th instar$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; strangely, one egg on upper surface of leaf \\(10\" below flowers\\)$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; small monarch frass on each stem; some buds eaten away$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; monarch egg on upper surface of a leaf approx. 8\" off ground on stem a \\(and 10\" below flower\\)$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; monarch egg on stem a; frass on stem b and c$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; lots of leaves missing\\/chewed up by insects, and some large monarch frass; did not see larvae$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
   ### Note judgement call here (most conservative number that would still be plural)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; eggs on leaf of c stem$", "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; at 7:50am, found 2 large 5th instar monarch feeding on plant; larvae feeding on stem a, the tallest stem; at 8:45am they were still on that stem and were feeding off different edges of the same leaf$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 5 monarch eggs plus small monarch frass\\)$", "5", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 4 monarch eggs, 1 for each stem, each one on underside of leaf between 1\\/2\" and 2\" below bud cluster$",
-                                       "4", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 4 monarch eggs total \\(2 on taller stems - both on young leaves\\), \\(2 on shorter stems  - 1 on stem, 1 on young leaves\\)$",
-                                       "4", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 3 monarch eggs, all laid on young leaves within 2cm of flower buds$",
-                                       "3", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 2 monarch eggs on buds. 1 monarch larva \\(2nd instar\\) in buds. frass from large 5th instar larva.$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 white monarch egg, 1 dark gray monarch egg, both laid on flower buds$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 white monarch egg on fresh leaf that subtends the bud cluster of stem c$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; eggs on leaf of c stem$", "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; at 7:50am, found 2 large 5th instar monarch feeding on plant; larvae feeding on stem a, the tallest stem; at 8:45am they were still on that stem and were feeding off different edges of the same leaf$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 5 monarch eggs plus small monarch frass\\)$", "5", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 4 monarch eggs, 1 for each stem, each one on underside of leaf between 1\\/2\" and 2\" below bud cluster$",
+                                       "4", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 4 monarch eggs total \\(2 on taller stems - both on young leaves\\), \\(2 on shorter stems  - 1 on stem, 1 on young leaves\\)$",
+                                       "4", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 3 monarch eggs, all laid on young leaves within 2cm of flower buds$",
+                                       "3", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 2 monarch eggs on buds. 1 monarch larva \\(2nd instar\\) in buds. frass from large 5th instar larva.$",
+                                       "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 white monarch egg, 1 dark gray monarch egg, both laid on flower buds$",
+                                       "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 white monarch egg on fresh leaf that subtends the bud cluster of stem c$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
   ## Note imprecision of "per stem" (assuming 3 stems sampled)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 monarch egg per stem, each egg laid on back of leaf within 2.5cm of bud cluster$",
-                                       "3", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 monarch egg on flower bud of an axillary shoot; another monarch egg on red tipped flower bud on stem b \\(another resprout\\) and large frass \\(potentially monarch frass\\); third monarch egg also on red tipped buds of an axillary shoot on stem c$",
-                                       "3", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 monarch egg on bud$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 fourth instar$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 fifth instar monarch larvae feeding on stem a when we arrived$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 egg on 1cm long leaf next to buds on stem a$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 5th instar$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes, 2 monarch eggs$", "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes, 2 dark monarch eggs \\(both on flower buds\\)$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes, 1 small caterpillar on smallest blooming axillary shoot; 1 4th instar \\(\\?\\) caterpillar hiding in grass next to tallest stem; large amounts of poop$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(frass\\)|yes \\(frass on stem, some buds eaten away\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(1 monarch egg on bud of stem c\\)$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(1 5th instar\\)$|^yes \\(1 4th instar\\)$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 monarch egg per stem, each egg laid on back of leaf within 2.5cm of bud cluster$",
+                                       "3", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 monarch egg on flower bud of an axillary shoot; another monarch egg on red tipped flower bud on stem b \\(another resprout\\) and large frass \\(potentially monarch frass\\); third monarch egg also on red tipped buds of an axillary shoot on stem c$",
+                                       "3", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 monarch egg on bud$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 fourth instar$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 fifth instar monarch larvae feeding on stem a when we arrived$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 egg on 1cm long leaf next to buds on stem a$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes; 1 5th instar$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes, 2 monarch eggs$", "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes, 2 dark monarch eggs \\(both on flower buds\\)$",
+                                       "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes, 1 small caterpillar on smallest blooming axillary shoot; 1 4th instar \\(\\?\\) caterpillar hiding in grass next to tallest stem; large amounts of poop$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(frass\\)|yes \\(frass on stem, some buds eaten away\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(1 monarch egg on bud of stem c\\)$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(1 5th instar\\)$|^yes \\(1 4th instar\\)$", "0", mkwd.16.v3$Num.Monarch.Eggs)
   ### Note judgement call (assuming at least 1 egg and larva in these cases)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^unk \\(not recorded\\)$|^trans$|^presum no$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^no; frass found on leaves but not of monarch$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^no data$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^no$|^no \\(could not find plant\\!\\)$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^na$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^n\\/a; no; caterpillar poop on stem, some missing buds \\(eaten\\?\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^n\\/a; no$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^monarch larva\\(e\\) had chewed leaves, pods$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^maybe; some insect has been eating some buds \\(in fashion of monarch larva\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^maybe; some buds have been chewed on$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^maybe frass|^maybe$|^frass$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^did not measure$|^did not assess$",
-                                       "", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^5 monarch eggs$", "5", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^3 monarch eggs, all on stem a.$", "3", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^2 monarch eggs$|^2 eggs$", "2", mkwd.13.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^unk \\(not recorded\\)$|^trans$|^presum no$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^no; frass found on leaves but not of monarch$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^no data$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^no$|^no \\(could not find plant\\!\\)$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^na$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^n\\/a; no; caterpillar poop on stem, some missing buds \\(eaten\\?\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^n\\/a; no$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^monarch larva\\(e\\) had chewed leaves, pods$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^maybe; some insect has been eating some buds \\(in fashion of monarch larva\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^maybe; some buds have been chewed on$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^maybe frass|^maybe$|^frass$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^did not measure$|^did not assess$",
+                                       "", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^5 monarch eggs$", "5", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^3 monarch eggs, all on stem a.$", "3", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^2 monarch eggs$|^2 eggs$", "2", mkwd.16.v3$Num.Monarch.Eggs)
   ### Note that I'm not counting hatched eggs towards the total monarchs
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^2 hatched monarch eggs on bud$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^2 eggs, 2 2nd instar larvae$", "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^2 5th instar larvae$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^2 3rd instar larvae on flower buds$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(3 4th or 5th instar\\)$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^2 2nd instars on stem a \\(eating buds\\), 1 egg on bud of stem b, 1 2nd instar and 1 egg on stem c \\(on buds\\)$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^10 monarch eggs \\(7 eggs on buds, 3 on leaves\\)$", "10", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 monarch egg, plus evidence of other larvae on the stem$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 monarch egg on a bud$|^1 monarch egg$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 larva \\(1st instar resting on bud stalk on stem a. one egg on big leaf on stem b.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 egg, 1 larva$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 egg on leaves near stem$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 egg on leaf, plus evidence of herbivory by monarch larvae$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 egg on leaf next to buds on stem c; 1 egg on leaf near top of stem a \\(no buds\\)$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 egg$", "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 dead 5th instar larva at base of the plant, plus 1 monarch egg on bud. \\! live 5th instar ot base of the plant$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 5th instar larva on 3rd tallest stem. 1 monarch egg on flower bud.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 4th instar near base, 1 2nd instar eating flowers$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 3rd instar larvae$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^1 3rd instar iarva, 1 monarch egg, evidence of other larvae.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Eggs)
-  ### Note that mkwd.13.16.v1$Comments.4 was removed in transition to v2 of the same
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^2 hatched monarch eggs on bud$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^2 eggs, 2 2nd instar larvae$", "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^2 5th instar larvae$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^2 3rd instar larvae on flower buds$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^yes \\(3 4th or 5th instar\\)$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^2 2nd instars on stem a \\(eating buds\\), 1 egg on bud of stem b, 1 2nd instar and 1 egg on stem c \\(on buds\\)$",
+                                       "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^10 monarch eggs \\(7 eggs on buds, 3 on leaves\\)$", "10", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 monarch egg, plus evidence of other larvae on the stem$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 monarch egg on a bud$|^1 monarch egg$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 larva \\(1st instar resting on bud stalk on stem a. one egg on big leaf on stem b.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 egg, 1 larva$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 egg on leaves near stem$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 egg on leaf, plus evidence of herbivory by monarch larvae$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 egg on leaf next to buds on stem c; 1 egg on leaf near top of stem a \\(no buds\\)$",
+                                       "2", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 egg$", "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 dead 5th instar larva at base of the plant, plus 1 monarch egg on bud. \\! live 5th instar ot base of the plant$",
+                                       "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 5th instar larva on 3rd tallest stem. 1 monarch egg on flower bud.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 4th instar near base, 1 2nd instar eating flowers$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 3rd instar larvae$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^1 3rd instar iarva, 1 monarch egg, evidence of other larvae.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Eggs)
+  ### Note that mkwd.16.v1$Comments.4 was removed in transition to v2 of the same
   ### That comment says there was an adult seen, not relevant to immatures
-mkwd.13.16.v3$Num.Monarch.Eggs <- gsub("^0-\\? see comment 4$", "0", mkwd.13.16.v3$Num.Monarch.Eggs)
-sort(unique(mkwd.13.16.v3$Num.Monarch.Eggs))
+mkwd.16.v3$Num.Monarch.Eggs <- gsub("^0-\\? see comment 4$", "0", mkwd.16.v3$Num.Monarch.Eggs)
+sort(unique(mkwd.16.v3$Num.Monarch.Eggs))
 
 # Make R count it as a number
-mkwd.13.16.v3$Num.Monarch.Eggs <- as.numeric(mkwd.13.16.v3$Num.Monarch.Eggs)
-sort(unique(mkwd.13.16.v3$Num.Monarch.Eggs))
+mkwd.16.v3$Num.Monarch.Eggs <- as.numeric(mkwd.16.v3$Num.Monarch.Eggs)
+sort(unique(mkwd.16.v3$Num.Monarch.Eggs))
 
 ## ------------------------------------------------ ##
             # Monarch Larvae Tidying ####
 ## ------------------------------------------------ ##
 # Tidy Monarch larvae next
-mkwd.13.16.v3$Num.Monarch.Larvae <- tolower(mkwd.13.16.v3$MonarchImmatures2)
-sort(unique(mkwd.13.16.v3$Num.Monarch.Larvae))
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; three second instar monarch larvae, one on each of the stems, all three are eating flower buds \\(and were somewhat hidden in the cluster of buds\\); all three stems are the most advanced phenologically for this plant \\(all have a few red tipped buds\\)$",
-                                         "3", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; three 4th or 5th instar$", "3", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; strangely, one egg on upper surface of leaf \\(10\" below flowers\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; small monarch frass on each stem; some buds eaten away$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; monarch egg on upper surface of a leaf approx. 8\" off ground on stem a \\(and 10\" below flower\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; monarch egg on stem a; frass on stem b and c$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; lots of leaves missing\\/chewed up by insects, and some large monarch frass; did not see larvae$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; eggs on leaf of c stem$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; at 7:50am, found 2 large 5th instar monarch feeding on plant; larvae feeding on stem a, the tallest stem; at 8:45am they were still on that stem and were feeding off different edges of the same leaf$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 5 monarch eggs plus small monarch frass\\)$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 4 monarch eggs, 1 for each stem, each one on underside of leaf between 1\\/2\" and 2\" below bud cluster$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 4 monarch eggs total \\(2 on taller stems - both on young leaves\\), \\(2 on shorter stems  - 1 on stem, 1 on young leaves\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 3 monarch eggs, all laid on young leaves within 2cm of flower buds$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 2 monarch eggs on buds. 1 monarch larva \\(2nd instar\\) in buds. frass from large 5th instar larva.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 white monarch egg, 1 dark gray monarch egg, both laid on flower buds$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 white monarch egg on fresh leaf that subtends the bud cluster of stem c$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- tolower(mkwd.16.v3$MonarchImmatures2)
+sort(unique(mkwd.16.v3$Num.Monarch.Larvae))
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; three second instar monarch larvae, one on each of the stems, all three are eating flower buds \\(and were somewhat hidden in the cluster of buds\\); all three stems are the most advanced phenologically for this plant \\(all have a few red tipped buds\\)$",
+                                         "3", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; three 4th or 5th instar$", "3", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; strangely, one egg on upper surface of leaf \\(10\" below flowers\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; small monarch frass on each stem; some buds eaten away$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; monarch egg on upper surface of a leaf approx. 8\" off ground on stem a \\(and 10\" below flower\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; monarch egg on stem a; frass on stem b and c$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; lots of leaves missing\\/chewed up by insects, and some large monarch frass; did not see larvae$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; eggs on leaf of c stem$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; at 7:50am, found 2 large 5th instar monarch feeding on plant; larvae feeding on stem a, the tallest stem; at 8:45am they were still on that stem and were feeding off different edges of the same leaf$",
+                                       "2", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 5 monarch eggs plus small monarch frass\\)$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 4 monarch eggs, 1 for each stem, each one on underside of leaf between 1\\/2\" and 2\" below bud cluster$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 4 monarch eggs total \\(2 on taller stems - both on young leaves\\), \\(2 on shorter stems  - 1 on stem, 1 on young leaves\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 3 monarch eggs, all laid on young leaves within 2cm of flower buds$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 2 monarch eggs on buds. 1 monarch larva \\(2nd instar\\) in buds. frass from large 5th instar larva.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 white monarch egg, 1 dark gray monarch egg, both laid on flower buds$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 white monarch egg on fresh leaf that subtends the bud cluster of stem c$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
 ## Note imprecision of "per stem" (assuming 3 stems sampled)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 monarch egg per stem, each egg laid on back of leaf within 2.5cm of bud cluster$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 monarch egg on flower bud of an axillary shoot; another monarch egg on red tipped flower bud on stem b \\(another resprout\\) and large frass \\(potentially monarch frass\\); third monarch egg also on red tipped buds of an axillary shoot on stem c$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 monarch egg on bud$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 fourth instar$", "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 fifth instar monarch larvae feeding on stem a when we arrived$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 egg on 1cm long leaf next to buds on stem a$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 5th instar$", "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes, 2 monarch eggs$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes, 2 dark monarch eggs \\(both on flower buds\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes, 1 small caterpillar on smallest blooming axillary shoot; 1 4th instar \\(\\?\\) caterpillar hiding in grass next to tallest stem; large amounts of poop$",
-                                       "2", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(frass\\)|yes \\(frass on stem, some buds eaten away\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(1 monarch egg on bud of stem c\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(1 5th instar\\)$|^yes \\(1 4th instar\\)$", "1", mkwd.13.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 monarch egg per stem, each egg laid on back of leaf within 2.5cm of bud cluster$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 monarch egg on flower bud of an axillary shoot; another monarch egg on red tipped flower bud on stem b \\(another resprout\\) and large frass \\(potentially monarch frass\\); third monarch egg also on red tipped buds of an axillary shoot on stem c$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 monarch egg on bud$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 fourth instar$", "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 fifth instar monarch larvae feeding on stem a when we arrived$",
+                                       "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 egg on 1cm long leaf next to buds on stem a$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes; 1 5th instar$", "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes, 2 monarch eggs$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes, 2 dark monarch eggs \\(both on flower buds\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes, 1 small caterpillar on smallest blooming axillary shoot; 1 4th instar \\(\\?\\) caterpillar hiding in grass next to tallest stem; large amounts of poop$",
+                                       "2", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(frass\\)|yes \\(frass on stem, some buds eaten away\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(1 monarch egg on bud of stem c\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(1 5th instar\\)$|^yes \\(1 4th instar\\)$", "1", mkwd.16.v3$Num.Monarch.Larvae)
 ### Note judgement call (assuming at least 1 egg and larva in these cases)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes$", "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^unk \\(not recorded\\)$|^trans$|^presum no$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^no; frass found on leaves but not of monarch$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^no data$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^no$|^no \\(could not find plant\\!\\)$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^na$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^n\\/a; no; caterpillar poop on stem, some missing buds \\(eaten\\?\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^n\\/a; no$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^monarch larva\\(e\\) had chewed leaves, pods$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe; some insect has been eating some buds \\(in fashion of monarch larva\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe; some buds have been chewed on$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^maybe frass|^maybe$|^frass$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
-                                       "8", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^did not measure$|^did not assess$",
-                                       "", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^5 monarch eggs$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^3 monarch eggs, all on stem a.$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^2 monarch eggs$|^2 eggs$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes$", "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^unk \\(not recorded\\)$|^trans$|^presum no$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^no; frass found on leaves but not of monarch$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^no data$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^no$|^no \\(could not find plant\\!\\)$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^na$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^n\\/a; no; caterpillar poop on stem, some missing buds \\(eaten\\?\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^n\\/a; no$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^monarch larva\\(e\\) had chewed leaves, pods$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^maybe; some insect has been eating some buds \\(in fashion of monarch larva\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^maybe; some buds have been chewed on$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^maybe frass|^maybe$|^frass$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
+                                       "8", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^did not measure$|^did not assess$",
+                                       "", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^5 monarch eggs$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^3 monarch eggs, all on stem a.$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^2 monarch eggs$|^2 eggs$", "0", mkwd.16.v3$Num.Monarch.Larvae)
 ### Note that I'm not counting hatched eggs towards the total monarchs
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^2 hatched monarch eggs on bud$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^2 eggs, 2 2nd instar larvae$", "2", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^2 5th instar larvae$", "2", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^2 3rd instar larvae on flower buds$", "2", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(3 4th or 5th instar\\)$", "3", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^2 2nd instars on stem a \\(eating buds\\), 1 egg on bud of stem b, 1 2nd instar and 1 egg on stem c \\(on buds\\)$",
-                                       "3", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^10 monarch eggs \\(7 eggs on buds, 3 on leaves\\)$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 monarch egg, plus evidence of other larvae on the stem$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 monarch egg on a bud$|^1 monarch egg$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 larva \\(1st instar resting on bud stalk on stem a. one egg on big leaf on stem b.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 egg, 1 larva$", "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 egg on leaves near stem$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 egg on leaf, plus evidence of herbivory by monarch larvae$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 egg on leaf next to buds on stem c; 1 egg on leaf near top of stem a \\(no buds\\)$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 egg$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 dead 5th instar larva at base of the plant, plus 1 monarch egg on bud. \\! live 5th instar ot base of the plant$",
-                                       "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 5th instar larva on 3rd tallest stem. 1 monarch egg on flower bud.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 4th instar near base, 1 2nd instar eating flowers$", "2", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 3rd instar larvae$", "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^1 3rd instar iarva, 1 monarch egg, evidence of other larvae.$",
-                                       "1", mkwd.13.16.v3$Num.Monarch.Larvae)
-### Note that mkwd.13.16.v1$Comments.4 was removed in transition to v2 of the same
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^2 hatched monarch eggs on bud$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^2 eggs, 2 2nd instar larvae$", "2", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^2 5th instar larvae$", "2", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^2 3rd instar larvae on flower buds$", "2", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^yes \\(3 4th or 5th instar\\)$", "3", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^2 2nd instars on stem a \\(eating buds\\), 1 egg on bud of stem b, 1 2nd instar and 1 egg on stem c \\(on buds\\)$",
+                                       "3", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^10 monarch eggs \\(7 eggs on buds, 3 on leaves\\)$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 monarch egg, plus evidence of other larvae on the stem$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 monarch egg on a bud$|^1 monarch egg$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 larva \\(1st instar resting on bud stalk on stem a. one egg on big leaf on stem b.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 egg, 1 larva$", "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 egg on leaves near stem$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 egg on leaf, plus evidence of herbivory by monarch larvae$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 egg on leaf next to buds on stem c; 1 egg on leaf near top of stem a \\(no buds\\)$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 egg$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 dead 5th instar larva at base of the plant, plus 1 monarch egg on bud. \\! live 5th instar ot base of the plant$",
+                                       "0", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 5th instar larva on 3rd tallest stem. 1 monarch egg on flower bud.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 4th instar near base, 1 2nd instar eating flowers$", "2", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 3rd instar larvae$", "1", mkwd.16.v3$Num.Monarch.Larvae)
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^1 3rd instar iarva, 1 monarch egg, evidence of other larvae.$",
+                                       "1", mkwd.16.v3$Num.Monarch.Larvae)
+### Note that mkwd.16.v1$Comments.4 was removed in transition to v2 of the same
 ### That comment says there was an adult seen, not relevant to immatures
-mkwd.13.16.v3$Num.Monarch.Larvae <- gsub("^0-\\? see comment 4$", "0", mkwd.13.16.v3$Num.Monarch.Larvae)
-sort(unique(mkwd.13.16.v3$Num.Monarch.Larvae))
+mkwd.16.v3$Num.Monarch.Larvae <- gsub("^0-\\? see comment 4$", "0", mkwd.16.v3$Num.Monarch.Larvae)
+sort(unique(mkwd.16.v3$Num.Monarch.Larvae))
 
 # Make R count it as a number
-mkwd.13.16.v3$Num.Monarch.Larvae <- as.numeric(mkwd.13.16.v3$Num.Monarch.Larvae)
-sort(unique(mkwd.13.16.v3$Num.Monarch.Larvae))
+mkwd.16.v3$Num.Monarch.Larvae <- as.numeric(mkwd.16.v3$Num.Monarch.Larvae)
+sort(unique(mkwd.16.v3$Num.Monarch.Larvae))
 
 ## ------------------------------------------------ ##
       # Monarch Presence/Absence Tidying ####
@@ -501,121 +513,121 @@ sort(unique(mkwd.13.16.v3$Num.Monarch.Larvae))
   ## I don't want to lose that data so we're going to collect that here
 
 # Last round of tidying the same qualitative observations
-mkwd.13.16.v3$Monarch.Immature.Evidence <- tolower(mkwd.13.16.v3$MonarchImmatures2)
-sort(unique(mkwd.13.16.v3$Monarch.Immature.Evidence))
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; three second instar monarch larvae, one on each of the stems, all three are eating flower buds \\(and were somewhat hidden in the cluster of buds\\); all three stems are the most advanced phenologically for this plant \\(all have a few red tipped buds\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; three 4th or 5th instar$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; strangely, one egg on upper surface of leaf \\(10\" below flowers\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; small monarch frass on each stem; some buds eaten away$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; monarch egg on upper surface of a leaf approx. 8\" off ground on stem a \\(and 10\" below flower\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; monarch egg on stem a; frass on stem b and c$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; lots of leaves missing\\/chewed up by insects, and some large monarch frass; did not see larvae$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- tolower(mkwd.16.v3$MonarchImmatures2)
+sort(unique(mkwd.16.v3$Monarch.Immature.Evidence))
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; two monarch eggs on stem c \\(specifically on underside of leaves, 10cm and 22cm from top of plant\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; three second instar monarch larvae, one on each of the stems, all three are eating flower buds \\(and were somewhat hidden in the cluster of buds\\); all three stems are the most advanced phenologically for this plant \\(all have a few red tipped buds\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; three 4th or 5th instar$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; strangely, one egg on upper surface of leaf \\(10\" below flowers\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; small monarch frass on each stem; some buds eaten away$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; monarch egg on upper surface of a leaf approx. 8\" off ground on stem a \\(and 10\" below flower\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; monarch egg on stem a; frass on stem b and c$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; lots of leaves missing\\/chewed up by insects, and some large monarch frass; did not see larvae$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
 ### Note judgement call here (most conservative number that would still be plural)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; eggs on leaf of c stem$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; at 7:50am, found 2 large 5th instar monarch feeding on plant; larvae feeding on stem a, the tallest stem; at 8:45am they were still on that stem and were feeding off different edges of the same leaf$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 5 monarch eggs plus small monarch frass\\)$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 4 monarch eggs, 1 for each stem, each one on underside of leaf between 1\\/2\" and 2\" below bud cluster$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 4 monarch eggs total \\(2 on taller stems - both on young leaves\\), \\(2 on shorter stems  - 1 on stem, 1 on young leaves\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 3 monarch eggs, all laid on young leaves within 2cm of flower buds$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 2 monarch eggs on buds. 1 monarch larva \\(2nd instar\\) in buds. frass from large 5th instar larva.$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 white monarch egg, 1 dark gray monarch egg, both laid on flower buds$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 white monarch egg on fresh leaf that subtends the bud cluster of stem c$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 monarch egg per stem, each egg laid on back of leaf within 2.5cm of bud cluster$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 monarch egg on flower bud of an axillary shoot; another monarch egg on red tipped flower bud on stem b \\(another resprout\\) and large frass \\(potentially monarch frass\\); third monarch egg also on red tipped buds of an axillary shoot on stem c$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 monarch egg on bud$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 fourth instar$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 fifth instar monarch larvae feeding on stem a when we arrived$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 egg on 1cm long leaf next to buds on stem a$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 5th instar$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes, 2 monarch eggs$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes, 2 dark monarch eggs \\(both on flower buds\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes, 1 small caterpillar on smallest blooming axillary shoot; 1 4th instar \\(\\?\\) caterpillar hiding in grass next to tallest stem; large amounts of poop$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(frass\\)|yes \\(frass on stem, some buds eaten away\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(1 monarch egg on bud of stem c\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(1 5th instar\\)$|^yes \\(1 4th instar\\)$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; eggs on leaf of c stem$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; at 7:50am, found 2 large 5th instar monarch feeding on plant; larvae feeding on stem a, the tallest stem; at 8:45am they were still on that stem and were feeding off different edges of the same leaf$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 5 monarch eggs plus small monarch frass\\)$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 4 monarch eggs, 1 for each stem, each one on underside of leaf between 1\\/2\" and 2\" below bud cluster$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 4 monarch eggs total \\(2 on taller stems - both on young leaves\\), \\(2 on shorter stems  - 1 on stem, 1 on young leaves\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 3 monarch eggs, all laid on young leaves within 2cm of flower buds$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 2 monarch eggs on buds. 1 monarch larva \\(2nd instar\\) in buds. frass from large 5th instar larva.$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 white monarch egg, 1 dark gray monarch egg, both laid on flower buds$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 white monarch egg on fresh leaf that subtends the bud cluster of stem c$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 monarch egg per stem, each egg laid on back of leaf within 2.5cm of bud cluster$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 monarch egg on flower bud of an axillary shoot; another monarch egg on red tipped flower bud on stem b \\(another resprout\\) and large frass \\(potentially monarch frass\\); third monarch egg also on red tipped buds of an axillary shoot on stem c$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 monarch egg on bud$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 fourth instar$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 fifth instar monarch larvae feeding on stem a when we arrived$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 egg on 1cm long leaf next to buds on stem a$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes; 1 5th instar$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes, 2 monarch eggs$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes, 2 dark monarch eggs \\(both on flower buds\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes, 1 small caterpillar on smallest blooming axillary shoot; 1 4th instar \\(\\?\\) caterpillar hiding in grass next to tallest stem; large amounts of poop$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(frass\\)|yes \\(frass on stem, some buds eaten away\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(1 monarch egg on bud of stem c\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(1 5th instar\\)$|^yes \\(1 4th instar\\)$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
 ### Note judgement call (assuming at least 1 egg and larva in these cases)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^unk \\(not recorded\\)$|^trans$|^presum no$",
-                                       "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^no; frass found on leaves but not of monarch$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^no data$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^no$|^no \\(could not find plant\\!\\)$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^na$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^n\\/a; no; caterpillar poop on stem, some missing buds \\(eaten\\?\\)$",
-                                       "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^n\\/a; no$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^monarch larva\\(e\\) had chewed leaves, pods$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^maybe; some insect has been eating some buds \\(in fashion of monarch larva\\)$",
-                                       "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^maybe; some buds have been chewed on$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^maybe frass|^maybe$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^frass$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^did not measure$|^did not assess$",
-                                       "", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^5 monarch eggs$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^3 monarch eggs, all on stem a.$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^2 monarch eggs$|^2 eggs$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^2 hatched monarch eggs on bud$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^2 eggs, 2 2nd instar larvae$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^2 5th instar larvae$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^2 3rd instar larvae on flower buds$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(3 4th or 5th instar\\)$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^2 2nd instars on stem a \\(eating buds\\), 1 egg on bud of stem b, 1 2nd instar and 1 egg on stem c \\(on buds\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^10 monarch eggs \\(7 eggs on buds, 3 on leaves\\)$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 monarch egg, plus evidence of other larvae on the stem$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 monarch egg on a bud$|^1 monarch egg$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 larva \\(1st instar resting on bud stalk on stem a. one egg on big leaf on stem b.$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg, 1 larva$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg on leaves near stem$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg on leaf, plus evidence of herbivory by monarch larvae$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg on leaf next to buds on stem c; 1 egg on leaf near top of stem a \\(no buds\\)$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 dead 5th instar larva at base of the plant, plus 1 monarch egg on bud. \\! live 5th instar ot base of the plant$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 5th instar larva on 3rd tallest stem. 1 monarch egg on flower bud.$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 4th instar near base, 1 2nd instar eating flowers$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 3rd instar larvae$", "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^1 3rd instar iarva, 1 monarch egg, evidence of other larvae.$",
-                                       "1", mkwd.13.16.v3$Monarch.Immature.Evidence)
-  ### Note that mkwd.13.16.v1$Comments.4 was removed in transition to v2 of the same
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^unk \\(not recorded\\)$|^trans$|^presum no$",
+                                       "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^no; frass found on leaves but not of monarch$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^no data$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^no$|^no \\(could not find plant\\!\\)$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^na$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^n\\/a; no; caterpillar poop on stem, some missing buds \\(eaten\\?\\)$",
+                                       "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^n\\/a; no$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^monarch larva\\(e\\) had chewed leaves, pods$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^maybe; some insect has been eating some buds \\(in fashion of monarch larva\\)$",
+                                       "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^maybe; some buds have been chewed on$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^maybe; 5 buds chewed by small invert$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^maybe frass|^maybe$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^frass$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^found 3  2nd instar monarch larva on stem b and 5 on stem c. they were feeding on buds. both have mixture of small green buds and red buds.$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^did not measure$|^did not assess$",
+                                       "", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^5 monarch eggs$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^3 monarch eggs, all on stem a.$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^2 monarch eggs$|^2 eggs$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^2 hatched monarch eggs on bud$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^2 eggs, 2 2nd instar larvae$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^2 5th instar larvae$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^2 3rd instar larvae on flower buds$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^yes \\(3 4th or 5th instar\\)$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^2 2nd instars on stem a \\(eating buds\\), 1 egg on bud of stem b, 1 2nd instar and 1 egg on stem c \\(on buds\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^10 monarch eggs \\(7 eggs on buds, 3 on leaves\\)$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 monarch egg, plus evidence of other larvae on the stem$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 monarch egg on a bud$|^1 monarch egg$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 larva \\(1st instar resting on bud stalk on stem a. one egg on big leaf on stem b.$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg, 1 larva$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg on leaves near stem$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg on leaf, plus evidence of herbivory by monarch larvae$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg on leaf next to buds on stem c; 1 egg on leaf near top of stem a \\(no buds\\)$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 egg$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 dead 5th instar larva at base of the plant, plus 1 monarch egg on bud. \\! live 5th instar ot base of the plant$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 5th instar larva on 3rd tallest stem. 1 monarch egg on flower bud.$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 4th instar near base, 1 2nd instar eating flowers$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 3rd instar larvae$", "1", mkwd.16.v3$Monarch.Immature.Evidence)
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^1 3rd instar iarva, 1 monarch egg, evidence of other larvae.$",
+                                       "1", mkwd.16.v3$Monarch.Immature.Evidence)
+  ### Note that mkwd.16.v1$Comments.4 was removed in transition to v2 of the same
   ### That comment says there was an adult seen, not relevant to immatures
-mkwd.13.16.v3$Monarch.Immature.Evidence <- gsub("^0-\\? see comment 4$", "0", mkwd.13.16.v3$Monarch.Immature.Evidence)
-sort(unique(mkwd.13.16.v3$Monarch.Immature.Evidence))
+mkwd.16.v3$Monarch.Immature.Evidence <- gsub("^0-\\? see comment 4$", "0", mkwd.16.v3$Monarch.Immature.Evidence)
+sort(unique(mkwd.16.v3$Monarch.Immature.Evidence))
 
 # Make R count it as a number
-mkwd.13.16.v3$Monarch.Immature.Evidence <- as.numeric(mkwd.13.16.v3$Monarch.Immature.Evidence)
-sort(unique(mkwd.13.16.v3$Monarch.Immature.Evidence))
+mkwd.16.v3$Monarch.Immature.Evidence <- as.numeric(mkwd.16.v3$Monarch.Immature.Evidence)
+sort(unique(mkwd.16.v3$Monarch.Immature.Evidence))
 
 ## ------------------------------------------------ ##
         # 2013-16 Data Tidying Continued ####
@@ -623,37 +635,37 @@ sort(unique(mkwd.13.16.v3$Monarch.Immature.Evidence))
 # Okay, back to the main tidying pipeline
 
 # Let's get a total Monarch immature column
-mkwd.13.16.v3$Tot.Monarch.Immatures <- (mkwd.13.16.v3$Num.Monarch.Eggs + mkwd.13.16.v3$Num.Monarch.Larvae)
-sort(unique(mkwd.13.16.v3$Tot.Monarch.Immatures))
+mkwd.16.v3$Tot.Monarch.Immatures <- (mkwd.16.v3$Num.Monarch.Eggs + mkwd.16.v3$Num.Monarch.Larvae)
+sort(unique(mkwd.16.v3$Tot.Monarch.Immatures))
 
 # Total bitten stems
-sort(unique(mkwd.13.16.v3$Tot.Bitten.Stems))
+sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
   ## Note judgement call ("at least 4" becomes 4)
-mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("at least 4", "4", mkwd.13.16.v3$Tot.Bitten.Stems)
-mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^na$", "", mkwd.13.16.v3$Tot.Bitten.Stems)
-mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", "", mkwd.13.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("at least 4", "4", mkwd.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^na$", "", mkwd.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", "", mkwd.16.v3$Tot.Bitten.Stems)
   ## Note judgement call (to me, these all imply that there were no stems)
-mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(likely they've atrophied\\)$", "0", mkwd.13.16.v3$Tot.Bitten.Stems)
-mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(plant gone$", "0", mkwd.13.16.v3$Tot.Bitten.Stems)
-mkwd.13.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(probably had stems that were eaten and atrophied\\)$", "0", mkwd.13.16.v3$Tot.Bitten.Stems)
-sort(unique(mkwd.13.16.v3$Tot.Bitten.Stems))
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(likely they've atrophied\\)$", "0", mkwd.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(plant gone$", "0", mkwd.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(probably had stems that were eaten and atrophied\\)$", "0", mkwd.16.v3$Tot.Bitten.Stems)
+sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
 
 # Make R count it as a number
-mkwd.13.16.v3$Tot.Bitten.Stems <- as.numeric(mkwd.13.16.v3$Tot.Bitten.Stems)
-sort(unique(mkwd.13.16.v3$Tot.Bitten.Stems))
+mkwd.16.v3$Tot.Bitten.Stems <- as.numeric(mkwd.16.v3$Tot.Bitten.Stems)
+sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
 
 # "Patch" includes whittaker number in 2012 so let's make it include that here as well
-sort(unique(mkwd.13.16.v3$Patch))
-mkwd.13.16.v3$Patch <- paste0(mkwd.13.16.v3$Patch, "-", mkwd.13.16.v3$Whittaker)
-sort(unique(mkwd.13.16.v3$Patch))
+sort(unique(mkwd.16.v3$Patch))
+mkwd.16.v3$Patch <- paste0(mkwd.16.v3$Patch, "-", mkwd.16.v3$Whittaker)
+sort(unique(mkwd.16.v3$Patch))
 
 # Rather than use the "rename()" function, duplicate Pasture and Plant.ID with the right name
-mkwd.13.16.v3$Site <- mkwd.13.16.v3$Pasture
-mkwd.13.16.v3$Plant.ID <- mkwd.13.16.v3$Plant.ID.R1
+mkwd.16.v3$Site <- mkwd.16.v3$Pasture
+mkwd.16.v3$Plant.ID <- mkwd.16.v3$Plant.ID.R1
 
 # Prune off the now-unnecessary columns and keep only the ones that we need
-names(mkwd.13.16.v3)
-mkwd.13.16.v4 <- mkwd.13.16.v3 %>%
+names(mkwd.16.v3)
+mkwd.16.v4 <- mkwd.16.v3 %>%
   select(Year, Date, Site, Patch, Plant.ID,
          Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud, Tot.Flr, Avg.Bloom.Status, 
          Num.Stems.Budding, Num.Stems.Flowering, Num.Stems.PostFlower, Num.Stems.Nonflowering,
@@ -670,7 +682,7 @@ mkwd.13.16.v4 <- mkwd.13.16.v3 %>%
   ## 2) Ensure that all columns are in the same order
 
 # What is in the 2013-16 data that isn't in the 2012 data?
-setdiff(names(mkwd.13.16.v4), names(mkwd.12.v2))
+setdiff(names(mkwd.16.v4), names(mkwd.12.v2))
 
 # Add them in as dummy columns
   ## Rather than use the "rename()" function, duplicate Plant.ID with the right name
@@ -685,23 +697,23 @@ mkwd.12.v2$Monarch.Immature.Evidence <- NA
 mkwd.12.v2$Tot.Monarch.Immatures <- NA
 
 # Check to make sure they transferred right
-setdiff(names(mkwd.13.16.v4), names(mkwd.12.v2))
+setdiff(names(mkwd.16.v4), names(mkwd.12.v2))
 
 # Vice versa? (in 2012 but missing from 13-16)
   ## Check
-setdiff(names(mkwd.12.v2), names(mkwd.13.16.v4))
+setdiff(names(mkwd.12.v2), names(mkwd.16.v4))
 
   ## Create
-mkwd.13.16.v4$Plant.ID.R2 <- NA
-mkwd.13.16.v4$Num.Stems.ALL.Flowering.Stages <- NA
-mkwd.13.16.v4$Height.1st.Longest <- NA
-mkwd.13.16.v4$Height.2nd.Longest <- NA
-mkwd.13.16.v4$Height.3rd.Longest <- NA
-mkwd.13.16.v4$Comments <- NA
-mkwd.13.16.v4$Major.Issues <- NA
+mkwd.16.v4$Plant.ID.R2 <- NA
+mkwd.16.v4$Num.Stems.ALL.Flowering.Stages <- NA
+mkwd.16.v4$Height.1st.Longest <- NA
+mkwd.16.v4$Height.2nd.Longest <- NA
+mkwd.16.v4$Height.3rd.Longest <- NA
+mkwd.16.v4$Comments <- NA
+mkwd.16.v4$Major.Issues <- NA
 
   ## Check again
-setdiff(names(mkwd.12.v2), names(mkwd.13.16.v4))
+setdiff(names(mkwd.12.v2), names(mkwd.16.v4))
       ### We're ditching the monarch immatures columns so this is fine
 
 # Reorder the 2012 column names
@@ -716,7 +728,7 @@ mkwd.12.v3 <- mkwd.12.v2 %>%
          Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
 
 # Reorder the 2013-16 columns too
-mkwd.13.16.v5 <- mkwd.13.16.v4 %>%
+mkwd.16.v5 <- mkwd.16.v4 %>%
   select(Year, Date, Site, Patch, Plant.ID, Avg.Height, Avg.Bud, Avg.Flr,
          Tot.Bud, Tot.Flr, Avg.Bloom.Status, Num.Stems.Budding, Num.Stems.Flowering,
          Num.Stems.PostFlower, Num.Stems.Nonflowering, Num.Stems.ALL.Flowering.Stages,
@@ -728,15 +740,15 @@ mkwd.13.16.v5 <- mkwd.13.16.v4 %>%
 
 # Do both dataframes have the same columns in the same order?
 names(mkwd.12.v3)
-names(mkwd.13.16.v5)
+names(mkwd.16.v5)
 
 # Triple check that in a more precise way
-setdiff(names(mkwd.12.v3), names(mkwd.13.16.v5))
-setdiff(names(mkwd.13.16.v5), names(mkwd.12.v3))
+setdiff(names(mkwd.12.v3), names(mkwd.16.v5))
+setdiff(names(mkwd.16.v5), names(mkwd.12.v3))
   ## Looks good!
 
 # Not the slickest way of doing this, but rbind the two dataframes together!
-milkweed.v1 <- rbind(mkwd.12.v3, mkwd.13.16.v5)
+milkweed.v1 <- rbind(mkwd.12.v3, mkwd.16.v5)
 str(milkweed.v1)
   ## Looks good!
 
@@ -2058,22 +2070,460 @@ milkweed.v10 <- milkweed.v9 %>%
 setdiff(names(milkweed.v9), names(milkweed.v10))
   ## Looks good!
 
+## ------------------------------------------------ ##
+         # Missing Data Retrieval Prep ####
+## ------------------------------------------------ ##
+# As noted in the "2013-16 Data Tidying" heading, each year's file has some data found nowhere else
+  ## This is usually, but not always, in the 2013-16 data (no I don't know why this was done)
+  ## So, here is where we're going to load each data file and import that stuff
+  ## We'll do this on a column by column basis and then clean the results
+
+# Read in each year's data (excl. 2016 because that was our starting point)
+mkwd.13.v0 <- read.csv("./Data/Asclepias-2013-RAW-plants.csv")
+mkwd.14.v0 <- read.csv("./Data/Asclepias-2014-RAW-plants.csv")
+mkwd.15.v0 <- read.csv("./Data/Asclepias-2015-RAW-plants.csv")
+
+# In order for this to work, each of these datasets need a "year" column and a "plant ID" column
+  ## Let's get those columns from the metadata file as we did with the 2016 data
+names(mkwd.13.v0)
+mkwd.13.v1 <- left_join(mkwd.13.v0, mkwd.13.16.meta, by = "AsclepTransID")
+names(mkwd.13.v1)
+
+names(mkwd.14.v0)
+mkwd.14.v1 <- left_join(mkwd.14.v0, mkwd.13.16.meta, by = "AsclepTransID")
+names(mkwd.14.v1)
+
+names(mkwd.15.v0)
+mkwd.15.v1 <- left_join(mkwd.15.v0, mkwd.13.16.meta, by = "AsclepTransID")
+names(mkwd.15.v1)
+
+# First, check the contents of the "YearVis" column in each dataset
+unique(mkwd.13.v1$YearVis) # unentered for this year
+unique(mkwd.14.v1$YearVis)
+unique(mkwd.15.v1$YearVis)
+
+# Subset 2014 and '15 to be just those years
+mkwd.13.v2 <- mkwd.13.v1 # want the name to be consistent even though subsetting not required here
+mkwd.13.v2$YearVis <- as.numeric(rep("2013", nrow(mkwd.13.v2)))
+mkwd.14.v2 <- mkwd.14.v1 %>%
+  filter(YearVis == "2014")
+mkwd.15.v2 <- mkwd.15.v1 %>%
+  filter(YearVis == "2015")
+
+# Did it work?
+unique(mkwd.13.v2$YearVis)
+unique(mkwd.14.v2$YearVis)
+unique(mkwd.15.v2$YearVis)
+  ## Yep
+
+# Okay, we need the "plant ID" column still
+  ## To simplify, let's name that column to match the tidy data
+  ## We don't care about redundant columns in these guys because we're just cannibalizing some columns
+names(mkwd.13.v2)
+mkwd.13.v2$Plant.ID <- mkwd.13.v2$PlantID.Code.from.2012
+names(mkwd.14.v2)
+mkwd.14.v2$Plant.ID <- mkwd.14.v2$PlantID.Code.from.2012
+names(mkwd.15.v2)
+mkwd.15.v2$Plant.ID <- mkwd.15.v2$PlantID.Code.from.2012
+
+# Did this work?
+unique(mkwd.13.v2$Plant.ID)
+unique(mkwd.14.v2$Plant.ID)
+unique(mkwd.15.v2$Plant.ID)
+  ## Yep!
+
+# Okay, last step before we can import the data
+  ## Get a combo year and plant.ID column (in the large tidy data too!)
+mkwd.13.v2$Temp.Plant.Code <- paste0(mkwd.13.v2$Year, "-", mkwd.13.v2$Plant.ID)
+mkwd.14.v2$Temp.Plant.Code <- paste0(mkwd.14.v2$Year, "-", mkwd.14.v2$Plant.ID)
+mkwd.15.v2$Temp.Plant.Code <- paste0(mkwd.15.v2$Year, "-", mkwd.15.v2$Plant.ID)
+milkweed.v10$Temp.Plant.Code <- paste0(milkweed.v10$Year, "-", milkweed.v10$Plant.ID)
+
+# Did *this* work?
+unique(mkwd.13.v2$Temp.Plant.Code)
+unique(mkwd.14.v2$Temp.Plant.Code)
+unique(mkwd.15.v2$Temp.Plant.Code)
+unique(milkweed.v10$Temp.Plant.Code)
+  ## Thank god
+
+# Now, 2013 and '14 are further complicated because some of the data was added to a different sheet
+  ## Joy.
+
+# Get the "stem" data
+mkwd.13.stm.v0 <- read.csv("./Data/Asclepias-2013-RAW-stems.csv")
+mkwd.14.stm.v0 <- read.csv("./Data/Asclepias-2014-RAW-stems.csv")
+
+# Take a quick look at them
+str(mkwd.13.stm.v0)
+str(mkwd.14.stm.v0)
+
+# Both dfs are in long format but we can dodge pivoting them if we summarise them
+  ## BUT, both are (as per usual) a combination of letters and numbers and are unsummarizable
+  ## So, if we fix that issue, we can summarize for the values we want and import them as needed
+
+# Fix stem length
+  ## '13
+sort(unique(mkwd.13.stm.v0$Stem.Length..cm.))
+mkwd.13.stm.v0$Stem.Length..cm. <- as.numeric(gsub("accidental row|Accidental Row|not recorded",
+                                        NA, mkwd.13.stm.v0$Stem.Length..cm.))
+sort(unique(mkwd.13.stm.v0$Stem.Length..cm.))
+
+  ## '14
+sort(unique(mkwd.14.stm.v0$Stem.Length..cm.))
+mkwd.14.stm.v0$Stem.Length..cm. <- gsub("accidental row|Accidental row|Accidental Row|no data|not recorded|unk",
+                                        NA, mkwd.14.stm.v0$Stem.Length..cm.)
+mkwd.14.stm.v0$Stem.Length..cm. <- as.numeric(gsub("\\?", NA, mkwd.14.stm.v0$Stem.Length..cm.))
+sort(unique(mkwd.14.stm.v0$Stem.Length..cm.))
+
+# Fix number of buds
+  ## '13
+sort(unique(mkwd.13.stm.v0$X..of.buds))
+mkwd.13.stm.v0$X..of.buds <- as.numeric(gsub("accidental row|to small|too early|too small",
+                                  NA, mkwd.13.stm.v0$X..of.buds))
+sort(unique(mkwd.13.stm.v0$X..of.buds))
+
+  ## '14
+sort(unique(mkwd.14.stm.v0$X..of.buds))
+mkwd.14.stm.v0$X..of.buds <- gsub("accidental row|to small|too early|too small|too small to count|unk",
+                                  NA, mkwd.14.stm.v0$X..of.buds)
+mkwd.14.stm.v0$X..of.buds <- gsub("Accidental row|\\?",
+                                  NA, mkwd.14.stm.v0$X..of.buds)
+mkwd.14.stm.v0$X..of.buds <- as.numeric(gsub("150\\+", "150", mkwd.14.stm.v0$X..of.buds))
+sort(unique(mkwd.14.stm.v0$X..of.buds))
+
+# Fix number of flowers
+  ## '13
+sort(unique(mkwd.13.stm.v0$X..of.flowers))
+    ### Actually correct to start
+
+  ## '14
+sort(unique(mkwd.14.stm.v0$X..of.flowers))
+mkwd.14.stm.v0$X..of.flowers <- as.numeric(gsub("\\?|accidental row|Accidental row",
+                                     NA, mkwd.14.stm.v0$X..of.flowers))
+sort(unique(mkwd.14.stm.v0$X..of.flowers))
+
+# Fix bloom status
+  ## '13
+sort(unique(mkwd.13.stm.v0$Bloom.Status))
+mkwd.13.stm.v0$Bloom.Status <- gsub("prob will bloom late summer|in bud|full",
+                                    NA, mkwd.13.stm.v0$Bloom.Status)
+mkwd.13.stm.v0$Bloom.Status <- as.numeric(gsub("40", "4", mkwd.13.stm.v0$Bloom.Status))
+sort(unique(mkwd.13.stm.v0$Bloom.Status))
+
+  ## '14
+sort(unique(mkwd.14.stm.v0$Bloom.Status))
+mkwd.14.stm.v0$Bloom.Status <- gsub("\\(|\\/|\\?|accidental row|Accidental row|full|in bud|n.a.|prob will bloom late summer",
+                                    NA, mkwd.14.stm.v0$Bloom.Status)
+mkwd.14.stm.v0$Bloom.Status <- as.numeric(gsub("40", "4", mkwd.14.stm.v0$Bloom.Status))
+sort(unique(mkwd.14.stm.v0$Bloom.Status))
+
+# Check that all is right with the world
+str(mkwd.13.stm.v0)
+str(mkwd.14.stm.v0)
+  ## Looks good!
+
+# Now summarize to get averages/totals (as needed) for each plant
+  ## 2013 summarization
+mkwd.13.stm.v1 <- mkwd.13.stm.v0 %>%
+  group_by(PlantNum) %>%
+  summarise(Avg.Height = mean(Stem.Length..cm.),
+            Avg.Bud = mean(X..of.buds),
+            Avg.Flr = mean(X..of.flowers),
+            Tot.Bud = sum(X..of.buds),
+            Tot.Flr = sum(X..of.flowers),
+            Tot.Bud.n.Flr = sum(X..of.buds, X..of.flowers),
+            Avg.Bloom.Status = mean(Bloom.Status)) %>%
+  as.data.frame()
+
+  ## 2014 summarization
+mkwd.14.stm.v1 <- mkwd.14.stm.v0 %>%
+  group_by(PlantNum) %>%
+  summarise(Avg.Height = mean(Stem.Length..cm.),
+            Avg.Bud = mean(X..of.buds),
+            Avg.Flr = mean(X..of.flowers),
+            Tot.Bud = sum(X..of.buds),
+            Tot.Flr = sum(X..of.flowers),
+            Tot.Bud.n.Flr = sum(X..of.buds, X..of.flowers),
+            Avg.Bloom.Status = mean(Bloom.Status)) %>%
+  as.data.frame()
+
+# Did that work?
+str(mkwd.13.stm.v1)
+str(mkwd.14.stm.v1)
+  ## Looks like it did!
+
+# Now let's just bring that whole mess into the larger data frames from those years
+  ## Need to quickly change the index column in the larger dataframe to make them match
+mkwd.13.v2$PlantNum <- mkwd.13.v2$PlantNumAuto
+mkwd.14.v2$PlantNum <- mkwd.14.v2$PlantNumAuto
+
+# Now bring the data over
+mkwd.13.v3 <- left_join(mkwd.13.v2, mkwd.13.stm.v1, by = "PlantNum")
+mkwd.14.v3 <- left_join(mkwd.14.v2, mkwd.14.stm.v1, by = "PlantNum")
+mkwd.15.v3 <- mkwd.15.v2
+
+# Make sure the switch happened
+str(mkwd.13.v3)
+str(mkwd.14.v3)
+  ## It did!
+
+# Okay, here's where things are going to get interesting
+  ## If a given row has an NA *in the tidy data*
+  ## We want to replace that NA with the data (if they exist) from that year's file
+  ## If there are data (even zeros) then do nothing
+
+# In our (mostly) tidy data, where are there NAs that may have data in other files?
+summary(milkweed.v10)
+  ## Basically all of them have 1000+ NAs
+  ## So let's just do the variables that were consistently collected across the years
+
+## ------------------------------------------------ ##
+        # Missing Data Retrieval Actual ####
+## ------------------------------------------------ ##
+# Make a new dataframe in case something goes wrong
+milkweed.v11 <- milkweed.v10
+
+# Let's go variable by variable
+  ## This will allow for easy fixes if my guess of a column's contents was wrong
+  ## Guessing is only necessary because of column abbreviations whose defs have been lost to time
+
+# For each of the following:
+  ## 1) Check the number of NAs before attempting the "fix"
+  ## 2) Add each year's data
+  ## 3) Double check the number of NAs
+
+# Fix average height
+summary(milkweed.v11$Avg.Height)
+milkweed.v11$Avg.Height <- ifelse(test = is.na(milkweed.v11$Avg.Height) == T,
+                                  yes = mkwd.13.v3$Avg.Height[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                  no = milkweed.v11$Avg.Height)
+milkweed.v11$Avg.Height <- ifelse(test = is.na(milkweed.v11$Avg.Height) == T,
+                                  yes = mkwd.14.v3$Avg.Height[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                  no = milkweed.v11$Avg.Height)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Avg.Height) # 1021 NAs fixed
+
+# Fix average number of buds
+summary(milkweed.v11$Avg.Bud)
+milkweed.v11$Avg.Bud <- ifelse(test = is.na(milkweed.v11$Avg.Bud) == T,
+                                  yes = mkwd.13.v3$Avg.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                  no = milkweed.v11$Avg.Bud)
+milkweed.v11$Avg.Bud <- ifelse(test = is.na(milkweed.v11$Avg.Bud) == T,
+                                  yes = mkwd.14.v3$Avg.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                  no = milkweed.v11$Avg.Bud)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Avg.Bud) # 991 NAs fixed
+
+# Fix average number of flowers
+summary(milkweed.v11$Avg.Flr)
+milkweed.v11$Avg.Flr <- ifelse(test = is.na(milkweed.v11$Avg.Flr) == T,
+                               yes = mkwd.13.v3$Avg.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Avg.Flr)
+milkweed.v11$Avg.Flr <- ifelse(test = is.na(milkweed.v11$Avg.Flr) == T,
+                               yes = mkwd.14.v3$Avg.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Avg.Flr)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Avg.Flr) # 1019 NAs fixed
+
+# Fix total number of buds
+summary(milkweed.v11$Tot.Bud)
+milkweed.v11$Tot.Bud <- ifelse(test = is.na(milkweed.v11$Tot.Bud) == T,
+                               yes = mkwd.13.v3$Tot.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Tot.Bud)
+milkweed.v11$Tot.Bud <- ifelse(test = is.na(milkweed.v11$Tot.Bud) == T,
+                               yes = mkwd.14.v3$Tot.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Tot.Bud)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Tot.Bud) # 991 NAs fixed
+
+# Fix total number of flowers
+summary(milkweed.v11$Tot.Flr)
+milkweed.v11$Tot.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Flr) == T,
+                               yes = mkwd.13.v3$Tot.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Tot.Flr)
+milkweed.v11$Tot.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Flr) == T,
+                               yes = mkwd.14.v3$Tot.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Tot.Flr)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Tot.Flr) # 1019 NAs fixed
+
+# Fix total number of buds AND flowers
+summary(milkweed.v11$Tot.Bud.n.Flr)
+milkweed.v11$Tot.Bud.n.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Bud.n.Flr) == T,
+                               yes = mkwd.13.v3$Tot.Bud.n.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Tot.Bud.n.Flr)
+milkweed.v11$Tot.Bud.n.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Bud.n.Flr) == T,
+                               yes = mkwd.14.v3$Tot.Bud.n.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                               no = milkweed.v11$Tot.Bud.n.Flr)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Tot.Bud.n.Flr) # 988 NAs fixed
+
+# Fix average bloom status
+summary(milkweed.v11$Avg.Bloom.Status)
+milkweed.v11$Avg.Bloom.Status <- ifelse(test = is.na(milkweed.v11$Avg.Bloom.Status) == T,
+                                     yes = mkwd.13.v3$Avg.Bloom.Status[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                     no = milkweed.v11$Avg.Bloom.Status)
+milkweed.v11$Avg.Bloom.Status <- ifelse(test = is.na(milkweed.v11$Avg.Bloom.Status) == T,
+                                     yes = mkwd.14.v3$Avg.Bloom.Status[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                     no = milkweed.v11$Avg.Bloom.Status)
+# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
+summary(milkweed.v11$Avg.Bloom.Status) # 1005 NAs fixed
+
+# This is (roughly) the halfway point so make a new dataframe
+milkweed.v12 <- milkweed.v11
+
+# Fix number of budding stems
+summary(milkweed.v12$Num.Stems.Budding)
+milkweed.v12$Num.Stems.Budding <- ifelse(test = is.na(milkweed.v12$Num.Stems.Budding) == T,
+                                        yes = mkwd.13.v3$TRIMBStemsBUD[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                        no = milkweed.v12$Num.Stems.Budding)
+milkweed.v12$Num.Stems.Budding <- ifelse(test = is.na(milkweed.v12$Num.Stems.Budding) == T,
+                                        yes = mkwd.14.v3$TRIMBSBUD[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                        no = milkweed.v12$Num.Stems.Budding)
+milkweed.v12$Num.Stems.Budding <- ifelse(test = is.na(milkweed.v12$Num.Stems.Budding) == T,
+                                         yes = mkwd.15.v3$TRIMBSBUD[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                         no = milkweed.v12$Num.Stems.Budding)
+milkweed.v12$Num.Stems.Budding <- as.numeric(milkweed.v12$Num.Stems.Budding)
+summary(milkweed.v12$Num.Stems.Budding) # 586 (of 643) NAs fixed
+
+# Fix number of flowering stems
+summary(milkweed.v12$Num.Stems.Flowering)
+milkweed.v12$Num.Stems.Flowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Flowering) == T,
+                                         yes = mkwd.13.v3$TRIMBStemsFLOW[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                         no = milkweed.v12$Num.Stems.Flowering)
+milkweed.v12$Num.Stems.Flowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Flowering) == T,
+                                         yes = mkwd.14.v3$TRIMBSFLOW[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                         no = milkweed.v12$Num.Stems.Flowering)
+milkweed.v12$Num.Stems.Flowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Flowering) == T,
+                                         yes = mkwd.15.v3$TRIMBSFLOW[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                         no = milkweed.v12$Num.Stems.Flowering)
+milkweed.v12$Num.Stems.Flowering <- as.numeric(milkweed.v12$Num.Stems.Flowering)
+summary(milkweed.v12$Num.Stems.Flowering) # 586 (of 643) NAs fixed
+
+# Fix number of stems post flowering (i.e., senesced)
+summary(milkweed.v12$Num.Stems.PostFlower)
+milkweed.v12$Num.Stems.PostFlower <- ifelse(test = is.na(milkweed.v12$Num.Stems.PostFlower) == T,
+                                           yes = mkwd.13.v3$TRIMBStemsDONE[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                           no = milkweed.v12$Num.Stems.PostFlower)
+milkweed.v12$Num.Stems.PostFlower <- ifelse(test = is.na(milkweed.v12$Num.Stems.PostFlower) == T,
+                                           yes = mkwd.14.v3$TRIMBSDONE[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                           no = milkweed.v12$Num.Stems.PostFlower)
+milkweed.v12$Num.Stems.PostFlower <- ifelse(test = is.na(milkweed.v12$Num.Stems.PostFlower) == T,
+                                           yes = mkwd.15.v3$TRIMBSDONE[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                           no = milkweed.v12$Num.Stems.PostFlower)
+milkweed.v12$Num.Stems.PostFlower <- as.numeric(milkweed.v12$Num.Stems.PostFlower)
+summary(milkweed.v12$Num.Stems.PostFlower) # 586 (of 643) NAs fixed
+
+# Fix number of non-flowering stems
+summary(milkweed.v12$Num.Stems.Nonflowering)
+milkweed.v12$Num.Stems.Nonflowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Nonflowering) == T,
+                                            yes = mkwd.13.v3$TRIMBStemsNOflow[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                            no = milkweed.v12$Num.Stems.Nonflowering)
+milkweed.v12$Num.Stems.Nonflowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Nonflowering) == T,
+                                            yes = mkwd.14.v3$TRIMBS.NOflow[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                            no = milkweed.v12$Num.Stems.Nonflowering)
+milkweed.v12$Num.Stems.Nonflowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Nonflowering) == T,
+                                            yes = mkwd.15.v3$TRIMBS.NOflow[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
+                                            no = milkweed.v12$Num.Stems.Nonflowering)
+milkweed.v12$Num.Stems.Nonflowering <- as.numeric(milkweed.v12$Num.Stems.Nonflowering)
+summary(milkweed.v12$Num.Stems.Nonflowering) # 586 (of 643) NAs fixed
+
+## ------------------------------------------------ ##
+            # "New" Data Checking ####
+## ------------------------------------------------ ##
+# As the previous 2000+ lines made abundantly clear, this raw data is remarkably error prone
+  ## So, we now need to re-check all of our "new" columns again before calling it a day
+
+# Plant ID code
+sort(unique(milkweed.v12$Plant.ID))
+  ## Still don't want to open this can of worms so I'll leave it alone for now
+
+# Average plant height
+sort(unique(milkweed.v12$Avg.Height))
+  ## Looks good!
+
+# Average bud number
+sort(unique(milkweed.v12$Avg.Bud))
+  ## LGTM (looks good to me)
+
+# Average flower number
+sort(unique(milkweed.v12$Avg.Flr))
+  ## LGTM
+
+# Total number buds
+sort(unique(milkweed.v12$Tot.Bud))
+
+# Total flowers
+sort(unique(milkweed.v12$Tot.Flr))
+
+# Total buds and flowers
+sort(unique(milkweed.v12$Tot.Bud.n.Flr))
+
+# Average bloom status
+sort(unique(milkweed.v12$Avg.Bloom.Status))
+
+# Number of budding stems
+sort(unique(milkweed.v12$Num.Stems.Budding))
+
+# Number of flowering stems
+sort(unique(milkweed.v12$Num.Stems.Flowering))
+
+# Number of stems post flowering
+sort(unique(milkweed.v12$Num.Stems.PostFlower))
+
+# Number of nonflowering stems
+sort(unique(milkweed.v12$Num.Stems.Nonflowering))
+
+# Need to recalculate the number of stems of all flowering stages (now that some NAs are resolved)
+  ## Recalculate
+summary(milkweed.v12$Num.Stems.ALL.Flowering.Stages)
+milkweed.v12$Num.Stems.ALL.Flowering.Stages <- ifelse(test = is.na(milkweed.v12$Num.Stems.ALL.Flowering.Stages) == T,
+                                                   yes = rowSums(select(milkweed.v12, Num.Stems.Budding:Num.Stems.PostFlower)),
+                                                   no = milkweed.v12$Num.Stems.ALL.Flowering.Stages)
+summary(milkweed.v12$Num.Stems.ALL.Flowering.Stages) # 586 NAs fixed
+
+  ## Now, check the contents of that column
+sort(unique(milkweed.v12$Num.Stems.ALL.Flowering.Stages))
+
+# For ease of recalculating the ratio of bitten to total stems, lets get a column for total stems
+milkweed.v12$Tot.Stems <- rowSums(select(milkweed.v12, Num.Stems.ALL.Flowering.Stages, Num.Stems.Nonflowering))
+sort(unique(milkweed.v12$Tot.Stems))
+  ## Looks good!
+
+# Now recalculate & check the ratio column
+  ## Recalculate
+summary(milkweed.v12$Ratio.Bitten.vs.Total.Stems)
+milkweed.v12$Ratio.Bitten.vs.Total.Stems <- ifelse(test = is.na(milkweed.v12$Ratio.Bitten.vs.Total.Stems) == T,
+                                                   yes = (milkweed.v12$Tot.Bitten.Stems / milkweed.v12$Tot.Stems),
+                                                   no = milkweed.v12$Ratio.Bitten.vs.Total.Stems)
+summary(milkweed.v12$Ratio.Bitten.vs.Total.Stems) # fixed 12 NAs (not as effective...)
+
+  ## Check
+sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
+milkweed.v12$Ratio.Bitten.vs.Total.Stems <- gsub("Inf|NaN", NA,
+                                                 milkweed.v12$Ratio.Bitten.vs.Total.Stems)
+milkweed.v12$Ratio.Bitten.vs.Total.Stems <- as.numeric(milkweed.v12$Ratio.Bitten.vs.Total.Stems)
+sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
+
+## ------------------------------------------------ ##
+             # Final Tidying Steps ####
+## ------------------------------------------------ ##
 # Last thing, but many rows contain only NAs so we should remove any row without actual data
   ## This occurs not infrequently because of evolving data collection goals
 
 # Make a new column that is TRUE when all of the data columns are NAs
-milkweed.v10$All.NA <- apply(milkweed.v10[11:ncol(milkweed.v10)], MARGIN = 1,
+milkweed.v12$All.NA <- apply(milkweed.v12[11:ncol(milkweed.v11)], MARGIN = 1,
                              FUN = function(x) all(is.na(x)))
 
 # Filter out the entirely empty rows using that information
-milkweed.v11 <- milkweed.v10 %>%
+milkweed.v13 <- milkweed.v12 %>%
   filter(All.NA != "TRUE") %>%
-    ## Remove that column while we're here
-  select(-All.NA) %>%
+  ## Remove that column while we're here
+  select(-All.NA, -Temp.Plant.Code) %>%
   as.data.frame()
 
-# Save the tidy data for ease of analysis later on
-write_xlsx(list(Data = milkweed.v11),
+# Save the tidy data to use for analysis later
+write_xlsx(list(Data = milkweed.v13),
            path = "./Data/Asclepias-TIDY.xlsx",
            col_names = T, format_headers = T)
 

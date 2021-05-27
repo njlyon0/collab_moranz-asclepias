@@ -20,7 +20,7 @@ library(readxl); library(psych); library(tidyverse); library(glmmTMB)
                 # Housekeeping ####
 ## ------------------------------------------------ ##
 # Read in data
-mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx", sheet = "Data")
+mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx", sheet = "Data", guess_max = 10000)
 
 # Check the structure
 str(mkwd)
@@ -57,60 +57,34 @@ levels(mkwd.lvl2$Management)
   ## 3 - then run the test
 
 ## ------------------------------------------------ ##
-   # Q1 & 2 - # stems of each flowering stage ####
+      # Q1 - # stems of any flowering stage ####
 ## ------------------------------------------------ ##
-### Number of stems with buds
+### Number of stems with buds + flowers + dead flowers
 # Distribution check
-multi.hist(mkwd$Num.Stems.Budding)
-
-# Tests
-summary(glmmTMB(Num.Stems.Budding ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
-  ## TSF = sig
-  ## Stocking = sig (IES ≠ None/SLS)
-summary(glmmTMB(Num.Stems.Budding ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
-  ## TSF = sig
-  ## Stocking = sig (None ≠ IES)
-  ## Ixn = sig (TSF*SLS ≠ TSF*None)
-
-### Number of stems with flowers
-# Check distribution
-multi.hist(mkwd$Num.Stems.Flowering)
-
-# Run tests
-summary(glmmTMB(Num.Stems.Flowering ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
-  ## TSF = sig
-  ## Stocking = sig (IES ≠ None/SLS)
-summary(glmmTMB(Num.Stems.Flowering ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
-  ## TSF = sig
-  ## Stocking = sig (None ≠ IES)
-
-### Number of stems with flowers that are senesced (i.e., post-flowering)
-# Distribution
-multi.hist(mkwd$Num.Stems.PostFlower)
-
-# Tests
-summary(glmmTMB(Num.Stems.PostFlower ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
-  ## TSF = marginal (p = 0.078)
-  ## Ixn = marginal (TSF*None p = 0.062)
-summary(glmmTMB(Num.Stems.PostFlower ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
-  ## Ixn = marginal (TSF*IES p = 0.062)
-
-### Number of stems of any flowering stage (bud, flower, postflower)
-# Dist.
 multi.hist(mkwd$Num.Stems.ALL.Flowering.Stages)
 
 # Tests
-summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking + (1|Site),
+summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking + (1|Year) + (1|Site),
                 data = mkwd, family = genpois()))
   ## Stocking = sig (IES ≠ None/SLS)
-summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking + (1|Site),
+summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking + (1|Year) + (1|Site),
                 data = mkwd.lvl2, family = genpois()))
   ## TSF = sig
   ## Stocking = sig (None ≠ IES)
   ## Ixn = marginal (TSF*SLS p = 0.093)
 
 ## ------------------------------------------------ ##
-          # Q3 - total buds/flowers ####
+      # Q2 - # stems that won't flower ####
+## ------------------------------------------------ ##
+# Distribution check
+multi.hist(mkwd$Num.Stems.Nonflowering)
+
+
+# ADD TEST
+
+
+## ------------------------------------------------ ##
+          # Q3 - total buds + flowers ####
 ## ------------------------------------------------ ##
 ### Total flower & bud distribution
 # Distribution?
@@ -120,9 +94,11 @@ mkwd$Log.Tot.Bud.n.Flr <- log(mkwd$Tot.Bud.n.Flr + 1)
 mkwd.lvl2$Log.Tot.Bud.n.Flr <- log(mkwd.lvl2$Tot.Bud.n.Flr + 1)
 
 ## Using log transformed total buds/flowers number as response
-summary(glmmTMB(Log.Tot.Bud.n.Flr ~ TSF * Stocking + (1|Site), data = mkwd, family = gaussian()))
+summary(glmmTMB(Log.Tot.Bud.n.Flr ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = gaussian()))
   ## Stocking = sig (SLS ≠ IES sig | SLS - None marginal)
-summary(glmmTMB(Log.Tot.Bud.n.Flr ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = gaussian()))
+summary(glmmTMB(Log.Tot.Bud.n.Flr ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = gaussian()))
   ## TSF = sig
   ## Stocking = marginal (None vs. IES p = 0.056)
   ## Ixn = marginal (TSF*SLS p = 0.081)
@@ -136,9 +112,11 @@ multi.hist(mkwd$Avg.Height)
   ## Surprisingly good fit for the normal distribution (at least relative to other raw data)
 
 # Run tests
-summary(glmmTMB(Avg.Height ~ TSF * Stocking + (1|Site), data = mkwd, family = gaussian()))
+summary(glmmTMB(Avg.Height ~ TSF * Stocking + (1|Year) + (1|Julian) + (1|Site),
+                data = mkwd, family = gaussian()))
   ## Stocking = sig (IES ≠ None/SLS)
-summary(glmmTMB(Avg.Height ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = gaussian()))
+summary(glmmTMB(Avg.Height ~ TSF * Stocking + (1|Year) + (1|Julian) + (1|Site),
+                data = mkwd.lvl2, family = gaussian()))
   ## Stocking = sig (None ≠ IES)
 
 ## ------------------------------------------------ ##
@@ -149,10 +127,12 @@ summary(glmmTMB(Avg.Height ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family
 multi.hist(mkwd$Tot.Bitten.Stems)
 
 # Tests
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## Stocking = sig (IES ≠ SLS)
   ## Ixn = sig (TSF*None)
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = genpois()))
   ## TSF = sig
   ## Ixn = all of them
 
@@ -167,17 +147,23 @@ summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, 
     ### (i.e., more bitten stems were counted than flowering/nonflowering)
   ## And these cases were coerced into NAs to avoid messing with the data
 
+
+
+# DOUBLE CHECK THIS VARIABLE (esp. "Tot.Bitten.Stems")
+  ## Ray says there should be far fewer NAs
+
+
 ### Bitten stems:Total stems
 # Distribution
 multi.hist(mkwd$Ratio.Bitten.vs.Total.Stems)
   ## ranges from 0 to 1
 
 # Test
-summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking + (1|Site),
+summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
                 data = mkwd, family = binomial()))
   ## Stocking = marginal (IES vs. SLS p = 0.051)
 
-summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking + (1|Site),
+summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
                 data = mkwd.lvl2, family = binomial()))
   ## Stocking = marginal (TSF*SLS p = 0.0998)
 
@@ -189,10 +175,12 @@ summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking + (1|Site),
 multi.hist(mkwd$Tot.Axillary.Shoots)
 
 # Tests
-summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## Ixn = sig (TSF*None)
 
-summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = genpois()))
   ## TSF = sig
   ## Ixn = sig (all!)
 
@@ -205,15 +193,24 @@ summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking + (1|Site), data = mkwd.lvl
 multi.hist(mkwd$Tot.Monarch.Immatures)
 
 ## Took year out to let the model run with a poisson distribution
-summary(glmmTMB(Tot.Monarch.Immatures ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(Tot.Monarch.Immatures ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## NS
 
-summary(glmmTMB(Tot.Monarch.Immatures ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(Tot.Monarch.Immatures ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = genpois()))
   ## NS
 
-# May analyze the component parts of the "total immatures" if Ray thinks it is needed
-multi.hist(mkwd$Num.Monarch.Eggs)
-multi.hist(mkwd$Num.Monarch.Larvae)
+### Monarch evidence (0 or 1)
+# Distribution check
+multi.hist(mkwd$Monarch.Immature.Evidence)
+
+# Test
+summary(glmmTMB(Monarch.Immature.Evidence ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = binomial()))
+
+summary(glmmTMB(Monarch.Immature.Evidence ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = binomial()))
 
 ## ------------------------------------------------ ##
  # Q9 - plant quality ~ nearby shrub abundance ####
@@ -226,10 +223,12 @@ multi.hist(mkwd$Num.Monarch.Larvae)
 multi.hist(mkwd$Shrub.Abun.1m)
 
 # Test
-summary(glmmTMB(Shrub.Abun.1m ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(Shrub.Abun.1m ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## Stocking = sig (IES ≠ SLS)
 
-summary(glmmTMB(Shrub.Abun.1m ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(Shrub.Abun.1m ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = genpois()))
   ## NS
 
 ### Now, *do shrubs affect milkweeds?*
@@ -240,18 +239,27 @@ multi.hist(mkwd$Avg.Height)
 multi.hist(mkwd$Tot.Axillary.Shoots)
 
 # Tests
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Shrub.Abun.1m + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## NS
 
-summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Shrub.Abun.1m + (1|Site),
+summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
                 data = mkwd, family = binomial()))
   ## NS
 
-summary(glmmTMB(Avg.Height ~ TSF * Shrub.Abun.1m + (1|Site), data = mkwd, family = gaussian()))
+summary(glmmTMB(Avg.Height ~  TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
+                data = mkwd, family = gaussian()))
   ## TSF = marginal (p = 0.079)
 
-summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Shrub.Abun.1m + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## NS
+
+
+# Do shrubs alone affect those characteristics?
+
+# ADD ME
+
 
 ## ------------------------------------------------ ##
            # Neighboring Conspecifics ####
@@ -264,10 +272,12 @@ summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Shrub.Abun.1m + (1|Site), data = mkw
 multi.hist(mkwd$ASCTUB.Abun.1m)
 
 # Tests
-summary(glmmTMB(ASCTUB.Abun.1m ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(ASCTUB.Abun.1m ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## Stocking = sig (IES ≠ None)
   ## Ixn = sig (TSF*None)
-summary(glmmTMB(ASCTUB.Abun.1m ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(ASCTUB.Abun.1m ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = genpois()))
   ## everything sig!
 
 ### Number of conspecifics within 2 meters?
@@ -275,10 +285,12 @@ summary(glmmTMB(ASCTUB.Abun.1m ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, fa
 multi.hist(mkwd$ASCTUB.Abun.2m)
 
 # Tests
-summary(glmmTMB(ASCTUB.Abun.2m ~ TSF * Stocking + (1|Site), data = mkwd, family = genpois()))
+summary(glmmTMB(ASCTUB.Abun.2m ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = genpois()))
   ## Stocking = sig (IES ≠ None)
   ## Ixn = sig (TSF*None)
-summary(glmmTMB(ASCTUB.Abun.2m ~ TSF * Stocking + (1|Site), data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(ASCTUB.Abun.2m ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = genpois()))
   ## Everything sig
 
 

@@ -642,8 +642,8 @@ sort(unique(mkwd.16.v3$Tot.Monarch.Immatures))
 sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
   ## Note judgement call ("at least 4" becomes 4)
 mkwd.16.v3$Tot.Bitten.Stems <- gsub("at least 4", "4", mkwd.16.v3$Tot.Bitten.Stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^na$", "", mkwd.16.v3$Tot.Bitten.Stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", "", mkwd.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^na$", NA, mkwd.16.v3$Tot.Bitten.Stems)
+mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", NA, mkwd.16.v3$Tot.Bitten.Stems)
   ## Note judgement call (to me, these all imply that there were no stems)
 mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(likely they've atrophied\\)$", "0", mkwd.16.v3$Tot.Bitten.Stems)
 mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(plant gone$", "0", mkwd.16.v3$Tot.Bitten.Stems)
@@ -2508,18 +2508,10 @@ sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
 ## ------------------------------------------------ ##
              # Final Tidying Steps ####
 ## ------------------------------------------------ ##
-# Last thing, but many rows contain only NAs so we should remove any row without actual data
-  ## This occurs not infrequently because of evolving data collection goals
-
-# Make a new column that is TRUE when all of the data columns are NAs
-milkweed.v12$All.NA <- apply(milkweed.v12[11:ncol(milkweed.v11)], MARGIN = 1,
-                             FUN = function(x) all(is.na(x)))
-
-# Filter out the entirely empty rows using that information
+# Remove the temporary plant code column we needed from earlier
 milkweed.v13 <- milkweed.v12 %>%
-  filter(All.NA != "TRUE") %>%
   ## Remove that column while we're here
-  select(-All.NA, -Temp.Plant.Code) %>%
+  select(-Temp.Plant.Code) %>%
   as.data.frame()
 
 # Save the tidy data to use for analysis later

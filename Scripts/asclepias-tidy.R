@@ -2502,6 +2502,9 @@ summary(milkweed.v12$Ratio.Bitten.vs.Total.Stems) # fixed 12 NAs (not as effecti
 sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
 milkweed.v12$Ratio.Bitten.vs.Total.Stems <- gsub("Inf|NaN", NA,
                                                  milkweed.v12$Ratio.Bitten.vs.Total.Stems)
+milkweed.v12$Ratio.Bitten.vs.Total.Stems <- ifelse(test = milkweed.v12$Ratio.Bitten.vs.Total.Stems > 1,
+                                                   yes = NA,
+                                                   no = milkweed.v12$Ratio.Bitten.vs.Total.Stems)
 milkweed.v12$Ratio.Bitten.vs.Total.Stems <- as.numeric(milkweed.v12$Ratio.Bitten.vs.Total.Stems)
 sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
 

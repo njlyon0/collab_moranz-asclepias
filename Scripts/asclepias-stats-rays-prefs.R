@@ -73,19 +73,19 @@ summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking + (1|Year) + (1|
   ## TSF = sig
 
 ## ------------------------------------------------ ##
-      # Q2 - # stems that won't flower ####
+     # Q2 - ratio of flowering : total stems ####
 ## ------------------------------------------------ ##
 # Distribution check
-multi.hist(mkwd$Num.Stems.Nonflowering)
+multi.hist(mkwd$Ratio.Flowering.vs.Total.Stems)
 
 # Tests
-summary(glmmTMB(Num.Stems.Nonflowering ~ TSF * Stocking + (1|Year) + (1|Site),
-                data = mkwd, family = genpois()))
-  ## Stocking = sig (IES ≠ SLS/None)
+summary(glmmTMB(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd, family = binomial()))
+  ## Stocking = sig (IES ≠ None)
   ## Ixn = sig (TSF*None)
 
-summary(glmmTMB(Num.Stems.Nonflowering ~ TSF * Stocking + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = genpois()))
+summary(glmmTMB(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking + (1|Year) + (1|Site),
+                data = mkwd.lvl2, family = binomial()))
   ## TSF = sig
   ## Stocking = sig (None ≠ SLS/IES)
   ## Ixn = sig (TSF*IES)
@@ -203,37 +203,10 @@ summary(glmmTMB(Tot.Monarch.Immatures ~ TSF * Stocking + (1|Year) + (1|Site),
   ## Stocking = marginal (None vs. IES p = 0.056 | None vs. SLS p = 0.058)
   ## Ixn = marginal (TSF*SLS p = 0.096)
 
-### Monarch evidence (0 or 1)
-# Distribution check
-multi.hist(mkwd$Monarch.Immature.Evidence)
-
-# Test
-summary(glmmTMB(Monarch.Immature.Evidence ~ TSF * Stocking + (1|Year) + (1|Site),
-                data = mkwd, family = binomial()))
-  ## Stocking = marginal (IES vs. None p = 0.058)
-
-summary(glmmTMB(Monarch.Immature.Evidence ~ TSF * Stocking + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = binomial()))
-  ## Stocking = marginal (None vs. SLS p = 0.056 | None vs. IES p = 0.058)
-
 ## ------------------------------------------------ ##
  # Q9 - plant quality ~ nearby shrub abundance ####
 ## ------------------------------------------------ ##
 # NOTE: This is (as of 5/24/21) the only variable with a different explanatory variable used
-  ## Also, this is the only variable containing two (related) tests of the same column
-
-### Is the number of shrubs within 1 meter *affected by* TSF/Stocking?
-# Distribution
-multi.hist(mkwd$Shrub.Abun.1m)
-
-# Test
-summary(glmmTMB(Shrub.Abun.1m ~ TSF * Stocking + (1|Year) + (1|Site),
-                data = mkwd, family = genpois()))
-  ## Stocking = marginal (IES ≠ SLS p = 0.0501) <- basically sig
-
-summary(glmmTMB(Shrub.Abun.1m ~ TSF * Stocking + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = genpois()))
-  ## NS
 
 ### Now, *do shrubs affect milkweeds?*
 # Distribution
@@ -241,46 +214,6 @@ multi.hist(mkwd$Tot.Bitten.Stems)
 multi.hist(mkwd$Ratio.Bitten.vs.Total.Stems)
 multi.hist(mkwd$Avg.Height)
 multi.hist(mkwd$Tot.Axillary.Shoots)
-
-### Total bitten stems
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd, family = genpois()))
-  ## Stocking = sig (IES ≠ SLS)
-
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = genpois()))
-  ## NS
-
-### Ratio bitten vs. total stems
-summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd, family = binomial()))
-  ## Stocking = sig (IES ≠ None/SLS)
-
-summary(glmmTMB(Ratio.Bitten.vs.Total.Stems ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = binomial()))
-  ## Stocking = sig (None ≠ IES)
-
-### Average height of three longest stems
-summary(glmmTMB(Avg.Height ~  TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd, family = gaussian()))
-  ## Stocking = sig (IES ≠ None)
-
-summary(glmmTMB(Avg.Height ~  TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = gaussian()))
-  ## Stocking = sig & marginal (None vs. IES p = 0.016 | None vs. SLS p = 0.0504) <- basically sig
-  ## Ixn = marginal (TSF*SLS p = 0.057)
-
-### Total axillary shoots
-summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd, family = genpois()))
-  ## Stocking = sig (IES ≠ None/SLS)
-
-summary(glmmTMB(Tot.Axillary.Shoots ~ TSF * Stocking * Shrub.Abun.1m + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = genpois()))
-  ## Stocking = sig & marginal (None vs. SLS p = 0.077 | None vs. IES p = 0.010)
-  ## Stocking * Shrubs ixn = marginal! (SLS*Shrubs p = 0.072)
-
-### Finally, do **shrubs alone** affect those characteristics?
 
 ### Total bitten stems
 summary(glmmTMB(Tot.Bitten.Stems ~ Shrub.Abun.1m + (1|Year) + (1|Site),

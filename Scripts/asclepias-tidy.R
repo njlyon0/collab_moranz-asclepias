@@ -2005,6 +2005,12 @@ milkweed.v9$Ratio.Bitten.vs.Total.Stems <- ifelse(test = milkweed.v9$Ratio.Bitte
   ## Check again
 sort(unique(milkweed.v9$Ratio.Bitten.vs.Total.Stems))
 
+# Also (x3), make a ratio of flowering to total stems
+  ## Calculate the new ratio column
+milkweed.v9$Ratio.Flowering.vs.Total.Stems <- with(milkweed.v9, (Num.Stems.ALL.Flowering.Stages / (Num.Stems.ALL.Flowering.Stages + Num.Stems.Nonflowering)))
+  ## Check for issues
+sort(unique(milkweed.v9$Ratio.Flowering.vs.Total.Stems))
+
 ## ------------------------------------------------ ##
         # Explanatory Variable Retrieval ####
 ## ------------------------------------------------ ##
@@ -2063,7 +2069,7 @@ summary(milkweed.v9$Julian)
   ## I.e., ditch the various concatenated index columns we needed to bring in the new variables
 milkweed.v10 <- milkweed.v9 %>%
   select(Year:Date, Julian, Site:Plant.ID, TSF:Stocking, GrazingLawn,
-         Avg.Height:Tot.Flr, Tot.Bud.n.Flr, Ratio.Bitten.vs.Total.Stems,
+         Avg.Height:Tot.Flr, Tot.Bud.n.Flr, Ratio.Bitten.vs.Total.Stems, Ratio.Flowering.vs.Total.Stems,
          Avg.Bloom.Status:ASCTUB.Abun.2m, Crab.Spider.Abun, Shrub.Abun.1m:Nectaring.Bfly.Rich)
 
 # Check what we ditched (should be just the unneeded index code)

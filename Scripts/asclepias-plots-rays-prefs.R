@@ -304,6 +304,7 @@ ggplot(shrub.btn, aes(x = Shrub.Abun.1m, y = Tot.Bitten.Stems,
   labs(x = "Shrubs within 1 meter", y = "Bitten Stems") +
   scale_fill_manual(values = std_color) +
   scale_color_manual(values = 'black') +
+  ylim(-0.05, 3) +
   pref_theme
 
 # Save the plot!
@@ -330,6 +331,7 @@ ggplot(shrub.ratio, aes(x = Shrub.Abun.1m, y = Ratio.Bitten.vs.Total.Stems,
   labs(x = "Shrubs within 1 meter", y = "Bitten:Total Stems") +
   scale_fill_manual(values = std_color) +
   scale_color_manual(values = 'black') +
+  ylim(-0.05, 0.65) +
   pref_theme
 
 # Save
@@ -337,7 +339,7 @@ ggsave("./Graphs/Shrubs-Ratio-Bitten-Total-Stems.pdf", plot = last_plot(),
        dpi = 600, width = 5, height = 5, units = "in")
 
 ## ------------------------ ##
-### Bitten:Total Stems
+    ### Bitten:Total Stems
 ## ------------------------ ##
 # Summarize
 shrub.axl <- summarySE(data = mkwd, measurevar = "Tot.Axillary.Shoots",
@@ -356,6 +358,7 @@ ggplot(shrub.axl, aes(x = Shrub.Abun.1m, y = Tot.Axillary.Shoots,
   labs(x = "Shrubs within 1 meter", y = "Axillary Shoots") +
   scale_fill_manual(values = std_color) +
   scale_color_manual(values = 'black') +
+  ylim(-0.05, 5.5) +
   pref_theme
 
 # Save

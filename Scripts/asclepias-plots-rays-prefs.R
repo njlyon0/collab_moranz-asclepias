@@ -23,6 +23,10 @@ library(readxl); library(psych); library(tidyverse); library(Rmisc); library(egg
 # Read in data
 mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx", sheet = "Data", guess_max = 10000)
 
+# Let's subset out TSF (time since fire) 3 & 4 because only one grazing treatment has those values
+mkwd <- filter(mkwd, TSF <= 2)
+sort(unique(mkwd$TSF))
+
 # Check the structure
 str(mkwd)
 
@@ -46,7 +50,7 @@ sort(unique(mkwd$Grazing))
 summary(mkwd)
 
 # Make any needed plotting aesthetics shared among graphs here
-stk_colors <- c("None" = "#b2abd2", "SLS" = "#fdb863", "IES" = "#b35806",
+stk_colors <- c("None" = "#b2abd2", #"SLS" = "#fdb863", "IES" = "#b35806",
                 "Season Long" = "#fdb863", "Intensive Early" = "#b35806")
 mgmt_colors <- c("BO" = "#d73027", "GB" = "#e0f3f8", "PBG" = "#74add1")
 std_color <- "#FFFFFF"
@@ -86,7 +90,7 @@ flr.stm.plt1 <- ggplot(mkwd.all.flr.stm, aes(x = TSF, y = Num.Stems.ALL.Flowerin
   pref_theme; flr.stm.plt1
 
 flr.stm.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Num.Stems.ALL.Flowering.Stages, fill = Grazing)) + 
-  geom_boxplot(outlier.shape = 21) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
   geom_text(label = "a", x = 0.8, y = 4.5, size = 6) +
   geom_text(label = "ab", x = 1.8, y = 4.5, size = 6) +
   geom_text(label = "b", x = 2.8, y = 5.5, size = 6) +
@@ -111,7 +115,7 @@ mkwd.noflr.stm <- summarySE(data = mkwd,
                               groupvars = c("TSF", "Grazing"), na.rm = T)
 # Make the plot
 ggplot(mkwd.noflr.stm, aes(x = TSF, y = Ratio.Flowering.vs.Total.Stems, fill = Grazing)) + 
-  geom_smooth(method = 'lm', se = F, aes(color = Grazing)) +
+  geom_smooth(aes(color = Grazing), method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Ratio.Flowering.vs.Total.Stems + se,
                     ymin = Ratio.Flowering.vs.Total.Stems - se),
                 width = 0.3, position = dodge) +
@@ -195,7 +199,7 @@ btn.plt1 <- ggplot(mkwd.tot.btn.stm, aes(x = TSF, y = Tot.Bitten.Stems, fill = F
 
 # Now make the second
 btn.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Bitten.Stems, fill = Grazing)) + 
-  geom_boxplot(outlier.shape = 21) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
   geom_text(label = "a", x = 0.8, y = 1, size = 6) +
   geom_text(label = "a", x = 1.8, y = 2, size = 6) +
   geom_text(label = "b", x = 2.8, y = 4, size = 6) +
@@ -224,7 +228,7 @@ ggsave("./Graphs/Bitten-Stems.pdf", plot = btn.panels, dpi = 600,
 
 # Plot
 ggplot(mkwd, aes(x = Grazing, y = Ratio.Bitten.vs.Total.Stems, fill = Grazing)) + 
-  geom_boxplot(outlier.shape = 21) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
   geom_text(label = "a", x = 0.8, y = 0.05, size = 6) +
   geom_text(label = "a", x = 1.8, y = 0.55, size = 6) +
   geom_text(label = "b", x = 2.5, y = 0.95, size = 6) +
@@ -241,7 +245,7 @@ ggsave("./Graphs/Ratio-Bitten-Total-Stems.pdf", plot = last_plot(), dpi = 600,
 ## ------------------------------------------------ ##
 # Plot
 ggplot(mkwd, aes(x = Grazing, y = Tot.Axillary.Shoots, fill = Grazing)) + 
-  geom_boxplot(outlier.shape = 21) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
   geom_text(label = "a", x = 0.8, y = 2, size = 6) +
   geom_text(label = "a", x = 1.8, y = 5, size = 6) +
   geom_text(label = "b", x = 2.8, y = 6, size = 6) +

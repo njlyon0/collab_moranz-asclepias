@@ -2523,8 +2523,19 @@ milkweed.v13 <- milkweed.v12 %>%
   select(-Temp.Plant.Code) %>%
   as.data.frame()
 
+# Somehow there are duplicate rows that need removing here
+  ## "Duplicate" as in every single row is duplicated
+  ## It gets worse:
+  ## Some of the response variables are duplicated across ostensibly different patches
+  ## To fix this, let's strip out the patch codes and plant IDs (neither is used anyway)
+  ## This is almost certainly an artifact of combining the different years separately earlier
+      ### See "Missing Data Retrieval Prep" & "... Actual"
+milkweed.v14 <- milkweed.v13 %>%
+  select(-Plant.ID, -Patch) %>%
+  unique()
+
 # Save the tidy data to use for analysis later
-write_xlsx(list(Data = milkweed.v13),
+write_xlsx(list(Data = milkweed.v14),
            path = "./Data/Asclepias-TIDY.xlsx",
            col_names = T, format_headers = T)
 

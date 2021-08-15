@@ -23,9 +23,11 @@ library(Rmisc); library(egg)
 ## ------------------------------------------------ ##
 # Read in data
 all.mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx", sheet = "Data", guess_max = 10000)
+all.bfly <- read_excel("./Data/Monarch-Adult-TIDY.xlsx", sheet = "Data", guess_max = 10000)
 
 # Check the structure
 str(all.mkwd)
+str(all.bfly)
 
 # Some of our columns are not the right format so let's fix 'em all here
 all.mkwd$Site <- as.factor(all.mkwd$Site)
@@ -34,12 +36,22 @@ all.mkwd$Stocking <- factor(all.mkwd$Stocking, levels = c("None", "SLS", "IES"))
 all.mkwd$GrazingLawn <- as.factor(all.mkwd$GrazingLawn)
 str(all.mkwd)
 
+all.bfly$Site <- as.factor(all.bfly$Site)
+str(all.bfly)
+
 # For ease of plotting, let's give our plotting the right aesthetics
 all.mkwd$Grazing <- all.mkwd$Stocking
 all.mkwd$Grazing <- gsub("IES", "Intensive Early", all.mkwd$Grazing)
 all.mkwd$Grazing <- gsub("SLS", "Season Long", all.mkwd$Grazing)
 all.mkwd$Grazing <- factor(all.mkwd$Grazing, levels = c("None", "Season Long", "Intensive Early"))
 sort(unique(all.mkwd$Grazing))
+
+all.bfly$Grazing <- all.bfly$Stocking.Type
+all.bfly$Grazing <- gsub("IES", "Intensive Early", all.bfly$Grazing)
+all.bfly$Grazing <- gsub("SLS", "Season Long", all.bfly$Grazing)
+all.bfly$Grazing <- factor(all.bfly$Grazing,
+                           levels = c("None", "Season Long", "Intensive Early"))
+sort(unique(all.bfly$Grazing))
 
 # If we treat TSF as a factor and have significant TSF*Grazing interactions
   ## We'll need a combo column for plotting that relationship
@@ -62,6 +74,8 @@ summary(all.mkwd)
   ## Thus they are removed from consideration here
 mkwd <- filter(all.mkwd, TSF <= 2)
 sort(unique(mkwd$TSF))
+bfly <- filter(all.bfly, TSF <= 2)
+sort(unique(bfly$TSF))
 
 # Make any needed plotting aesthetics shared among graphs here
 stk_colors <- c("None" = "#b2abd2", #"SLS" = "#fdb863", "IES" = "#b35806",
@@ -366,7 +380,49 @@ ggsave("./Graphs/Monarch-Immatures.pdf", plot = monarchs.panels, dpi = 600,
        width = 8, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
- # Q9 - plant quality ~ nearby shrub abundance ####
+              # Q9 - monarch adults ####
+## ------------------------------------------------ ##
+# Summarize the response of interest
+bfly.adults <- summarySE(data = bfly, measurevar = "Monarch.Adults",
+                               groupvars = c("TSF"), na.rm = T)
+## And add a new dummy column to that
+bfly.adults$Dummy <- rep("x", nrow(bfly.adults))
+
+# Create the plot
+adults.plt1 <- ggplot(bfly.adults, aes(x = TSF, y = Monarch.Adults,
+                                               fill = Dummy, color = Dummy)) + 
+  geom_text(label = "NS", x = 1.85, y = 1.8, size = 6) +
+  #geom_smooth(method = 'lm', se = F) +
+  geom_errorbar(aes(ymax = Monarch.Adults + se,
+                    ymin = Monarch.Adults - se),
+                width = 0.2) +
+  geom_point(pch = 23, size = 3) +
+  labs(x = "Time Since Fire (Years)", y = "Monarch Adults") +
+  scale_fill_manual(values = std_color) +
+  scale_color_manual(values = 'black') +
+  pref_theme + tsf.x.brks; adults.plt1
+
+adults.plt2 <- ggplot(bfly, aes(x = Grazing, y = Monarch.Adults, fill = Grazing)) + 
+  geom_text(label = "NS", x = 0.75, y = 4, size = 6) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
+  #geom_text(label = "a", x = 0.8, y = 4.5, size = 6) +
+  #geom_text(label = "b", x = 1.8, y = 5.5, size = 6) +
+  #geom_text(label = "c", x = 2.8, y = 6, size = 6) +
+  labs(x = "Grazing Treatment", y = "Monarch Adults") +
+  scale_fill_manual(values = stk_colors) +
+  pref_theme + axis_angle
+adults.plt2
+
+# Make the two panel graph including both
+egg::ggarrange(adults.plt1, adults.plt2, nrow = 1)
+adults.panels <- egg::ggarrange(adults.plt1, adults.plt2, nrow = 1)
+
+# Save it
+ggsave("./Graphs/Monarch-Adults.pdf", plot = adults.panels, dpi = 600,
+       width = 8, height = 5, units = "in")
+
+## ------------------------------------------------ ##
+ # Q10 - plant quality ~ nearby shrub abundance ####
 ## ------------------------------------------------ ##
 
 ## ------------------------ ##

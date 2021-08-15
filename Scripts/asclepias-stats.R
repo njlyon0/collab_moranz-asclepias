@@ -10,7 +10,7 @@
 rm(list = ls())
 
 # Set the working directory
-setwd("~/Documents/_Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
+setwd("~/Documents/Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
 
 # Call any needed libraries here (good to centralize this step)
@@ -20,10 +20,14 @@ library(readxl); library(psych); library(tidyverse); library(glmmTMB)
                 # Housekeeping ####
 ## ------------------------------------------------ ##
 # Read in data
-mkwd.v0 <- read_excel("./Data/Asclepias-TIDY.xlsx", sheet = "Data", guess_max = 10000)
+mkwd.v0 <- as.data.frame(read_excel("./Data/Asclepias-TIDY.xlsx",
+                      sheet = "Data", guess_max = 10000))
+bfly.v0 <- as.data.frame(read_excel("./Data/Monarch-Adult-TIDY.xlsx",
+                   sheet = "Data", guess_max = 10000))
 
 # Check the structure
 str(mkwd.v0)
+str(bfly.v0)
 
 # Some of our columns are not the right format so let's fix 'em all here
 mkwd.v0$Site <- as.factor(mkwd.v0$Site)
@@ -31,13 +35,19 @@ mkwd.v0$Management <- as.factor(mkwd.v0$Management)
 mkwd.v0$Stocking <- as.factor(mkwd.v0$Stocking)
 mkwd.v0$GrazingLawn <- as.factor(mkwd.v0$GrazingLawn)
 str(mkwd.v0)
+bfly.v0$Site <- as.factor(bfly.v0$Site)
+bfly.v0$Stocking.Type <- as.factor(bfly.v0$Stocking.Type)
+str(bfly.v0)
 
 # Give the summary of the df a quick once-over too
 summary(mkwd.v0)
+summary(bfly.v0)
 
 # Now remove the TSF > 2
 mkwd <- filter(mkwd.v0, TSF <= 2)
 sort(unique(mkwd$TSF))
+bfly <- filter(bfly.v0, TSF <= 2)
+sort(unique(bfly$TSF))
 
 # Okay, if we want to get all of our pairwise comparisons we need to change the factor levels
   ## The first level gets 'sucked into' the intercept so we need a second version of the data
@@ -50,6 +60,13 @@ mkwd.lvl2$Management <- factor(mkwd.lvl2$Management, levels = c("GB", "PBG", "BO
 levels(mkwd.lvl2$Stocking)
 levels(mkwd.lvl2$Management)
   ## So, to get all three comparisons you just run the same test once with each version of the data
+
+# Do the same for the butterfly stocking column
+bfly.lvl2 <- bfly
+levels(bfly.lvl2$Stocking.Type)
+bfly.lvl2$Stocking.Type <- factor(bfly.lvl2$Stocking.Type,
+                            levels = c("None", "SLS", "IES"))
+levels(bfly.lvl2$Stocking.Type)
 
 # We are now ready to do the analyses!
 
@@ -220,7 +237,27 @@ summary(glmmTMB(Tot.Monarch.Immatures ~ TSF + Stocking + (1|Year) + (1|Site),
                 data = mkwd, family = genpois()))
 
 ## ------------------------------------------------ ##
- # Q9 - plant quality ~ nearby shrub abundance ####
+              # Q9 - monarch adults ####
+## ------------------------------------------------ ##
+# Distribution check
+multi.hist(bfly$Monarch.Adults)
+
+## Run the same model as monarch immatures
+summary(glmmTMB(Monarch.Adults ~ TSF * Stocking.Type + (1|Year) + (1|Site),
+                data = bfly, family = genpois()))
+
+summary(glmmTMB(Monarch.Adults ~ TSF * Stocking.Type + (1|Year) + (1|Site),
+                data = bfly.lvl2, family = genpois()))
+
+# And again without interaction term
+summary(glmmTMB(Monarch.Adults ~ TSF + Stocking.Type + (1|Year) + (1|Site),
+                data = bfly, family = genpois()))
+
+summary(glmmTMB(Monarch.Adults ~ TSF + Stocking.Type + (1|Year) + (1|Site),
+                data = bfly.lvl2, family = genpois()))
+
+## ------------------------------------------------ ##
+ # Q10 - plant quality ~ nearby shrub abundance ####
 ## ------------------------------------------------ ##
 # NOTE: This is (as of 5/24/21) the only variable with a different explanatory variable used
 

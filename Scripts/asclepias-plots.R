@@ -11,11 +11,12 @@
 rm(list = ls())
 
 # Set the working directory
-setwd("~/Documents/_Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
+setwd("~/Documents/Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
 
 # Call any needed libraries here (good to centralize this step)
-library(readxl); library(psych); library(tidyverse); library(Rmisc); library(egg)
+library(readxl); library(psych); library(tidyverse)
+library(Rmisc); library(egg)
 
 ## ------------------------------------------------ ##
                   # Housekeeping ####
@@ -65,6 +66,7 @@ sort(unique(mkwd$TSF))
 # Make any needed plotting aesthetics shared among graphs here
 stk_colors <- c("None" = "#b2abd2", #"SLS" = "#fdb863", "IES" = "#b35806",
                 "Season Long" = "#fdb863", "Intensive Early" = "#b35806")
+stk_shps <- c("None" = 21, "Season Long" = 25, "Intensive Early" = 24)
 mgmt_colors <- c("BO" = "#d73027", "GB" = "#e0f3f8", "PBG" = "#74add1")
 std_color <- "#FFFFFF"
 dodge <- position_dodge(width = 0.5)
@@ -72,7 +74,9 @@ pref_theme <- theme_classic() + theme(axis.text = element_text(size = 13),
                                       axis.title = element_text(size = 15),
                                       legend.position = "none",
                                       legend.title.align = 0.5,
-                                      legend.background = element_blank())
+                                      legend.background = element_blank(),
+                                      legend.text = element_text(size = 12),
+                                      legend.title = element_text(size = 13))
 axis_angle <- theme(axis.text.x = element_text(angle = 25, hjust = 1))
 tsf.x.brks <- scale_x_continuous(breaks = c(0, 1, 2))
 
@@ -93,7 +97,8 @@ mkwd.all.flr.stm$Dummy <- rep("x", nrow(mkwd.all.flr.stm))
 # Create the plot
 flr.stm.plt1 <- ggplot(mkwd.all.flr.stm, aes(x = TSF, y = Num.Stems.ALL.Flowering.Stages,
                                              fill = Dummy, color = Dummy)) + 
-  geom_smooth(method = 'lm', se = F) +
+  geom_text(label = "NS", x = 1.85, y = 3.85, size = 6) +
+  #geom_smooth(method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Num.Stems.ALL.Flowering.Stages + se,
                     ymin = Num.Stems.ALL.Flowering.Stages - se),
                 width = 0.2) +
@@ -105,6 +110,7 @@ flr.stm.plt1 <- ggplot(mkwd.all.flr.stm, aes(x = TSF, y = Num.Stems.ALL.Flowerin
 
 flr.stm.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Num.Stems.ALL.Flowering.Stages, fill = Grazing)) + 
   geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
+  geom_text(label = "NS", x = 0.75, y = 25, size = 6) +
   #geom_text(label = "a", x = 0.8, y = 4.5, size = 6) +
   #geom_text(label = "ab", x = 1.8, y = 4.5, size = 6) +
   #geom_text(label = "b", x = 2.8, y = 5.5, size = 6) +
@@ -128,36 +134,22 @@ mkwd.noflr.stm <- summarySE(data = mkwd,
                               measurevar = "Ratio.Flowering.vs.Total.Stems",
                               groupvars = c("TSF", "Grazing", "Combo.Factor"), na.rm = T)
 # Make the plot
-ggplot(mkwd.noflr.stm, aes(x = TSF, y = Ratio.Flowering.vs.Total.Stems, fill = Grazing)) + 
+ggplot(mkwd.noflr.stm, aes(x = TSF, y = Ratio.Flowering.vs.Total.Stems,
+                           fill = Grazing, shape = Grazing)) + 
   geom_smooth(aes(color = Grazing), method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Ratio.Flowering.vs.Total.Stems + se,
                     ymin = Ratio.Flowering.vs.Total.Stems - se),
                 width = 0.3, position = dodge) +
-  geom_point(size = 3, pch = 23, position = dodge) + 
+  geom_point(size = 3.5, position = dodge) + 
   labs(x = "Time Since Fire (Years)", y = "Flowering:Total Stems") +
   ylim(0.5, 1) +
   scale_fill_manual(values = stk_colors) +
   scale_color_manual(values = stk_colors) +
+  scale_shape_manual(values = stk_shps) +
   pref_theme + theme(legend.position = c(0.8, 0.85)) + tsf.x.brks
 
 # Save the plot
-ggsave("./Graphs/Ratio-Flowering-Total-Stems_TSF NUMERIC.pdf", plot = last_plot(), dpi = 600,
-       width = 5, height = 5, units = "in")
-
-# Re-make the plot but with TSF AS A FACTOR this time
-ggplot(mkwd.noflr.stm, aes(x = Combo.Factor, y = Ratio.Flowering.vs.Total.Stems,
-                           fill = Grazing, color = rep('x', nrow(mkwd.noflr.stm)))) + 
-  geom_bar(stat = 'identity') +
-  geom_errorbar(aes(ymax = Ratio.Flowering.vs.Total.Stems + se,
-                    ymin = Ratio.Flowering.vs.Total.Stems - se),
-                width = 0.3, position = dodge) +
-  labs(x = "TSF-Grazing", y = "Flowering:Total Stems") +
-  scale_fill_manual(values = stk_colors) +
-  scale_color_manual(values = 'black') +
-  pref_theme + axis_angle
-
-# Save the plot
-ggsave("./Graphs/Ratio-Flowering-Total-Stems_TSF FACTOR.pdf", plot = last_plot(), dpi = 600,
+ggsave("./Graphs/Ratio-Flowering-Total-Stems.pdf", plot = last_plot(), dpi = 600,
        width = 5, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
@@ -169,15 +161,17 @@ mkwd.bud.n.flr.stm <- summarySE(data = mkwd,
                             groupvars = c("TSF", "Grazing"), na.rm = T)
 
 # Make the plot
-ggplot(mkwd.bud.n.flr.stm, aes(x = TSF, y = Tot.Bud.n.Flr, fill = Grazing)) + 
+ggplot(mkwd.bud.n.flr.stm, aes(x = TSF, y = Tot.Bud.n.Flr,
+                               fill = Grazing, shape = Grazing)) + 
   geom_smooth(method = 'lm', se = F, aes(color = Grazing)) +
   geom_errorbar(aes(ymax = Tot.Bud.n.Flr + se,
                     ymin = Tot.Bud.n.Flr - se),
                 width = 0.3, position = dodge) +
-  geom_point(size = 3, pch = 23, position = dodge) + 
+  geom_point(size = 3.5, position = dodge) + 
   labs(x = "Time Since Fire (Years)", y = "Buds and Flowers") +
   scale_fill_manual(values = stk_colors) +
   scale_color_manual(values = stk_colors) +
+  scale_shape_manual(values = stk_shps) +
   pref_theme + tsf.x.brks + theme(legend.position = c(0.85, 0.85))
 
 # Save the plot
@@ -188,24 +182,40 @@ ggsave("./Graphs/Buds-and-Flowers.pdf", plot = last_plot(), dpi = 600,
     # Q4 - average height of 3 longest stems ####
 ## ------------------------------------------------ ##
 # Need to summarize
-mkwd.height <- summarySE(data = mkwd,
-                                measurevar = "Avg.Height",
-                                groupvars = c("TSF", "Grazing"), na.rm = T)
-# Make the plot
-ggplot(mkwd.height, aes(x = TSF, y = Avg.Height, fill = Grazing)) + 
-  geom_smooth(method = 'lm', se = F, aes(color = Grazing)) +
-  geom_errorbar(aes(ymax = Avg.Height + se,
-                    ymin = Avg.Height - se),
-                width = 0.3, position = dodge) +
-  geom_point(size = 3, pch = 23, position = dodge) + 
+mkwd.height <- summarySE(data = mkwd, measurevar = "Avg.Height",
+                                groupvars = c("TSF"), na.rm = T)
+mkwd.height$Dummy <- rep("x", nrow(mkwd.height))
+
+# Create the plot
+mkwd.height.plt1 <- ggplot(mkwd.height, aes(x = TSF, y = Avg.Height,
+                                             fill = Dummy, color = Dummy)) + 
+  geom_smooth(method = 'lm', se = F) +
+  geom_errorbar(aes(ymax = Avg.Height + se, ymin = Avg.Height - se),
+                width = 0.2) +
+  geom_point(pch = 23, size = 3.5) +
+  labs(x = "Time Since Fire (Years)", y = "Average Stem Length (cm)") +
+  scale_fill_manual(values = std_color) +
+  scale_color_manual(values = 'black') +
+  pref_theme + tsf.x.brks; mkwd.height.plt1
+
+# Plot with just grazing
+mkwd.height.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Avg.Height,
+                                     fill = Grazing)) + 
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
+  geom_text(label = "a", x = 0.8, y = 70, size = 6) +
+  geom_text(label = "a", x = 1.8, y = 70, size = 6) +
+  geom_text(label = "b", x = 2.8, y = 50, size = 6) +
   labs(x = "Time Since Fire (Years)", y = "Average Stem Length (cm)") +
   scale_fill_manual(values = stk_colors) +
-  scale_color_manual(values = stk_colors) +
-  pref_theme + tsf.x.brks + theme(legend.position = c(0.85, 0.85))
+  pref_theme + axis_angle; mkwd.height.plt2
+
+# Make the two panel graph including both
+egg::ggarrange(mkwd.height.plt1, mkwd.height.plt2, nrow = 1)
+mkwd.height.panels <- egg::ggarrange(mkwd.height.plt1, mkwd.height.plt2, nrow = 1)
 
 # Save the plot
-ggsave("./Graphs/Avg-Length.pdf", plot = last_plot(), dpi = 600,
-       width = 5, height = 5, units = "in")
+ggsave("./Graphs/Avg-Length.pdf", plot = mkwd.height.panels, dpi = 600,
+       width = 8, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
           # Q5 - total # bitten stems ####
@@ -231,9 +241,9 @@ btn.plt1 <- ggplot(mkwd.tot.btn.stm, aes(x = TSF, y = Tot.Bitten.Stems, fill = F
 # Now make the second
 btn.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Bitten.Stems, fill = Grazing)) + 
   geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
-  #geom_text(label = "a", x = 0.8, y = 1, size = 6) +
-  #geom_text(label = "a", x = 1.8, y = 2, size = 6) +
-  #geom_text(label = "b", x = 2.8, y = 4, size = 6) +
+  geom_text(label = "a", x = 0.8, y = 1.5, size = 6) +
+  geom_text(label = "b", x = 1.8, y = 2, size = 6) +
+  geom_text(label = "c", x = 2.8, y = 4, size = 6) +
   labs(x = "Grazing Treatment", y = "Bitten Stems") +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle; btn.plt2
@@ -260,9 +270,9 @@ ggsave("./Graphs/Bitten-Stems.pdf", plot = btn.panels, dpi = 600,
 # Plot
 ggplot(mkwd, aes(x = Grazing, y = Ratio.Bitten.vs.Total.Stems, fill = Grazing)) + 
   geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
-  #geom_text(label = "a", x = 0.8, y = 0.05, size = 6) +
-  #geom_text(label = "a", x = 1.8, y = 0.55, size = 6) +
-  #geom_text(label = "b", x = 2.5, y = 0.95, size = 6) +
+  geom_text(label = "a", x = 0.8, y = 0.24, size = 6) +
+  geom_text(label = "b", x = 1.8, y = 0.58, size = 6) +
+  geom_text(label = "c", x = 2.5, y = 0.95, size = 6) +
   labs(x = "Grazing Treatment", y = "Bitten:Total Stems") +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle
@@ -274,48 +284,86 @@ ggsave("./Graphs/Ratio-Bitten-Total-Stems.pdf", plot = last_plot(), dpi = 600,
 ## ------------------------------------------------ ##
         # Q7 - total # axillary shoots ####
 ## ------------------------------------------------ ##
-# Plot
-ggplot(mkwd, aes(x = Grazing, y = Tot.Axillary.Shoots, fill = Grazing)) + 
+# Summarize the response of interest
+mkwd.all.ax.sht <- summarySE(data = mkwd, measurevar = "Tot.Axillary.Shoots",
+                              groupvars = c("TSF"), na.rm = T)
+## And add a new dummy column to that
+mkwd.all.ax.sht$Dummy <- rep("x", nrow(mkwd.all.ax.sht))
+
+# Create the plot
+ax.sht.plt1 <- ggplot(mkwd.all.ax.sht, aes(x = TSF, y = Tot.Axillary.Shoots,
+                                             fill = Dummy, color = Dummy)) + 
+  geom_smooth(method = 'lm', se = F) +
+  geom_errorbar(aes(ymax = Tot.Axillary.Shoots + se,
+                    ymin = Tot.Axillary.Shoots - se),
+                width = 0.2) +
+  geom_point(pch = 23, size = 3) +
+  labs(x = "Time Since Fire (Years)", y = "# Axillary Shoots") +
+  scale_fill_manual(values = std_color) +
+  scale_color_manual(values = 'black') +
+  pref_theme + tsf.x.brks; ax.sht.plt1
+
+ax.sht.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Axillary.Shoots, fill = Grazing)) + 
   geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
-  #geom_text(label = "a", x = 0.8, y = 2, size = 6) +
-  #geom_text(label = "a", x = 1.8, y = 5, size = 6) +
-  #geom_text(label = "b", x = 2.8, y = 6, size = 6) +
+  geom_text(label = "a", x = 0.8, y = 4.5, size = 6) +
+  geom_text(label = "b", x = 1.8, y = 5.5, size = 6) +
+  geom_text(label = "c", x = 2.8, y = 6, size = 6) +
   labs(x = "Grazing Treatment", y = "# Axillary Shoots") +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle
+ax.sht.plt2
 
-# Save
-ggsave("./Graphs/Axillary-Shoots.pdf", plot = last_plot(), dpi = 600,
-       width = 5, height = 5, units = "in")
+# Make the two panel graph including both
+egg::ggarrange(ax.sht.plt1, ax.sht.plt2, nrow = 1)
+ax.sht.panels <- egg::ggarrange(ax.sht.plt1, ax.sht.plt2, nrow = 1)
+
+# Save it
+ggsave("./Graphs/Axillary-Shoots.pdf", plot = ax.sht.panels, dpi = 600,
+       width = 8, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
             # Q8 - monarch immatures ####
 ## ------------------------------------------------ ##
 # "Immatures" = larvae (caterpillars) + eggs
 
-# Summarize
-mkwd.monarchs <- summarySE(data = mkwd,
-                              measurevar = "Tot.Monarch.Immatures",
-                              groupvars = c("Grazing"), na.rm = T)
+# Summarize the response of interest
+mkwd.all.monarchs <- summarySE(data = mkwd, measurevar = "Tot.Monarch.Immatures",
+                             groupvars = c("TSF"), na.rm = T)
+## And add a new dummy column to that
+mkwd.all.monarchs$Dummy <- rep("x", nrow(mkwd.all.monarchs))
 
-# Plot
-ggplot(mkwd.monarchs, aes(x = Grazing, y = Tot.Monarch.Immatures,
-                          fill = Grazing, color = rep('x', nrow(mkwd.monarchs)))) + 
-  geom_bar(stat = 'identity') +
+# Create the plot
+monarchs.plt1 <- ggplot(mkwd.all.monarchs, aes(x = TSF, y = Tot.Monarch.Immatures,
+                                           fill = Dummy, color = Dummy)) + 
+  geom_text(label = "NS", x = 1.85, y = 0.475, size = 6) +
+  #geom_smooth(method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Tot.Monarch.Immatures + se,
                     ymin = Tot.Monarch.Immatures - se),
                 width = 0.2) +
-  #geom_text(label = "a", x = 0.8, y = 0.025, size = 6) +
-  #geom_text(label = "b", x = 1.8, y = 0.27, size = 6) +
-  #geom_text(label = "b", x = 2.8, y = 0.37, size = 6) +
+  geom_point(pch = 23, size = 3) +
+  labs(x = "Time Since Fire (Years)", y = "Monarch Immatures") +
+  scale_fill_manual(values = std_color) +
+  scale_color_manual(values = 'black') +
+  pref_theme + tsf.x.brks; monarchs.plt1
+
+monarchs.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Monarch.Immatures, fill = Grazing)) + 
+  geom_text(label = "NS", x = 0.75, y = 9, size = 6) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
+  #geom_text(label = "a", x = 0.8, y = 4.5, size = 6) +
+  #geom_text(label = "b", x = 1.8, y = 5.5, size = 6) +
+  #geom_text(label = "c", x = 2.8, y = 6, size = 6) +
   labs(x = "Grazing Treatment", y = "Monarch Immatures") +
   scale_fill_manual(values = stk_colors) +
-  scale_color_manual(values = 'black') +
   pref_theme + axis_angle
+monarchs.plt2
 
-# Save
-ggsave("./Graphs/Monarch-Immatures.pdf", plot = last_plot(), dpi = 600,
-       width = 5, height = 5, units = "in")
+# Make the two panel graph including both
+egg::ggarrange(monarchs.plt1, monarchs.plt2, nrow = 1)
+monarchs.panels <- egg::ggarrange(monarchs.plt1, monarchs.plt2, nrow = 1)
+
+# Save it
+ggsave("./Graphs/Monarch-Immatures.pdf", plot = monarchs.panels, dpi = 600,
+       width = 8, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
  # Q9 - plant quality ~ nearby shrub abundance ####

@@ -10,7 +10,7 @@
 rm(list = ls())
 
 # Set the working directory
-setwd("~/Documents/_Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
+setwd("~/Documents/Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
 
 # Call any needed libraries here (good to centralize this step)
@@ -43,7 +43,7 @@ mkwd.12.v1 <- mkwd.12.v0 %>%
            GrazingLawn, `height on 1st longest`, `height on 2nd longest`, `height on 3rd longest`,
          Comments, `major issues`, MonarchImmatures1, MonarchImmatures2,
          ShrubsWithin1m, TotalNumBittenStems) %>%
-  rename(Year = Year, Date = Date, Site = Pasture, Patch = PatchWhit,
+  dplyr::rename(Year = Year, Date = Date, Site = Pasture, Patch = PatchWhit,
          Plant.ID.R1 = `2012PlantIDCode`, Plant.ID.R2 = `2012PlantIDCode_2nd Rnd`,
          Avg.Height = `Length zAVERAGE`, Avg.Bud = `# buds zAVERAGE`, Avg.Flr = `# flowers zAVERAGE`,
          Tot.Bud = `# buds TOTAL`, Tot.Flr = `# flowers TOTAL`, Avg.Bloom.Status = `bloom status zAVERAGE`,
@@ -118,7 +118,7 @@ mkwd.16.v2 <- mkwd.16.v1 %>%
          Grazing.lawn., Bflies.nectaring., Crab.spiders., Shrubs.within.1.m.,
          X..of.bitten.stems.flower.this.year, X..bitten.stems.w.axillary, X..of.UNbit.stems.w.axillary,
          X..of.axillary.shoots, X..of.BITTEN.Axillary.shoots) %>%
-  rename(YearVis = YearVis, Date = Date, Pasture = Pasture, Patch = Patch, Whittaker = Whittaker,
+  dplyr::rename(YearVis = YearVis, Date = Date, Pasture = Pasture, Patch = Patch, Whittaker = Whittaker,
          Plant.ID.R1 = PlantID.Code.from.2012, 
          Length.St1 = Length.St1, Length.St2 = LengthSt2, Length.St3 = LengthSt3,
          Buds.St.1 = Buds.St.1, Buds.St.2 = Buds.St.2, Buds.St.3 = Buds.St.3,
@@ -2232,7 +2232,7 @@ str(mkwd.14.stm.v0)
   ## 2013 summarization
 mkwd.13.stm.v1 <- mkwd.13.stm.v0 %>%
   group_by(PlantNum) %>%
-  summarise(Avg.Height = mean(Stem.Length..cm.),
+  dplyr::summarise(Avg.Height = mean(Stem.Length..cm.),
             Avg.Bud = mean(X..of.buds),
             Avg.Flr = mean(X..of.flowers),
             Tot.Bud = sum(X..of.buds),
@@ -2244,7 +2244,7 @@ mkwd.13.stm.v1 <- mkwd.13.stm.v0 %>%
   ## 2014 summarization
 mkwd.14.stm.v1 <- mkwd.14.stm.v0 %>%
   group_by(PlantNum) %>%
-  summarise(Avg.Height = mean(Stem.Length..cm.),
+  dplyr::summarise(Avg.Height = mean(Stem.Length..cm.),
             Avg.Bud = mean(X..of.buds),
             Avg.Flr = mean(X..of.flowers),
             Tot.Bud = sum(X..of.buds),
@@ -2515,6 +2515,86 @@ milkweed.v12$Ratio.Bitten.vs.Total.Stems <- as.numeric(milkweed.v12$Ratio.Bitten
 sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
 
 ## ------------------------------------------------ ##
+            # Monarch Adult Tidying ####
+## ------------------------------------------------ ##
+# Load in the full tidying data from the other part of the GRG study
+grg.bfly.v0 <- read_excel("./Data/2007-2018 GRG INVERTS MASTER DATA.xlsx",
+                          sheet = "Butterfly")
+  ## Note this file won't be in the Git repo because we...
+  ## ...have not (yet) published on it 
+
+# Remind ourselves what sites and years we want monarchs from
+sort(unique(milkweed.v13$Year))
+sort(unique(milkweed.v13$Site))
+
+# What's in the dataframe
+sort(unique(grg.bfly.v0$Year))
+sort(unique(grg.bfly.v0$Site))
+
+# Filter the big butterfly dataset to just monarchs
+  ## on the sites measured for this project
+grg.bfly.v1 <- grg.bfly.v0 %>%
+  ## 2012-16 only
+  filter(Year >= 12 & Year <= 16) %>%
+  ## same 9 sites as in Moranz project
+  filter(Site == "GIL" | Site == "LTR" | Site == "PAW" | 
+           Site == "PYN" | Site == "PYS" | Site == "PYW" | 
+           Site == "RCH" | Site == "RIN" | Site == "RIS" ) %>%
+  ## Monarchs only
+  filter(Butterfly.Common.Name == "monarch") %>%
+  ## Only needed columns
+  select(Year, Site, Patch, Round, Month, Date,
+         Butterfly.Common.Name, Number) %>%
+  ## Return as data frame
+  as.data.frame()
+
+# Examine product
+str(grg.bfly.v1)
+
+# Aggregate through monarch to get a per patch total
+grg.bfly.v2 <- aggregate(Number ~ Year + Site + Patch + Round +
+                           Month + Date + Butterfly.Common.Name, 
+                         data = grg.bfly.v1, FUN = sum)
+
+# Examine
+str(grg.bfly.v2)
+
+# Get this into a better column format
+grg.bfly.v3 <- grg.bfly.v2 %>%
+  ## Get a the number column more intuitively named
+  dplyr::mutate(
+    Monarch.Adults = Number,
+    Pasture.Patch = Patch,
+    Pasture = Site,
+    Year = as.numeric(paste0("20", grg.bfly.v2$Year)),
+    ) %>%
+  ## Remove now-redundant "monarch" column and "number" column
+  select(-Butterfly.Common.Name, -Number) %>%
+  ## Get metadata
+  left_join(mgmt.index, by = c("Year", "Pasture", "Pasture.Patch")) %>%
+  ## Get rid of our re-named duplicate columns
+  dplyr::mutate(
+    Patch = coalesce(Patch.x, Patch.y, Pasture.Patch)
+  ) %>%
+  ## Keep only relevant columns
+  select(Year, Site, Date, TSF, Stocking.Type, Monarch.Adults) %>%
+  ## Return dataframe
+  as.data.frame()
+
+# Examine
+head(grg.bfly.v3)
+
+# Make a new grazing column
+grg.bfly.v3$Grazing <- grg.bfly.v3$Stocking
+grg.bfly.v3$Grazing <- gsub("IES", "Intensive Early", grg.bfly.v3$Grazing)
+grg.bfly.v3$Grazing <- gsub("SLS", "Season Long", grg.bfly.v3$Grazing)
+sort(unique(grg.bfly.v3$Grazing))
+
+# Get Julian day
+grg.bfly.v4 <- left_join(grg.bfly.v3, julian.index, by = "Date")
+head(grg.bfly.v4)
+
+## ------------------------------------------------ ##
              # Final Tidying Steps ####
 ## ------------------------------------------------ ##
 # Remove the temporary plant code column we needed from earlier
@@ -2529,7 +2609,7 @@ milkweed.v13 <- milkweed.v12 %>%
   ## Some of the response variables are duplicated across ostensibly different patches
   ## To fix this, let's strip out the patch codes and plant IDs (neither is used anyway)
   ## This is almost certainly an artifact of combining the different years separately earlier
-      ### See "Missing Data Retrieval Prep" & "... Actual"
+    ### See "Missing Data Retrieval Prep" & "... Actual"
 milkweed.v14 <- milkweed.v13 %>%
   select(-Plant.ID, -Patch) %>%
   unique()
@@ -2537,6 +2617,11 @@ milkweed.v14 <- milkweed.v13 %>%
 # Save the tidy data to use for analysis later
 write_xlsx(list(Data = milkweed.v14),
            path = "./Data/Asclepias-TIDY.xlsx",
+           col_names = T, format_headers = T)
+
+# Save the monarch adult data as well
+write_xlsx(list(Data = grg.bfly.v4),
+           path = "./Data/Monarch-Adult-TIDY.xlsx",
            col_names = T, format_headers = T)
 
 ## ------------------------------------------------ ##

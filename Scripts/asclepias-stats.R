@@ -1,17 +1,19 @@
-## ---------------------------------------------------------------------------------------- ##
-              # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
-## ---------------------------------------------------------------------------------------- ##
+## ----------------------------------------------------------------------- ##
+      # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
+## ----------------------------------------------------------------------- ##
 # Code written by Nicholas J Lyon
 
 # PURPOSE ####
-  ## This code tests the eleven variables that Ray requested
+  ## This code performs all of the statistical tests in the paper
+  ## and (presumably) some tests that didn't make it to the paper
 
 # Clear the environment
 rm(list = ls())
 
 # Set the working directory
-setwd("~/Documents/Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
+myWD <- getwd()
+setwd(myWD)
 
 # Call any needed libraries here (good to centralize this step)
 library(readxl); library(psych); library(tidyverse); library(glmmTMB)
@@ -97,6 +99,7 @@ summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking + (1|Year) + (1|
 # Run again with the other factor order
 summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking + (1|Year) + (1|Site),
                 data = mkwd.lvl2, family = genpois()))
+
 ## ------------------------------------------------ ##
      # Q2 - ratio of flowering : total stems ####
 ## ------------------------------------------------ ##
@@ -317,6 +320,18 @@ summary(glmmTMB(ASCTUB.Abun.2m ~ TSF * Stocking + (1|Year) + (1|Site),
 summary(glmmTMB(ASCTUB.Abun.2m ~ TSF * Stocking + (1|Year) + (1|Site),
                 data = mkwd.lvl2, family = genpois()))
   ## Stocking = sig (IES ≠ None)
+
+## ------------------------------------------------ ##
+    # Q11 - Axillary Shoots ~ Bitten Stems ####
+## ------------------------------------------------ ##
+### Does the # of axillary shoots depend on the # of bitten stems?
+# Distribution check
+multi.hist(mkwd$Tot.Bitten.Stems)
+multi.hist(mkwd$Tot.Axillary.Shoots)
+
+# Run the test
+summary(glmmTMB(Tot.Axillary.Shoots ~ Tot.Bitten.Stems,
+                data = mkwd, family = genpois()))
 
 # END ####
 

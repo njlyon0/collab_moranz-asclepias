@@ -150,7 +150,7 @@ ggsave("./Graphs/Flowering-Stems_ANY-STAGE.pdf", plot = flr.stm.panels, dpi = 60
        width = 8, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
-        # Q2 - # stems that won't flower ####
+    # Q2 - ratio of flowering : total stems ####
 ## ------------------------------------------------ ##
 # Need to summarize
 mkwd.noflr.stm <- summarySE(data = mkwd,

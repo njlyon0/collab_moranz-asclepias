@@ -1,28 +1,32 @@
-## ---------------------------------------------------------------------------------------- ##
-               # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
-## ---------------------------------------------------------------------------------------- ##
+## ----------------------------------------------------------------------- ##
+      # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
+## ----------------------------------------------------------------------- ##
 # Code written by Nicholas J Lyon
 
 # PURPOSE ####
-  ## This code tidys the raw data into a format that is ready for analysis and figure construction
+  ## This code wrangles raw data into tidy data
 
 # Clear the environment
 rm(list = ls())
 
 # Set the working directory
-setwd("~/Documents/Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
+myWD <- getwd()
+setwd(myWD)
 
 # Call any needed libraries here (good to centralize this step)
-library(readxl); library(tidyverse); library(stringr); library(vegan); library(writexl)
+library(readxl); library(tidyverse); library(stringr)
+library(vegan); library(writexl)
 
 ## ------------------------------------------------ ##
                 # 2012 Tidying ####
 ## ------------------------------------------------ ##
-# Before we can get to tidying in earnest, it will be best to join 2012 to the other years
+# Before we can get to tidying in earnest
+  ## it will be best to join 2012 to the other years
 
 # Read in the data
-mkwd.12.v0 <- read_excel("./Data/Asclepias-2012-RAW.xlsx", sheet = "MAIN Trimbled minus not 3yrs")
+mkwd.12.v0 <- read_excel("./Data/Asclepias-2012-RAW.xlsx",
+                         sheet = "MAIN Trimbled minus not 3yrs")
 
 # Take a look at the data
 str(mkwd.12.v0)

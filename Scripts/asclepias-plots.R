@@ -1,6 +1,6 @@
-## ---------------------------------------------------------------------------------------- ##
-              # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
-## ---------------------------------------------------------------------------------------- ##
+## ----------------------------------------------------------------------- ##
+      # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
+## ----------------------------------------------------------------------- ##
 # Code written by Nicholas J Lyon
 
 # PURPOSE ####
@@ -11,8 +11,9 @@
 rm(list = ls())
 
 # Set the working directory
-setwd("~/Documents/Publications/2022_Moranz_Asclepias/Moranz-AsclepiasCollab")
   ## Session -> Set Working Directory -> Choose Directory...
+myWD <- getwd()
+setwd(myWD)
 
 # Call any needed libraries here (good to centralize this step)
 library(readxl); library(psych); library(tidyverse)
@@ -22,8 +23,10 @@ library(Rmisc); library(egg)
                   # Housekeeping ####
 ## ------------------------------------------------ ##
 # Read in data
-all.mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx", sheet = "Data", guess_max = 10000)
-all.bfly <- read_excel("./Data/Monarch-Adult-TIDY.xlsx", sheet = "Data", guess_max = 10000)
+all.mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx",
+                       sheet = "Data", guess_max = 10000)
+all.bfly <- read_excel("./Data/Monarch-Adult-TIDY.xlsx",
+                       sheet = "Data", guess_max = 10000)
 
 # Check the structure
 str(all.mkwd)
@@ -32,7 +35,8 @@ str(all.bfly)
 # Some of our columns are not the right format so let's fix 'em all here
 all.mkwd$Site <- as.factor(all.mkwd$Site)
 all.mkwd$Management <- as.factor(all.mkwd$Management)
-all.mkwd$Stocking <- factor(all.mkwd$Stocking, levels = c("None", "SLS", "IES"))
+all.mkwd$Stocking <- factor(all.mkwd$Stocking, 
+                            levels = c("None", "SLS", "IES"))
 all.mkwd$GrazingLawn <- as.factor(all.mkwd$GrazingLawn)
 str(all.mkwd)
 
@@ -43,7 +47,8 @@ str(all.bfly)
 all.mkwd$Grazing <- all.mkwd$Stocking
 all.mkwd$Grazing <- gsub("IES", "Intensive Early", all.mkwd$Grazing)
 all.mkwd$Grazing <- gsub("SLS", "Season Long", all.mkwd$Grazing)
-all.mkwd$Grazing <- factor(all.mkwd$Grazing, levels = c("None", "Season Long", "Intensive Early"))
+all.mkwd$Grazing <- factor(all.mkwd$Grazing,
+                           levels = c("None", "Season Long", "Intensive Early"))
 sort(unique(all.mkwd$Grazing))
 
 all.bfly$Grazing <- all.bfly$Stocking.Type
@@ -82,7 +87,9 @@ stk_colors <- c("None" = "#b2abd2", #"SLS" = "#fdb863", "IES" = "#b35806",
                 "Season Long" = "#fdb863", "Intensive Early" = "#b35806")
 stk_shps <- c("None" = 21, "Season Long" = 25, "Intensive Early" = 24)
 mgmt_colors <- c("BO" = "#d73027", "GB" = "#e0f3f8", "PBG" = "#74add1")
-std_color <- "#FFFFFF"
+tsf_color <- "#FFFFFF"
+shrub_color <- "#7fbc41"
+btn_color <- "#35978f"
 dodge <- position_dodge(width = 0.5)
 pref_theme <- theme_classic() + theme(axis.text = element_text(size = 13),
                                       axis.title = element_text(size = 15),
@@ -111,14 +118,15 @@ mkwd.all.flr.stm$Dummy <- rep("x", nrow(mkwd.all.flr.stm))
 # Create the plot
 flr.stm.plt1 <- ggplot(mkwd.all.flr.stm, aes(x = TSF, y = Num.Stems.ALL.Flowering.Stages,
                                              fill = Dummy, color = Dummy)) + 
-  geom_text(label = "NS", x = 1.85, y = 3.85, size = 6) +
+  geom_text(label = "NS", x = 1.85, y = 25, size = 6) +
   #geom_smooth(method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Num.Stems.ALL.Flowering.Stages + se,
                     ymin = Num.Stems.ALL.Flowering.Stages - se),
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Time Since Fire (Years)", y = "Flowering Stems (all stages)") +
-  scale_fill_manual(values = std_color) +
+  ylim(0, 27) +
+  scale_fill_manual(values = tsf_color) +
   scale_color_manual(values = 'black') +
   pref_theme + tsf.x.brks; flr.stm.plt1
 
@@ -129,6 +137,7 @@ flr.stm.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Num.Stems.ALL.Flowering.Stages
   #geom_text(label = "ab", x = 1.8, y = 4.5, size = 6) +
   #geom_text(label = "b", x = 2.8, y = 5.5, size = 6) +
   labs(x = "Grazing Treatment", y = "Flowering Stems (all stages)") +
+  ylim(0, 27) +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle; flr.stm.plt2
 
@@ -208,7 +217,8 @@ mkwd.height.plt1 <- ggplot(mkwd.height, aes(x = TSF, y = Avg.Height,
                 width = 0.2) +
   geom_point(pch = 23, size = 3.5) +
   labs(x = "Time Since Fire (Years)", y = "Average Stem Length (cm)") +
-  scale_fill_manual(values = std_color) +
+  ylim(0, 101) +
+  scale_fill_manual(values = tsf_color) +
   scale_color_manual(values = 'black') +
   pref_theme + tsf.x.brks; mkwd.height.plt1
 
@@ -221,6 +231,7 @@ mkwd.height.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Avg.Height,
   geom_text(label = "b", x = 2.8, y = 50, size = 6) +
   labs(x = "Time Since Fire (Years)", y = "Average Stem Length (cm)") +
   scale_fill_manual(values = stk_colors) +
+  ylim(0, 101) +
   pref_theme + axis_angle; mkwd.height.plt2
 
 # Make the two panel graph including both
@@ -248,7 +259,8 @@ btn.plt1 <- ggplot(mkwd.tot.btn.stm, aes(x = TSF, y = Tot.Bitten.Stems, fill = F
                 width = 0.3, position = dodge) +
   geom_point(size = 3, pch = 23, position = dodge) + 
   labs(x = "Time Since Fire (years)", y = "Bitten Stems") +
-  scale_fill_manual(values = std_color) +
+  ylim(0, 15) +
+  scale_fill_manual(values = tsf_color) +
   scale_color_manual(values = 'black') +
   pref_theme + tsf.x.brks; btn.plt1
 
@@ -259,6 +271,7 @@ btn.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Bitten.Stems, fill = Grazing))
   geom_text(label = "b", x = 1.8, y = 2, size = 6) +
   geom_text(label = "c", x = 2.8, y = 4, size = 6) +
   labs(x = "Grazing Treatment", y = "Bitten Stems") +
+  ylim(0, 15) +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle; btn.plt2
 
@@ -275,25 +288,54 @@ ggsave("./Graphs/Bitten-Stems.pdf", plot = btn.panels, dpi = 600,
 ## ------------------------------------------------ ##
 # NOTE:
   ## The "total stems" included in this ratio was not directly measured as such
-  ## HOWEVER, the total number of (1) flowering stems and (2) nonflowering stems *was* counted
+  ## HOWEVER, the total number of:
+    ### (1) flowering stems and
+    ### (2) nonflowering stems *was* counted
   ## So I added those two together to get the total stems
   ## There were ~20 cases (of ~600) where the resulting ratio was greater than 1
     ### (i.e., more bitten stems were counted than flowering/nonflowering)
   ## And these cases were coerced into NAs to avoid messing with the data
 
+# Summarize
+mkwd.rat.btn <- summarySE(data = mkwd,
+                          measurevar = "Ratio.Bitten.vs.Total.Stems",
+                              groupvars = c("TSF"), na.rm = T)
+
+## make dummy column
+mkwd.rat.btn$For.Plotting <- rep("x", nrow(mkwd.rat.btn))
+
+# Make the TSF panel
+btn.rat.plt1 <- ggplot(mkwd.rat.btn, aes(x = TSF, y = Ratio.Bitten.vs.Total.Stems,
+                                         fill = For.Plotting)) + 
+  geom_errorbar(aes(ymax = Ratio.Bitten.vs.Total.Stems + se,
+                    ymin = Ratio.Bitten.vs.Total.Stems - se),
+                width = 0.3, position = dodge) +
+  geom_point(size = 3, pch = 23, position = dodge) + 
+  geom_text(label = "NS", x = 0.05, y = 0.9, size = 6) +
+  labs(x = "Time Since Fire (years)", y = "Bitten:Total Stems") +
+  ylim(0, 1) +
+  scale_fill_manual(values = tsf_color) +
+  scale_color_manual(values = 'black') +
+  pref_theme + tsf.x.brks; btn.rat.plt1
+
 # Plot
-ggplot(mkwd, aes(x = Grazing, y = Ratio.Bitten.vs.Total.Stems, fill = Grazing)) + 
+btn.rat.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Ratio.Bitten.vs.Total.Stems, fill = Grazing)) + 
   geom_boxplot(outlier.shape = 21, outlier.alpha = 0.125) +
   geom_text(label = "a", x = 0.8, y = 0.24, size = 6) +
   geom_text(label = "b", x = 1.8, y = 0.58, size = 6) +
   geom_text(label = "c", x = 2.5, y = 0.95, size = 6) +
   labs(x = "Grazing Treatment", y = "Bitten:Total Stems") +
+  ylim(0, 1) +
   scale_fill_manual(values = stk_colors) +
-  pref_theme + axis_angle
+  pref_theme + axis_angle; btn.rat.plt2
 
-# Save
-ggsave("./Graphs/Ratio-Bitten-Total-Stems.pdf", plot = last_plot(), dpi = 600,
-       width = 5, height = 5, units = "in")
+# Make the two panel graph including both
+egg::ggarrange(btn.rat.plt1, btn.rat.plt2, nrow = 1)
+btn.rat.panels <- egg::ggarrange(btn.rat.plt1, btn.rat.plt2, nrow = 1)
+
+# Save it
+ggsave("./Graphs/Ratio-Bitten-Total-Stems.pdf", plot = btn.rat.panels,
+       dpi = 600, width = 8, height = 5, units = "in")
 
 ## ------------------------------------------------ ##
         # Q7 - total # axillary shoots ####
@@ -313,7 +355,8 @@ ax.sht.plt1 <- ggplot(mkwd.all.ax.sht, aes(x = TSF, y = Tot.Axillary.Shoots,
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Time Since Fire (Years)", y = "# Axillary Shoots") +
-  scale_fill_manual(values = std_color) +
+  ylim(0, 35) +
+  scale_fill_manual(values = tsf_color) +
   scale_color_manual(values = 'black') +
   pref_theme + tsf.x.brks; ax.sht.plt1
 
@@ -323,6 +366,7 @@ ax.sht.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Axillary.Shoots, fill = Gra
   geom_text(label = "b", x = 1.8, y = 5.5, size = 6) +
   geom_text(label = "c", x = 2.8, y = 6, size = 6) +
   labs(x = "Grazing Treatment", y = "# Axillary Shoots") +
+  ylim(0, 35) +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle
 ax.sht.plt2
@@ -349,14 +393,15 @@ mkwd.all.monarchs$Dummy <- rep("x", nrow(mkwd.all.monarchs))
 # Create the plot
 monarchs.plt1 <- ggplot(mkwd.all.monarchs, aes(x = TSF, y = Tot.Monarch.Immatures,
                                            fill = Dummy, color = Dummy)) + 
-  geom_text(label = "NS", x = 1.85, y = 0.475, size = 6) +
+  geom_text(label = "NS", x = 1.85, y = 10, size = 6) +
   #geom_smooth(method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Tot.Monarch.Immatures + se,
                     ymin = Tot.Monarch.Immatures - se),
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Time Since Fire (Years)", y = "Monarch Immatures") +
-  scale_fill_manual(values = std_color) +
+  ylim(0, 10) +
+  scale_fill_manual(values = tsf_color) +
   scale_color_manual(values = 'black') +
   pref_theme + tsf.x.brks; monarchs.plt1
 
@@ -367,6 +412,7 @@ monarchs.plt2 <- ggplot(mkwd, aes(x = Grazing, y = Tot.Monarch.Immatures, fill =
   #geom_text(label = "b", x = 1.8, y = 5.5, size = 6) +
   #geom_text(label = "c", x = 2.8, y = 6, size = 6) +
   labs(x = "Grazing Treatment", y = "Monarch Immatures") +
+  ylim(0, 10) +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle
 monarchs.plt2
@@ -391,14 +437,15 @@ bfly.adults$Dummy <- rep("x", nrow(bfly.adults))
 # Create the plot
 adults.plt1 <- ggplot(bfly.adults, aes(x = TSF, y = Monarch.Adults,
                                                fill = Dummy, color = Dummy)) + 
-  geom_text(label = "NS", x = 1.85, y = 1.8, size = 6) +
+  geom_text(label = "NS", x = 1.85, y = 3.5, size = 6) +
   #geom_smooth(method = 'lm', se = F) +
   geom_errorbar(aes(ymax = Monarch.Adults + se,
                     ymin = Monarch.Adults - se),
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Time Since Fire (Years)", y = "Monarch Adults") +
-  scale_fill_manual(values = std_color) +
+  ylim(1, 4) +
+  scale_fill_manual(values = tsf_color) +
   scale_color_manual(values = 'black') +
   pref_theme + tsf.x.brks; adults.plt1
 
@@ -409,6 +456,7 @@ adults.plt2 <- ggplot(bfly, aes(x = Grazing, y = Monarch.Adults, fill = Grazing)
   #geom_text(label = "b", x = 1.8, y = 5.5, size = 6) +
   #geom_text(label = "c", x = 2.8, y = 6, size = 6) +
   labs(x = "Grazing Treatment", y = "Monarch Adults") +
+  ylim(1, 4) +
   scale_fill_manual(values = stk_colors) +
   pref_theme + axis_angle
 adults.plt2
@@ -443,7 +491,7 @@ ggplot(shrub.btn, aes(x = Shrub.Abun.1m, y = Tot.Bitten.Stems,
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Shrubs within 1 meter", y = "Bitten Stems") +
-  scale_fill_manual(values = std_color) +
+  scale_fill_manual(values = shrub_color) +
   scale_color_manual(values = 'black') +
   ylim(-0.15, 3.5) +
   pref_theme
@@ -470,7 +518,7 @@ ggplot(shrub.ratio, aes(x = Shrub.Abun.1m, y = Ratio.Bitten.vs.Total.Stems,
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Shrubs within 1 meter", y = "Bitten:Total Stems") +
-  scale_fill_manual(values = std_color) +
+  scale_fill_manual(values = shrub_color) +
   scale_color_manual(values = 'black') +
   ylim(-0.1, 0.7) +
   pref_theme
@@ -497,13 +545,40 @@ ggplot(shrub.axl, aes(x = Shrub.Abun.1m, y = Tot.Axillary.Shoots,
                 width = 0.2) +
   geom_point(pch = 23, size = 3) +
   labs(x = "Shrubs within 1 meter", y = "Axillary Shoots") +
-  scale_fill_manual(values = std_color) +
+  scale_fill_manual(values = shrub_color) +
   scale_color_manual(values = 'black') +
   ylim(-0.05, 5.5) +
   pref_theme
 
 # Save
 ggsave("./Graphs/Shrubs-Axillary-Shoots.pdf", plot = last_plot(),
+       dpi = 600, width = 5, height = 5, units = "in")
+
+## ------------------------------------------------ ##
+     # Q11 - Axillary Shoots ~ Bitten Stems ####
+## ------------------------------------------------ ##
+# Summarize
+ax.vs.rat.btn <- summarySE(data = mkwd, measurevar = "Tot.Axillary.Shoots",
+                       groupvars = c("Tot.Bitten.Stems"), na.rm = T)
+## Add a dummy column
+ax.vs.rat.btn$Dummy <- rep("x", nrow(ax.vs.rat.btn))
+
+# Make plot
+ggplot(ax.vs.rat.btn, aes(x = Tot.Bitten.Stems,
+                          y = Tot.Axillary.Shoots,
+                      fill = Dummy, color = Dummy)) + 
+  geom_smooth(method = 'lm', se = F) +
+  geom_errorbar(aes(ymax = Tot.Axillary.Shoots + se,
+                    ymin = Tot.Axillary.Shoots - se),
+                width = 0.5) +
+  geom_point(pch = 23, size = 3) +
+  labs(x = "Bitten Stems", y = "Axillary Shoots") +
+  scale_fill_manual(values = btn_color) +
+  scale_color_manual(values = 'black') +
+  pref_theme
+
+# Save
+ggsave("./Graphs/Axillary-Shoots-versus-Bitten-Stems.pdf", plot = last_plot(),
        dpi = 600, width = 5, height = 5, units = "in")
 
 ## ------------------------------------------------ ##

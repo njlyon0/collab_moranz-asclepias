@@ -1,22 +1,16 @@
-## ----------------------------------------------------------------------- ##
-      # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
-## ----------------------------------------------------------------------- ##
+## ---------------------------------------------------------- ##
+          # Moranz et al. Asclepias tuberosa Project
+## ---------------------------------------------------------- ##
 # Code written by Nicholas J Lyon
 
-# PURPOSE ####
-  ## This code wrangles raw data into tidy data
+# PURPOSE: This code wrangles raw data into tidy data
 
 # Clear the environment
 rm(list = ls())
 
-# Set the working directory
-  ## Session -> Set Working Directory -> Choose Directory...
-myWD <- getwd()
-setwd(myWD)
-
 # Call any needed libraries here (good to centralize this step)
-library(readxl); library(tidyverse); library(stringr)
-library(vegan); library(writexl)
+# install.packages("librarian")
+librarian::shelf(readxl, tidyverse, vegan, writexl, njlyon0/helpR)
 
 ## ------------------------------------------------ ##
                 # 2012 Tidying ####
@@ -25,21 +19,20 @@ library(vegan); library(writexl)
   ## it will be best to join 2012 to the other years
 
 # Read in the data
-mkwd.12.v0 <- read_excel("./Data/Asclepias-2012-RAW.xlsx",
+mkwd.12.v0 <- read_excel(path = file.path("Data", "Asclepias-2012-RAW.xlsx"),
                          sheet = "MAIN Trimbled minus not 3yrs")
 
 # Take a look at the data
 str(mkwd.12.v0)
 summary(mkwd.12.v0)
 names(mkwd.12.v0)
-  ## Oof that is rough
 
 # Let's make this more manageable by slicing down now to only the columns that we want
   ## Identify what's in there now
 names(mkwd.12.v0)
   ## Prune and re-order based on what we want
 mkwd.12.v1 <- mkwd.12.v0 %>%
-  select(Year, Date, Pasture, PatchWhit, `2012PlantIDCode`, `2012PlantIDCode_2nd Rnd`,
+  dplyr::select(Year, Date, Pasture, PatchWhit, `2012PlantIDCode`, `2012PlantIDCode_2nd Rnd`,
          `Length zAVERAGE`, `# buds zAVERAGE`, `# flowers zAVERAGE`,
          `# buds TOTAL`, `# flowers TOTAL`, `bloom status zAVERAGE`,
          TrimbStemsAbud, TrimbStemsBflower, TrimbStemsCdone, TrimbStemsDnoflowers, TrimbStemsFbudflowerdone,
@@ -96,8 +89,8 @@ mkwd.12.v2 <- mkwd.12.v1
     ### Something about "read_excel()" deletes those numbers stored as text
 
 # Read in the data
-mkwd.16.v0 <- read.csv("./Data/Asclepias-2016-RAW-plants.csv")
-mkwd.13.16.meta <- read_excel("./Data/Asclepias-2016-RAW.xlsx", sheet = "Metadata")
+mkwd.16.v0 <- read.csv(file.path("Data", "Asclepias-2016-RAW-plants.csv"))
+mkwd.13.16.meta <- read_excel(file.path("Data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata")
 
 # Get some diagnostics to understand the scope of tidying ahead of us
 str(mkwd.16.v0)
@@ -115,7 +108,7 @@ names(mkwd.16.v1)
 names(mkwd.16.v1)
 mkwd.16.v2 <- mkwd.16.v1 %>%
     ## Needed columns
-  select(YearVis, Date, Pasture, Patch, Whittaker, PlantID.Code.from.2012,
+  dplyr::select(YearVis, Date, Pasture, Patch, Whittaker, PlantID.Code.from.2012,
          Length.St1:LengthSt3, Buds.St.1:Buds.St.3, Flow.St.1:Flow.St.3,
          BlooStatus.St.1:BlooStatus.St.3, Monarch.immatures2., total...bitten.stems,
          TRIMBSBUD:TRIMBS.NOflow, Ascl.within.1.m., Ascl.within.2.m,
@@ -686,73 +679,29 @@ mkwd.16.v4 <- mkwd.16.v3 %>%
   ## 2) Ensure that all columns are in the same order
 
 # What is in the 2013-16 data that isn't in the 2012 data?
-setdiff(names(mkwd.16.v4), names(mkwd.12.v2))
+helpR::diff_chk(names(mkwd.16.v4), names(mkwd.12.v2))
 
-# Add them in as dummy columns
-  ## Rather than use the "rename()" function, duplicate Plant.ID with the right name
-mkwd.12.v2$Plant.ID <- mkwd.12.v2$Plant.ID.R1
-mkwd.12.v2$Num.Flowering.Stems.Bitten <- NA
-mkwd.12.v2$Num.Bitten.Stems.w.Axillary.Shoots <- NA
-mkwd.12.v2$Tot.Axillary.Shoots <- NA
-mkwd.12.v2$Num.Axillary.Shoots.Bitten <- NA
-mkwd.12.v2$Num.Monarch.Eggs <- NA
-mkwd.12.v2$Num.Monarch.Larvae <- NA
-mkwd.12.v2$Monarch.Immature.Evidence <- NA
-mkwd.12.v2$Tot.Monarch.Immatures <- NA
+# Tweaks to 2012 data is needed
+mkwd.12.v3 <- mkwd.12.v2 %>%
+  # Rename plant ID
+  dplyr::rename(Plant.ID = Plant.ID.R1) %>%
+  # Change format of some columns
+  dplyr::mutate(Year = as.factor(Year),
+                Avg.Height = as.numeric(Avg.Height),
+                Avg.Bloom.Status = as.numeric(Avg.Bloom.Status),
+                Num.Stems.Budding = as.character(Num.Stems.Budding),
+                Num.Stems.Flowering = as.character(Num.Stems.Flowering),
+                Num.Stems.PostFlower = as.character(Num.Stems.PostFlower))
 
 # Check to make sure they transferred right
-setdiff(names(mkwd.16.v4), names(mkwd.12.v2))
+helpR::diff_chk(names(mkwd.16.v4), names(mkwd.12.v3))
+  ## We're ditching the monarch immatures columns so this is fine
 
-# Vice versa? (in 2012 but missing from 13-16)
-  ## Check
-setdiff(names(mkwd.12.v2), names(mkwd.16.v4))
+# Time to combine!
+milkweed.v1 <- mkwd.12.v3 %>%
+  dplyr::bind_rows(mkwd.16.v4)
 
-  ## Create
-mkwd.16.v4$Plant.ID.R2 <- NA
-mkwd.16.v4$Num.Stems.ALL.Flowering.Stages <- NA
-mkwd.16.v4$Height.1st.Longest <- NA
-mkwd.16.v4$Height.2nd.Longest <- NA
-mkwd.16.v4$Height.3rd.Longest <- NA
-mkwd.16.v4$Comments <- NA
-mkwd.16.v4$Major.Issues <- NA
-
-  ## Check again
-setdiff(names(mkwd.12.v2), names(mkwd.16.v4))
-      ### We're ditching the monarch immatures columns so this is fine
-
-# Reorder the 2012 column names
-mkwd.12.v3 <- mkwd.12.v2 %>%
-  select(Year, Date, Site, Patch, Plant.ID, Avg.Height, Avg.Bud, Avg.Flr,
-         Tot.Bud, Tot.Flr, Avg.Bloom.Status, Num.Stems.Budding, Num.Stems.Flowering,
-         Num.Stems.PostFlower, Num.Stems.Nonflowering, Num.Stems.ALL.Flowering.Stages,
-         Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m,
-         BfliesNectaring, Crab.Spider.Abun, GrazingLawn,
-         Comments, Major.Issues, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-         Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, Num.Axillary.Shoots.Bitten,
-         Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
-
-# Reorder the 2013-16 columns too
-mkwd.16.v5 <- mkwd.16.v4 %>%
-  select(Year, Date, Site, Patch, Plant.ID, Avg.Height, Avg.Bud, Avg.Flr,
-         Tot.Bud, Tot.Flr, Avg.Bloom.Status, Num.Stems.Budding, Num.Stems.Flowering,
-         Num.Stems.PostFlower, Num.Stems.Nonflowering, Num.Stems.ALL.Flowering.Stages,
-         Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m,
-         BfliesNectaring, Crab.Spider.Abun, GrazingLawn,
-         Comments, Major.Issues, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-         Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, Num.Axillary.Shoots.Bitten,
-         Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
-
-# Do both dataframes have the same columns in the same order?
-names(mkwd.12.v3)
-names(mkwd.16.v5)
-
-# Triple check that in a more precise way
-setdiff(names(mkwd.12.v3), names(mkwd.16.v5))
-setdiff(names(mkwd.16.v5), names(mkwd.12.v3))
-  ## Looks good!
-
-# Not the slickest way of doing this, but rbind the two dataframes together!
-milkweed.v1 <- rbind(mkwd.12.v3, mkwd.16.v5)
+# Check it out
 str(milkweed.v1)
   ## Looks good!
 

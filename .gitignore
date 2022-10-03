@@ -43,3 +43,7 @@ vignettes/*.pdf
 
 # R project file
 *.Rproj
+
+# Master data file
+2007-2018 GRG INVERTS MASTER DATA.xlsx
+

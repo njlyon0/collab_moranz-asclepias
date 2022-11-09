@@ -42,7 +42,7 @@ mkwd_12_v2 <- mkwd_12_v1 %>%
   # Rename columns more informatively
   dplyr::rename(Site = Pasture, 
                 Patch = PatchWhit,
-                Plant.ID.R1 = `2012PlantIDCode`, 
+                Plant.ID = `2012PlantIDCode`, 
                 Plant.ID.R2 = `2012PlantIDCode_2nd Rnd`,
                 Avg.Height = `Length zAVERAGE`, 
                 Avg.Bud = `# buds zAVERAGE`, 
@@ -68,12 +68,32 @@ mkwd_12_v2 <- mkwd_12_v1 %>%
                 MonarchImmatures1 = MonarchImmatures1,
                 MonarchImmatures2 = MonarchImmatures2,
                 Shrub.Abun.1m = ShrubsWithin1m,
-                Tot.Bitten.Stems = TotalNumBittenStems) %>%
-  # Make the date column a character for ease of joining with other data
-  dplyr::mutate(Date = as.character(Date))
+                Tot.Bitten.Stems = TotalNumBittenStems)
+
+# Check for a few bad numbers
+helpR::num_chk(data = mkwd_12_v2, col = "Avg.Height")
+helpR::num_chk(data = mkwd_12_v2, col = "Avg.Bloom.Status")
+
+# Change the format of some of these columns
+mkwd_12_v3 <- mkwd_12_v2 %>%
+  dplyr::mutate(Date = as.character(Date),
+                Year = as.factor(Year),
+                Avg.Height = as.numeric(ifelse(
+                  test = Avg.Height == "no data",
+                  yes = "", no = Avg.Height)),
+                Avg.Bloom.Status = as.numeric(ifelse(
+                  test = Avg.Bloom.Status == "unknown",
+                  yes = "", no = Avg.Bloom.Status)),
+                Num.Stems.Budding = as.character(Num.Stems.Budding),
+                Num.Stems.Flowering = as.character(Num.Stems.Flowering),
+                Num.Stems.PostFlower = as.character(Num.Stems.PostFlower))
+
+# Check remaaining values
+sort(unique(mkwd_12_v3$Avg.Height))
+sort(unique(mkwd_12_v3$Avg.Bloom.Status))
 
 # Glimpse this
-dplyr::glimpse(mkwd_12_v2)
+dplyr::glimpse(mkwd_12_v3)
 
 ## ------------------------------------------------ ##
            # 2013-16 Initial Wrangling ####
@@ -403,35 +423,17 @@ dplyr::glimpse(mkwd_16_v7)
 ## ------------------------------------------------ ##
           # Combine 2012 with 2013-16 ####
 ## ------------------------------------------------ ##
-# Before we can join we need to do two things:
-  ## 1) for any column in one dataframe but not the other, add a dummy column with the same name
-  ## 2) Ensure that all columns are in the same order
 
 # What is in the 2013-16 data that isn't in the 2012 data?
-helpR::diff_chk(names(mkwd.16.v4), names(mkwd.12.v2))
-
-# Tweaks to 2012 data is needed
-mkwd.12.v3 <- mkwd.12.v2 %>%
-  # Rename plant ID
-  dplyr::rename(Plant.ID = Plant.ID.R1) %>%
-  # Change format of some columns
-  dplyr::mutate(Year = as.factor(Year),
-                Avg.Height = as.numeric(Avg.Height),
-                Avg.Bloom.Status = as.numeric(Avg.Bloom.Status),
-                Num.Stems.Budding = as.character(Num.Stems.Budding),
-                Num.Stems.Flowering = as.character(Num.Stems.Flowering),
-                Num.Stems.PostFlower = as.character(Num.Stems.PostFlower))
-
-# Check to make sure they transferred right
-helpR::diff_chk(names(mkwd.16.v4), names(mkwd.12.v3))
-  ## We're ditching the monarch immatures columns so this is fine
+## And vice versa
+helpR::diff_chk(old = names(mkwd_16_v4), new = names(mkwd_12_v3))
 
 # Time to combine!
-milkweed.v1 <- mkwd.12.v3 %>%
-  dplyr::bind_rows(mkwd.16.v4)
+milkweed.v1 <- mkwd_12_v3 %>%
+  dplyr::bind_rows(mkwd_16_v7)
 
 # Check it out
-str(milkweed.v1)
+dplyr::glimpse(milkweed.v1)
   ## Looks good!
 
 ## ------------------------------------------------ ##

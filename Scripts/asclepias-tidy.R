@@ -201,6 +201,10 @@ mkwd_16_v5 <- mkwd_16_v4 %>%
     Avg.Height = mean(
       dplyr::c_across(cols = dplyr::contains("Length.StObs")),
       na.rm = TRUE),
+    ## Average buds
+    Avg.Bud = mean(
+      dplyr::c_across(cols = dplyr::contains("Buds.StObs")),
+      na.rm = TRUE),
     ## Total buds
     bud_na = sum(is.na(
       dplyr::c_across(cols = dplyr::contains("Buds.StObs")))),
@@ -209,6 +213,10 @@ mkwd_16_v5 <- mkwd_16_v4 %>%
                      no = sum(dplyr::c_across(
                        cols = dplyr::contains("Buds.StObs")),
                        na.rm = TRUE)),
+    ## Average flowers
+    Avg.Flr = mean(
+      dplyr::c_across(cols = dplyr::contains("Flow.StObs")),
+      na.rm = TRUE),
     ## Total flowers
     flow_na = sum(is.na(
       dplyr::c_across(cols = dplyr::contains("Flow.StObs")))),
@@ -226,7 +234,6 @@ mkwd_16_v5 <- mkwd_16_v4 %>%
 
 # Glimpse this
 dplyr::glimpse(mkwd_16_v5)
-
 
 ## ------------------------------------------------ ##
         # 2013-16 Monarch Info Wrangling ####
@@ -343,51 +350,58 @@ mkwd_16_v6 <- mkwd_16_v5 %>%
 # Glimpse data
 dplyr::glimpse(mkwd_16_v6)
 
+## ------------------------------------------------ ##
+        # 2013-16 Remaining Wrangling ####
+## ------------------------------------------------ ##
+
+# Check for some bad entries (we'll resolve them shortly)
+helpR::num_chk(data = mkwd_16_v6, col = "Tot.Bitten.Stems")
+
+# More wrangling
+mkwd_16_v7 <- mkwd_16_v6 %>%
+  # Fix problematic entries
+  dplyr::mutate(
+    Tot.Bitten.Stems = as.numeric(dplyr::case_when(
+      Tot.Bitten.Stems %in% c("unk", "unk.", "unknown",
+                              "na", "unk (plant gone",
+                              "unk (likely they've atrophied)",
+                              "unk (probably had stems that were eaten and atrophied)"
+                              ) ~ "",
+      Tot.Bitten.Stems == "at least 4" ~ "4",
+      TRUE ~ Tot.Bitten.Stems))
+    ) %>%
+  # Add Whittaker number to patch
+  dplyr::mutate(Patch = paste0(Patch, "-", Whittaker)) %>%
+  # Rename two columns
+  dplyr::rename(Site = Pasture,
+                Plant.ID = Plant.ID.R1) %>%
+  # Pare down to desired columns
+  dplyr::select(Year, Date, Site, Patch, Plant.ID,
+                Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud,
+                Tot.Flr, Avg.Bloom.Status, 
+                Num.Stems.Budding, Num.Stems.Flowering,
+                Num.Stems.PostFlower, Num.Stems.Nonflowering,
+                Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m,
+                ASCTUB.Abun.2m, BfliesNectaring,
+                Crab.Spider.Abun, GrazingLawn, Shrub.Abun.1m,
+                Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
+                Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, 
+                Num.Axillary.Shoots.Bitten, Num.Monarch.Eggs,
+                Num.Monarch.Larvae, Monarch.Immature.Evidence,
+                Tot.Monarch.Immatures)
+
+# Check that entries are fixed
+helpR::num_chk(data = mkwd_16_v7, col = "Tot.Bitten.Stems")
+sort(unique(mkwd_16_v7$Tot.Bitten.Stems))
+
+# Check for lost columns
+helpR::diff_chk(old = names(mkwd_16_v6), new = names(mkwd_16_v7))
+
+# Glimpse full dataset
+dplyr::glimpse(mkwd_16_v7)
 
 ## ------------------------------------------------ ##
-        # 2013-16 Data Tidying Continued ####
-## ------------------------------------------------ ##
-# Okay, back to the main tidying pipeline
-
-
-# Total bitten stems
-sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
-  ## Note judgement call ("at least 4" becomes 4)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("at least 4", "4", mkwd.16.v3$Tot.Bitten.Stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^na$", NA, mkwd.16.v3$Tot.Bitten.Stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk$|^unk.$|unknown", NA, mkwd.16.v3$Tot.Bitten.Stems)
-  ## Note judgement call (to me, these all imply that there were no stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(likely they've atrophied\\)$", "0", mkwd.16.v3$Tot.Bitten.Stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(plant gone$", "0", mkwd.16.v3$Tot.Bitten.Stems)
-mkwd.16.v3$Tot.Bitten.Stems <- gsub("^unk \\(probably had stems that were eaten and atrophied\\)$", "0", mkwd.16.v3$Tot.Bitten.Stems)
-sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
-
-# Make R count it as a number
-mkwd.16.v3$Tot.Bitten.Stems <- as.numeric(mkwd.16.v3$Tot.Bitten.Stems)
-sort(unique(mkwd.16.v3$Tot.Bitten.Stems))
-
-# "Patch" includes whittaker number in 2012 so let's make it include that here as well
-sort(unique(mkwd.16.v3$Patch))
-mkwd.16.v3$Patch <- paste0(mkwd.16.v3$Patch, "-", mkwd.16.v3$Whittaker)
-sort(unique(mkwd.16.v3$Patch))
-
-# Rather than use the "rename()" function, duplicate Pasture and Plant.ID with the right name
-mkwd.16.v3$Site <- mkwd.16.v3$Pasture
-mkwd.16.v3$Plant.ID <- mkwd.16.v3$Plant.ID.R1
-
-# Prune off the now-unnecessary columns and keep only the ones that we need
-names(mkwd.16.v3)
-mkwd.16.v4 <- mkwd.16.v3 %>%
-  select(Year, Date, Site, Patch, Plant.ID,
-         Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud, Tot.Flr, Avg.Bloom.Status, 
-         Num.Stems.Budding, Num.Stems.Flowering, Num.Stems.PostFlower, Num.Stems.Nonflowering,
-         Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m, ASCTUB.Abun.2m, BfliesNectaring,
-         Crab.Spider.Abun, GrazingLawn, Shrub.Abun.1m, Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-         Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, Num.Axillary.Shoots.Bitten,
-         Num.Monarch.Eggs, Num.Monarch.Larvae, Monarch.Immature.Evidence, Tot.Monarch.Immatures)
-
-## ------------------------------------------------ ##
-        # Data Joining (2012 + 2013-16) ####
+          # Combine 2012 with 2013-16 ####
 ## ------------------------------------------------ ##
 # Before we can join we need to do two things:
   ## 1) for any column in one dataframe but not the other, add a dummy column with the same name

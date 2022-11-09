@@ -3,7 +3,8 @@
 ## ---------------------------------------------------------- ##
 # Code written by Nicholas J Lyon
 
-# PURPOSE: This code wrangles raw data into tidy data
+# PURPOSE ----
+## This code wrangles raw data into tidy data
 
 # Clear the environment
 rm(list = ls())
@@ -429,49 +430,44 @@ dplyr::glimpse(mkwd_16_v7)
 helpR::diff_chk(old = names(mkwd_16_v4), new = names(mkwd_12_v3))
 
 # Time to combine!
-milkweed.v1 <- mkwd_12_v3 %>%
+milkweed_v1 <- mkwd_12_v3 %>%
   dplyr::bind_rows(mkwd_16_v7)
 
 # Check it out
-dplyr::glimpse(milkweed.v1)
+dplyr::glimpse(milkweed_v1)
   ## Looks good!
 
 ## ------------------------------------------------ ##
          # Full Data Tidying (Part 1) ####
 ## ------------------------------------------------ ##
-# So this job is partially done as prerequisite to joining the two dataframes but let's finish it here
-  ## Check each column individually and fix any errors that occur
-  ## Also get each column in the format we want it (i.e., factor, numeric, etc.)
-names(milkweed.v1)
+# Now more wrangling
+milkweed_v2 <- milkweed_v1 %>%
+  # Make year into a number
+  dplyr::mutate(Year = as.numeric(as.character(Year))) %>%
+  # Get a simplified date
+  dplyr::mutate(
+    Date = as.numeric(
+      gsub(pattern = "-", replacement = ".",
+           x = str_sub(string = Date, start = 7, end = 10)))) %>%
+  # Simplify site names
+  dplyr::mutate(
+    Site = dplyr::case_when(
+     Site == "Gilleland" ~ "GIL", 
+     Site == "Lee Trail Rd" ~ "LTR", 
+     Site == "Pawnee Prairie" ~ "PAW", 
+     Site == "Pyland North" ~ "PYN", 
+     Site == "Pyland South" ~ "PYS", 
+     Site == "Pyland West" ~ "PYW", 
+     Site == "Richardson" ~ "RCH", 
+     Site == "Ringgold North" ~ "RIN", 
+     Site == "Ringgold South" ~ "RIS"))
 
-# Year
-sort(unique(milkweed.v1$Year))
-milkweed.v1$Year <- as.numeric(as.character(milkweed.v1$Year))
-sort(unique(milkweed.v1$Year))
+# Glimpse it
+dplyr::glimpse(milkweed_v2)
 
-# Date
-sort(unique(milkweed.v1$Date))
-  ## Year is in another column already so let's make this just month and day
-milkweed.v1$Date <- str_sub(milkweed.v1$Date, 7, 10)
-milkweed.v1$Date <- as.numeric(gsub("-", ".", milkweed.v1$Date))
-sort(unique(milkweed.v1$Date))
-
-# Make a new dataset to avoid contaminating the progress thus far
-milkweed.v2 <- milkweed.v1
-
-# Site names
-sort(unique(milkweed.v2$Site))
-milkweed.v2$Site <- gsub("Gilleland", "GIL", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Lee Trail Rd", "LTR", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Pawnee Prairie", "PAW", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Pyland North", "PYN", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Pyland South", "PYS", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Pyland West", "PYW", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Richardson", "RCH", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Ringgold North", "RIN", milkweed.v2$Site)
-milkweed.v2$Site <- gsub("Ringgold South", "RIS", milkweed.v2$Site)
-milkweed.v2$Site <- as.factor(milkweed.v2$Site)
-sort(unique(milkweed.v2$Site))
+# Check specific columns
+sort(unique(milkweed_v2$Date))
+sort(unique(milkweed_v2$Site))
 
 # Patch names
   ## Note that we don't care about Whittaker (i.e., the numbers) transects

@@ -19,56 +19,61 @@ librarian::shelf(readxl, tidyverse, vegan, writexl, njlyon0/helpR)
   ## it will be best to join 2012 to the other years
 
 # Read in the data
-mkwd.12.v0 <- read_excel(path = file.path("Data", "Asclepias-2012-RAW.xlsx"),
+mkwd_12_v1 <- read_excel(path = file.path("Data", "Asclepias-2012-RAW.xlsx"),
                          sheet = "MAIN Trimbled minus not 3yrs")
 
 # Take a look at the data
-str(mkwd.12.v0)
-summary(mkwd.12.v0)
-names(mkwd.12.v0)
+dplyr::glimpse(mkwd_12_v1)
 
-# Let's make this more manageable by slicing down now to only the columns that we want
-  ## Identify what's in there now
-names(mkwd.12.v0)
-  ## Prune and re-order based on what we want
-mkwd.12.v1 <- mkwd.12.v0 %>%
-  dplyr::select(Year, Date, Pasture, PatchWhit, `2012PlantIDCode`, `2012PlantIDCode_2nd Rnd`,
-         `Length zAVERAGE`, `# buds zAVERAGE`, `# flowers zAVERAGE`,
-         `# buds TOTAL`, `# flowers TOTAL`, `bloom status zAVERAGE`,
-         TrimbStemsAbud, TrimbStemsBflower, TrimbStemsCdone, TrimbStemsDnoflowers, TrimbStemsFbudflowerdone,
-         `# of UNbit stems w axillary`, AsclWithin1m, AsclWithin2m, BfliesNectaring, `Crab spiders?`,
-           GrazingLawn, `height on 1st longest`, `height on 2nd longest`, `height on 3rd longest`,
-         Comments, `major issues`, MonarchImmatures1, MonarchImmatures2,
-         ShrubsWithin1m, TotalNumBittenStems) %>%
-  dplyr::rename(Year = Year, Date = Date, Site = Pasture, Patch = PatchWhit,
-         Plant.ID.R1 = `2012PlantIDCode`, Plant.ID.R2 = `2012PlantIDCode_2nd Rnd`,
-         Avg.Height = `Length zAVERAGE`, Avg.Bud = `# buds zAVERAGE`, Avg.Flr = `# flowers zAVERAGE`,
-         Tot.Bud = `# buds TOTAL`, Tot.Flr = `# flowers TOTAL`, Avg.Bloom.Status = `bloom status zAVERAGE`,
-         Num.Stems.Budding = TrimbStemsAbud, Num.Stems.Flowering = TrimbStemsBflower,
-         Num.Stems.PostFlower = TrimbStemsCdone, Num.Stems.Nonflowering = TrimbStemsDnoflowers, 
-         Num.Stems.ALL.Flowering.Stages = TrimbStemsFbudflowerdone,
-         Num.Unbit.Stems.w.Axillary.Shoots = `# of UNbit stems w axillary`, 
-         ASCTUB.Abun.1m = AsclWithin1m, ASCTUB.Abun.2m = AsclWithin2m, 
-         BfliesNectaring = BfliesNectaring, Crab.Spider.Abun = `Crab spiders?`,
-         GrazingLawn = GrazingLawn, 
-         Height.1st.Longest = `height on 1st longest`, 
-         Height.2nd.Longest = `height on 2nd longest`, 
-         Height.3rd.Longest = `height on 3rd longest`,
-         Comments = Comments, Major.Issues = `major issues`, 
-         MonarchImmatures1 = MonarchImmatures1, MonarchImmatures2 = MonarchImmatures2,
-         Shrub.Abun.1m = ShrubsWithin1m, Tot.Bitten.Stems = TotalNumBittenStems)
+# Slicing down now to only needed columns
+mkwd_12_v2 <- mkwd_12_v1 %>%
+  dplyr::select(Year, Date, Pasture, PatchWhit,
+                `2012PlantIDCode`, `2012PlantIDCode_2nd Rnd`,
+                `Length zAVERAGE`, `# buds zAVERAGE`, `# flowers zAVERAGE`,
+                `# buds TOTAL`, `# flowers TOTAL`, `bloom status zAVERAGE`,
+                TrimbStemsAbud, TrimbStemsBflower, TrimbStemsCdone,
+                TrimbStemsDnoflowers, TrimbStemsFbudflowerdone,
+                `# of UNbit stems w axillary`, AsclWithin1m, AsclWithin2m,
+                BfliesNectaring, `Crab spiders?`,
+                GrazingLawn, `height on 1st longest`, 
+                `height on 2nd longest`, `height on 3rd longest`,
+                Comments, `major issues`, MonarchImmatures1,
+                MonarchImmatures2, ShrubsWithin1m, TotalNumBittenStems) %>%
+  # Rename columns more informatively
+  dplyr::rename(Site = Pasture, 
+                Patch = PatchWhit,
+                Plant.ID.R1 = `2012PlantIDCode`, 
+                Plant.ID.R2 = `2012PlantIDCode_2nd Rnd`,
+                Avg.Height = `Length zAVERAGE`, 
+                Avg.Bud = `# buds zAVERAGE`, 
+                Avg.Flr = `# flowers zAVERAGE`,
+                Tot.Bud = `# buds TOTAL`, 
+                Tot.Flr = `# flowers TOTAL`, 
+                Avg.Bloom.Status = `bloom status zAVERAGE`,
+                Num.Stems.Budding = TrimbStemsAbud, 
+                Num.Stems.Flowering = TrimbStemsBflower,
+                Num.Stems.PostFlower = TrimbStemsCdone, 
+                Num.Stems.Nonflowering = TrimbStemsDnoflowers, 
+                Num.Stems.ALL.Flowering.Stages = TrimbStemsFbudflowerdone,
+                Num.Unbit.Stems.w.Axillary.Shoots = `# of UNbit stems w axillary`, 
+                ASCTUB.Abun.1m = AsclWithin1m, 
+                ASCTUB.Abun.2m = AsclWithin2m, 
+                BfliesNectaring = BfliesNectaring, 
+              Crab.Spider.Abun = `Crab spiders?`,
+                GrazingLawn = GrazingLawn, 
+                Height.1st.Longest = `height on 1st longest`, 
+                Height.2nd.Longest = `height on 2nd longest`, 
+                Height.3rd.Longest = `height on 3rd longest`,
+                Comments = Comments, Major.Issues = `major issues`, 
+                MonarchImmatures1 = MonarchImmatures1,
+                MonarchImmatures2 = MonarchImmatures2,
+                Shrub.Abun.1m = ShrubsWithin1m,
+                Tot.Bitten.Stems = TotalNumBittenStems) %>%
+  # Make the date column a character for ease of joining with other data
+  dplyr::mutate(Date = as.character(Date))
 
-# How's that look?
-names(mkwd.12.v1)
-str(mkwd.12.v1)
-  ## Much more manageable
-
-# Make date a character so it doesn't get messed up when binding to the other dataframe
-mkwd.12.v1$Date <- as.character(mkwd.12.v1$Date)
-sort(unique(mkwd.12.v1$Date))
-
-# Make a new dataframe to preserve our work
-mkwd.12.v2 <- mkwd.12.v1
+# Glimpse this
+dplyr::glimpse(mkwd_12_v2)
 
 ## ------------------------------------------------ ##
             # 2013-16 Data Tidying ####

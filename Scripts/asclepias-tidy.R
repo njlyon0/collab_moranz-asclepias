@@ -78,30 +78,16 @@ dplyr::glimpse(mkwd_12_v2)
 ## ------------------------------------------------ ##
             # 2013-16 Data Tidying ####
 ## ------------------------------------------------ ##
-# Two notes before we get down to business (sing Mulan to yourself while reading that last bit):
-  ## 1) Despite the 2016 data in theory including the 2013-16 data (see file name) it **does not**
-    ### For some reason, each year's data file *may* include data that can only be found in that file
-    ### This is a nightmare obviously
-    ### Doubly so because each year has inconsistent column names
-    ### This precludes the possibility of uploading each year and rbind()-ing them together
-    ### I think the best path forward is as follows:
-      #### Tidy using the pipeline I have already established
-      #### At the very end, give the opportunity for NAs to be filled with their respective data
-
-## 2) Though the data are in Excel files (see the "Data" folder), all data uploads are .csv files
-    ### The below data is a .csv file directly (unmodified) from the Excel sheet "Plants"
-    ### Much of these files are numbers stored as text so the csv file preserves more data than the xlsx
-    ### Something about "read_excel()" deletes those numbers stored as text
 
 # Read in the data
-mkwd.16.v0 <- read.csv(file.path("Data", "Asclepias-2016-RAW-plants.csv"))
-mkwd.13.16.meta <- read_excel(file.path("Data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata")
+mkwd_16_v1 <- read.csv(file.path("Data", "Asclepias-2016-RAW-plants.csv"))
+mkwd_13_16_meta <- readxl::read_excel(file.path("Data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata") %>%
+  # Fix an ID column name
+  dplyr::rename(AsclepTransID = AsclepTransIDauto)
 
-# Get some diagnostics to understand the scope of tidying ahead of us
-str(mkwd.16.v0)
-summary(mkwd.16.v0)
-names(mkwd.16.v0)
-  ## Time for a pivot in approach
+# Glimpse both opbjects
+dplyr::glimpse(mkwd_16_v1)
+dplyr::glimpse(mkwd_13_16_meta)
 
 # To combine 2012 with the other years we first need to get 2013-16 into a single datafile
   ## The legacy of MS Access lives on in it's current form

@@ -47,3 +47,7 @@ vignettes/*.pdf
 # Master data file
 2007-2018 GRG INVERTS MASTER DATA.xlsx
 
+# Ignore all data and visuals folders
+data/
+figures/
+graphs/

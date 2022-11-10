@@ -438,7 +438,7 @@ dplyr::glimpse(milkweed_v1)
   ## Looks good!
 
 ## ------------------------------------------------ ##
-         # Full Data Tidying (Part 1) ####
+         # Site & Date Format Wrangling ####
 ## ------------------------------------------------ ##
 # Now more wrangling
 milkweed_v2 <- milkweed_v1 %>%
@@ -450,17 +450,54 @@ milkweed_v2 <- milkweed_v1 %>%
       gsub(pattern = "-", replacement = ".",
            x = str_sub(string = Date, start = 7, end = 10)))) %>%
   # Simplify site names
-  dplyr::mutate(
-    Site = dplyr::case_when(
-     Site == "Gilleland" ~ "GIL", 
-     Site == "Lee Trail Rd" ~ "LTR", 
-     Site == "Pawnee Prairie" ~ "PAW", 
-     Site == "Pyland North" ~ "PYN", 
-     Site == "Pyland South" ~ "PYS", 
-     Site == "Pyland West" ~ "PYW", 
-     Site == "Richardson" ~ "RCH", 
-     Site == "Ringgold North" ~ "RIN", 
-     Site == "Ringgold South" ~ "RIS"))
+  dplyr::mutate(Site = dplyr::case_when(
+    Site == "Gilleland" ~ "GIL", 
+    Site == "Lee Trail Rd" ~ "LTR", 
+    Site == "Pawnee Prairie" ~ "PAW", 
+    Site == "Pyland North" ~ "PYN", 
+    Site == "Pyland South" ~ "PYS", 
+    Site == "Pyland West" ~ "PYW", 
+    Site == "Richardson" ~ "RCH", 
+    Site == "Ringgold North" ~ "RIN", 
+    Site == "Ringgold South" ~ "RIS")) %>%
+  # Fix some patch information that is contained in the plant ID column
+  dplyr::mutate(Patch = dplyr::case_when(
+    ## Some have correct information in Plant ID column
+    Patch %in% c("East and Center-1 &2", "East and Center-NA",
+                 "multiple-2", "North & Center-1 & 2") ~ Plant.ID,
+    TRUE ~ Patch)) %>%
+  # Simplify all patches
+  dplyr::mutate(Patch = dplyr::case_when(
+    ## North patches
+    Patch %in% c("N1", "N2", "North-1", "North-1 and 2", 
+                 "North-1and2", "North-2", "North-2 and 3", 
+                 "North-N1W1", "North-N2W2", "GILN1001") ~ "N",
+    ## South patches
+    Patch %in% c("S1", "S2", "S3", "South-1", "South-1 & 2", 
+                 "South-1 and 2", "South-1 and 3", "South-1,2", 
+                 "South-1and2", "South-1and3", "South-2", 
+                 "South-3") ~ "S",
+    ## East patches
+    Patch %in% c("E1", "E2", "East-1", "East-2", "East-1 & 2",
+                 "LTRE1001", "LTRE2001", "LTRE2002", "LTRE2003",
+                 "LTRE2004") ~ "E",
+    ## West patches
+    Patch %in% c("W1", "W2", "W3", "West-1", "West-1 and 2", 
+                 "West-2", "West-NA", "Y-1", "LTRW2001") ~ "W",
+    ## Center patches
+    Patch %in% c("C1", "C2", "C3", "Center-1", "Center-1 and 2",
+                 "Center-1,2,3", "Center-2", "Center-3",
+                 "GIL-C-2013-901", "GIL-C-2013-902", 
+                 "GIL-C1-13-R1-001", "GILC1001", "GILC1002", 
+                 "GILC1003", "LTRC1001", "LTRC2001", "LTRC2003",
+                 "LTRC2007", "LTRC2008", "LTRC2009", "LTRC2015") ~ "C",
+    # Fix blank too
+    Patch == "NA-NA" ~ "",
+    # If not specified, keep old entry
+    TRUE ~ Patch)) %>%
+  # Filter out accidental rows
+  dplyr::filter(!Plant.ID %in% c("(accidental row)", "accidental row",
+                                 "Accidental row", "ACCIDENTAL ROW"))
 
 # Glimpse it
 dplyr::glimpse(milkweed_v2)
@@ -468,245 +505,258 @@ dplyr::glimpse(milkweed_v2)
 # Check specific columns
 sort(unique(milkweed_v2$Date))
 sort(unique(milkweed_v2$Site))
+sort(unique(milkweed_v2$Patch))
 
-# Patch names
-  ## Note that we don't care about Whittaker (i.e., the numbers) transects
-sort(unique(milkweed.v2$Patch))
-milkweed.v2$Patch <- gsub("^C1$|^C2$|^C3$|^Center-1$|^Center-1 and 2$|^Center-1,2,3$|^Center-2$|^Center-3$",
-                          "C", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^E1$|^E2$|^East-1$|^East-2$|^East-1 \\& 2$",
-                          "E", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^N1$|^N2$|^North-1$|^North-1 and 2$|^North-1and2$|^North-2$|^North-2 and 3$|^North-N1W1$|^North-N2W2$",
-                          "N", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^S1$|^S2$|^S3$|^South-1$|^South-1 \\& 2$|^South-1 and 2$|^South-1 and 3$|^South-1,2$|^South-1and2$|^South-1and3$|^South-2$|^South-3$",
-                          "S", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^W1$|^W2$|^W3$|^West-1$|^West-1 and 2$|^West-2$|^West-NA$",
-                          "W", milkweed.v2$Patch)
-## Fixes requiring judgement calls
-  ### Richardson briefly had it's West patch called the "Y" patch
-milkweed.v2$Patch <- gsub("^Y-1$", "W", milkweed.v2$Patch)
-  ### The remaining issues have the correct information in the Plant.ID column (thankfully)
-milkweed.v2$Patch <- ifelse(test = (milkweed.v2$Patch == "East and Center-1 &2" |
-                                      milkweed.v2$Patch == "East and Center-NA" |
-                                      milkweed.v2$Patch == "multiple-2" |
-                                      milkweed.v2$Patch == "North & Center-1 & 2"), 
-                            yes = milkweed.v2$Plant.ID, no = milkweed.v2$Patch)
-  ### Now just revise the Plant.IDs to have only the patch letter
-milkweed.v2$Patch <- gsub("^GIL-C-2013-901$|^GIL-C-2013-902$|^GIL-C1-13-R1-001$|^GILC1001$|^GILC1002$|^GILC1003$",
-                          "C", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^LTRC1001$|^LTRC2001$|^LTRC2003$|^LTRC2007$|^LTRC2008$|^LTRC2009$|^LTRC2015$",
-                          "C", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^GILN1001$", "N", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^LTRE1001$|^LTRE2001$|^LTRE2002$|^LTRE2003$|^LTRE2004$",
-                          "E", milkweed.v2$Patch)
-milkweed.v2$Patch <- gsub("^LTRW2001$",
-                          "W", milkweed.v2$Patch)
-  ### This is a blank row we'll remove later
-milkweed.v2$Patch <- gsub("NA-NA", "", milkweed.v2$Patch)
-sort(unique(milkweed.v2$Patch))
+## ------------------------------------------------ ##
+        # Numeric Column Checks & Fixes ####
+## ------------------------------------------------ ##
 
-# Plant.ID code
-sort(unique(milkweed.v2$Plant.ID))
-  ## Formatting is wonky and may need revisiting but good enough for now (may not use anyway)
+# Check 
+helpR::multi_num_chk(data = milkweed_v2, col_vec = c(
+  "Avg.Height", "Avg.Bud", "Avg.Flr" , "Tot.Bud", "Tot.Flr", 
+  "Avg.Bloom.Status", "Num.Stems.Budding", "Num.Stems.Flowering", 
+  "Num.Stems.PostFlower" , "Num.Stems.Nonflowering",
+  "Num.Stems.ALL.Flowering.Stages", 
+  "Num.Unbit.Stems.w.Axillary.Shoots", 
+  "ASCTUB.Abun.1m", "ASCTUB.Abun.2m", 
+  "Crab.Spider.Abun", "Height.1st.Longest", 
+  "Height.2nd.Longest", "Height.3rd.Longest", 
+  "MonarchImmatures1", "MonarchImmatures2", 
+  "Shrub.Abun.1m", "Tot.Bitten.Stems", "Num.Flowering.Stems.Bitten",
+  "Num.Bitten.Stems.w.Axillary.Shoots", "Tot.Axillary.Shoots", 
+  "Num.Axillary.Shoots.Bitten", "Num.Monarch.Eggs", 
+  "Num.Monarch.Larvae", "Monarch.Immature.Evidence", 
+  "Tot.Monarch.Immatures"))
 
-# Let's remove the accidental rows here
-milkweed.v3 <- milkweed.v2 %>%
-  filter(Plant.ID != "(accidental row)" & Plant.ID != "accidental row" &
-           Plant.ID != "Accidental row" & Plant.ID != "ACCIDENTAL ROW")
-sort(unique(milkweed.v3$Plant.ID))
+# Address these issues
+milkweed_v3 <- milkweed_v2 %>%
+  # Budding stems
+  dplyr::mutate(Num.Stems.Budding = dplyr::case_when(
+    Num.Stems.Budding %in% c("no sign of plant", "could not find plant",
+                             "could not find") ~ "",
+    TRUE ~ Num.Stems.Budding)) %>%
+  # Nonflowering stems
+  dplyr::mutate(Num.Stems.Nonflowering = dplyr::case_when(
+    Num.Stems.Nonflowering %in% c(
+      "1 (bitten off 8 \" from ground, presumably by deer",
+      "1 dying") ~ "1",
+    Num.Stems.Nonflowering == "2- these particular stems are unusually weak" ~ "2",
+    TRUE ~ Num.Stems.Nonflowering)) %>%
+  # Unbitten stems with axillary shoots
+  dplyr::mutate(Num.Unbit.Stems.w.Axillary.Shoots = dplyr::case_when(
+    Num.Unbit.Stems.w.Axillary.Shoots %in% c(
+      "no data", "n.a.", "unk", "n/a", "u", "unknown", "na") ~ "",
+    TRUE ~ Num.Unbit.Stems.w.Axillary.Shoots)) %>%
+  # Asclepias tuberosa conspecifics within 1 meter
+  dplyr::mutate(ASCTUB.Abun.1m = dplyr::case_when(
+    ASCTUB.Abun.1m %in% c(
+      "NO DATA", "no data", "unk", "uncertain", "did not assess",
+      "did not measure", "not recorded", "?") ~ "",
+    ASCTUB.Abun.1m %in% c("no", "No") ~ "0",
+    ASCTUB.Abun.1m %in% c(
+      "1 A. tuberosa with 2 stems in flower 1m to SE; no other within 1.4m",
+      "YES; number not recorded", 
+      "1 A. tuberosa with 1 stem in bud only 60cm to W",
+      "yes; One A. tuberosa with 1 flowering stem is 90cm to SSW",
+      "tiny (5\" tall) A. tuberosa seedling only 40cm to SSE",
+      "1 A. tuberosa (only 1 stem, not flowering) is 50cm NE of this plant",
+      "1 AT with 2 stems in bud only 80cm to NE",
+      "seedling 15cm tall 70cm to S",
+      "1 A. tuberosa with 3 stems in bloom (and 1 stem that won't bloom this year) only 1m to NNW",
+      "1 A. tuberosa with only 2 stems in bloom only 0.9m E",
+      "1 A. tuberosa 0.9m to E",
+      "another A. tuberosa only 0.65m to WNW - named it PAWS1401",
+      "0.65m WNW of PAWS1007") ~ "1",
+    ASCTUB.Abun.1m %in% c(
+      "there is 1 A. tuberosa (with 1 stem in bud) 35cm to SE (~90 small green buds) and 1 A. tuberosa (1stem, bitten) 35cm to SW",
+      "this plant is less than 1m from plants 105 and 106; ~20cm S",
+      "another robust A. tuberosa 1m to E and a smaller A. tuberosa 0.8m to WSW", "1 or more",
+      # Double checked this date one in the raw data
+      "as on 6/29/2014") ~ "2",
+    # Some 1 meter plants were recorded in the 2m column
+    ASCTUB.Abun.2m == "another A. tuberosa with 1 stem (no flowers) is 30cm to W of plant" ~ "1",
+    TRUE ~ ASCTUB.Abun.1m)) %>%
+  # Asclepias tuberosa conspecifics within 2 meters
+  dplyr::mutate(ASCTUB.Abun.2m = dplyr::case_when(
+    ASCTUB.Abun.2m %in% c(
+      "NO DATA", "unknown", "unk", "did not assess",
+      "did not measure", "not recorded", "?", "no data") ~ "",
+    ASCTUB.Abun.2m %in% c(
+      "no", "1 A. tuberosa 1.3 m to SW", "No", 
+      "no; 1 Asclep. hirtella approx. 2m to E",
+      "no; 6 whorled milkweed (non-flowering)",
+      "no; A. syriaca, but protecte dby two branches of dead tree (1.3m N of A. tuberosa)"
+    ) ~ "0",
+    ASCTUB.Abun.2m %in% c(
+      "YES; number not recorded", "yes; # unk", "1 A.t. is 2m to the S",
+      "1 milkweed within 1.1m to SE", "closest milkweed is 1.1m north",
+      "another A. tuberosa 1.1m away", "yes; 1 A. tuberosa 1.2m SW",
+      "1 A. tuberosa only 1.7m to E; it had 3 stems, but all were bitten by cattle, and none will bloom", "this plant is 1.7m ENE of RISC1002",
+      "yes; one", "A. tuberosa 1.5m to NE, which has 2 stems, each stem having hundreds of buds and/or flowers",
+      "N2006 1.1m to NNW", "another A. tuberosa 1.1m S and another 1.4m NW",
+      "another A. tuberosa 1.6m S of A. tuberosa",
+      "Yes, one plant 1.7m away, small plant with only 2 stems, neither will bloom; no monarch eggs on this neighbor",
+      "healthy A. tuberosa with 2 stems in early bud is 1.5m to the W; that plant, which is earlier phenologically, does not have monarch eggs",
+      "yes", "seedling 18cm tall (two stems) 1.2m to WSW",
+      "1 A. tubersosa with 2 stems in bloom only 1.4m NE",
+      "another A. tuberosa with 1 stem (no flowers) is 30cm to W of plant",
+      "1 other A. tuberosa only 95cm to SW, it will not bloom this year",
+      "1 A. tuberosa 1.5m to E", "1 A. tuberosa 1.9m to S",
+      "at least 1", "1 or more", "yes (# unk)") ~ "1",
+    ASCTUB.Abun.2m %in% c(
+      "1 A. tuberosa (with 2 stems) 2.0 m NW, 1 A.tuberosa 2.0m SW (with 1 stem in bloom)",
+      "one 2m to ENE, another 2m to NNW; both are healthy;",
+      "1 robust A. tuberosa 1.15m N of this plant (with 13 stems that are done flowering) and plant PAWE2045 is 1.3m S of this plant",
+      "there is another A. tuberosa 1.5m N of GPS point (2 stems with no flowers this year) and 1 A. tuberosa 1.5m SE of GPS point (1 stem with no flowers)",
+      "1 A. tuberosa 1.5m to E (with 1 stem that won't flower this year); 1 A. tuberosa to S (with 1 stem in bud) with 13 buds and no signs of monarch immatures"
+    ) ~ "2",
+    ASCTUB.Abun.2m == "Multiple A. tuberosa within 1.5 m !!" ~ "3",
+    ASCTUB.Abun.2m == "12 ~1.2m from W1003" ~ "12",
+    TRUE ~ ASCTUB.Abun.2m)) %>%
+  # Crab spider abundance
+  # Crab spider abundance
+  dplyr::mutate(Crab.Spider.Abun = dplyr::case_when(
+    Crab.Spider.Abun %in% c(
+      "no data", "presum no", "na", "unk (not recorded)",
+      "did not assess", "did not measure") ~ "",
+    Crab.Spider.Abun %in% c("no", " no", "NO", "n/a; no") ~ "0",
+    Crab.Spider.Abun %in% c(
+      "1 yellow crab spider in blossom of this plant",
+      "yes; 1 yellow crab spider hiding amidst blossoms",
+      "yes; 1 yellow crab spider hiding in blossoms",
+      "1 yellow crab spider with dead Apis mellifera in its clutches",
+      "yes; yellow crab spider", "1 yellow crab spider on stem C,",
+      "1 yellow crab spider on stem B", "yes, on A",
+      "1 crab spider in flower on stem A. yellow spider at @:45 pm"
+    ) ~ "1",
+    Crab.Spider.Abun == "2 Crab spider" ~ "2",
+    TRUE ~ Crab.Spider.Abun)) %>%
+  # Shrub abundance within 1 meter
+  dplyr::mutate(Shrub.Abun.1m = dplyr::case_when(
+    Shrub.Abun.1m %in% c(
+      "no data", "NO DATA", "unknown", "unk", "did not measure",
+      "did not assess") ~ "",
+    Shrub.Abun.1m %in% c(
+      "no", "0, but 3 Baptistia alba nearby", "0, but 1 Baptisia alba",
+      "0, but 2 Baptisia alba and Solidago rigida", "2 Baptisia alba",
+      "0, but lots of ironweed", "barbed wire fence") ~ "0",
+    Shrub.Abun.1m %in% c(
+      "1 buckbrush", "1 multiflora rose", "1 smooth sumac",
+      "1 buckbrush 95cm to N", "1 multi-floral rose",
+      "1 elm", "1 (.8m west of osage orange)",
+      "1 buckbrush 99cm away", "1 buckbrush 30cm away", 
+      "1 buckbrush 80cm SW", "1 buckbrush 60 cm S", 
+      "1 buckbrush 1m away", "1 small elm only 5cm from A. tuberosa",
+      "1 buckbrush 40cm away", "1 large multiflora rose",
+      "1 buckbrush 10cm to W", "yes; 1 sharp cedar snag 50cm to SE", 
+      "yes; 1 sharp cedar snag 15cm to W", "1 rose",
+      "yes; 1 sharp cedar snag 80cm to WSW",
+      "plant within 50cm of buckbrush or other shrub",
+      "15cm from base of a buckbrush", "1 wild plum (20cm S)",
+      "1 black raspberry", "1 2m tall cedar only 30cm away",
+      "1 Rosa multiflora", "1 Rosa multiflora", "1 Rosa multiflora",
+      "1 wild grape", "1 buck brush", "1 plum", "1 osage orange",
+      "1 Rubus", "1 blackberry", "1 Sumac", "1 Buckbrush", 
+      "1 large osage orange", "6' tall osage orange", "1 wild plum",
+      "1 buckbrush, 1 Baptisia alba", "1 shrubby elm",
+      "1 small multiflower rose", "osage orange",
+      "1 osage orange (2 m tall)") ~ "1",
+    Shrub.Abun.1m %in% c(
+      "1 buckbrush, 1 osage orange", "2 buckbrush", 
+      "2 buckbrush within 30cm", "2 small multi-floral rose",
+      "2 small buckbrush", "2 shrubs (1 hawthorn)",
+      "2 buckbrush within 30 cm", "2 buckbrush within 30 cm",
+      "2 small multiflora rose", "1 large osage orange, 1 buckbrush",
+      "1 large osage orange, 1 buckbrush", "2 small multiflora rose",
+      "2 multi flora rose", "2 buck brush", "1 Rubus, 1Sumac", 
+      "1 osage orange, 1 raspberry") ~ "2",
+    Shrub.Abun.1m %in% c(
+      "3 buckbrush; 20cm from woody elm stem; 40cm from buckbrush",
+      "3 buckbrush", "3 Carolina rose", "3 black berries",
+      "1 osage orange, 1 plum, 1 raspberry", "3 multi-flora rose",
+      "1 elm, 1 buckbrush, 1 hawthorn", "3 Buckbrush", "3 dogweed") ~ "3",
+    Shrub.Abun.1m %in% c(
+      "4 buckbrush", "1 buckbrush, 2 blackberry, 1 elm sapling",
+      "3 buckbrush and 1 prairie rose", "3 Rubus, 1 Rosa",
+      "1 buckbrush, 1 multi-stemmed, 2 fall elm", "4 prairie rose",
+      "3 buckbrush, osage orange", "4 prairie rose",
+      "3 buckbursh, 1 osage orange", "1 honey locust, 3 licorice",
+      "3 buck brush, 1 multi prarie rose", "4 buck brush", "4 Buckbrush",
+      "4 multi-flora rose", "4 blackberry", "4 ironweed") ~ "4",
+    Shrub.Abun.1m %in% c(
+      "5 buckbrush", "5 buck brush", "5 buckbrush(1 huge clump)",
+      "5 buckbrush; 20 buckbrush stems (may have helped protect plant)",
+      "3 sumac, 3 rubus") ~ "5",
+    Shrub.Abun.1m %in% c(
+      "6 buckbrush", "n/a; 6 buckbrush", "6 Rubus", 
+      "5 buckbrush, 1 Osage orange", "6 dogwood oak",
+      "1 locust tree, 5 black berry", "6 Buckbrush",
+      "6 dogwood black berry") ~ "6",
+    Shrub.Abun.1m %in% c(
+      "7 buckbrush", "7 prairie rose", "5 Cornus 2 Rubus", 
+      "7 blackberry") ~ "7",
+    Shrub.Abun.1m %in% c(
+      "8 Cornus", "n/a; 8 buckbrush", "8 buckbrush",
+      "5 blackberry, 3 buckbrush") ~ "8",
+    Shrub.Abun.1m %in% c(
+      "n/a; 9 buckbrush", "9 buckbrush", "9 buckbrush", "9 buckbrush",
+      "6 blackberry, 1 prairie rose, 2 buckbrush") ~ "9",
+    Shrub.Abun.1m %in% c("9 dogwoods, 1 shingle oak", "10 Buckbrush") ~ "10",
+    # Other numbers
+    Shrub.Abun.1m == "11 buckbrush" ~ "11",
+    Shrub.Abun.1m == "12 Rubus" ~ "12",
+    Shrub.Abun.1m == "20 or 30" ~ "25",
+    TRUE ~ Shrub.Abun.1m)) %>%
+  # Bitten flowering stems
+  dplyr::mutate(Num.Flowering.Stems.Bitten = dplyr::case_when(
+    Num.Flowering.Stems.Bitten %in% c("unk", "unknown", "na") ~ "",
+    TRUE ~ Num.Flowering.Stems.Bitten)) %>%
+  # Stems with axillary shoots
+  dplyr::mutate(Num.Bitten.Stems.w.Axillary.Shoots = dplyr::case_when(
+    Num.Bitten.Stems.w.Axillary.Shoots %in% c(
+      "unclear", "no data", "unk", "na", "unknown") ~ "",
+    TRUE ~ Num.Bitten.Stems.w.Axillary.Shoots)) %>%
+  # Axillary shoots total
+  dplyr::mutate(Tot.Axillary.Shoots = dplyr::case_when(
+    Tot.Axillary.Shoots %in% c("?", "no data", "unknown",
+                               "unk", "na") ~ "",
+    Tot.Axillary.Shoots == "3 tiny ones" ~ "3",
+    Tot.Axillary.Shoots == "4 bitten, 2 unbitten" ~ "6",
+    Tot.Axillary.Shoots == "7 (6+1)" ~ "7",
+    Tot.Axillary.Shoots == "dozens?" ~ "24",
+    TRUE ~ Tot.Axillary.Shoots)) %>%
+  # Axillary shoots bitten
+  dplyr::mutate(Num.Axillary.Shoots.Bitten = dplyr::case_when(
+    Num.Axillary.Shoots.Bitten %in% c("?", "no data", "unk", 
+                                      "unknown", "na") ~ "",
+    TRUE ~ Num.Axillary.Shoots.Bitten)) %>%
+  # For the conspecifics columns we can fix it if only one is recorded
+  dplyr::mutate(
+    # If 2m is blank but 1m isn't we can fill 2m with 1m data
+    ASCTUB.Abun.2m = ifelse(
+      test = is.na(ASCTUB.Abun.2m) | nchar(ASCTUB.Abun.2m) == 0,
+      yes = ASCTUB.Abun.1m,
+      no = ASCTUB.Abun.2m))
 
-# Average height
-sort(unique(milkweed.v3$Avg.Height))
-milkweed.v3$Avg.Height <- gsub("no data", "", milkweed.v3$Avg.Height)
-milkweed.v3$Avg.Height <- as.numeric(milkweed.v3$Avg.Height)
-sort(unique(milkweed.v3$Avg.Height))
+# Check again to ensure issues are resolved
+helpR::multi_num_chk(data = milkweed_v3, col_vec = c(
+  "Avg.Height", "Avg.Bud", "Avg.Flr" , "Tot.Bud", "Tot.Flr", 
+  "Avg.Bloom.Status", "Num.Stems.Budding", "Num.Stems.Flowering", 
+  "Num.Stems.PostFlower" , "Num.Stems.Nonflowering",
+  "Num.Stems.ALL.Flowering.Stages", 
+  "Num.Unbit.Stems.w.Axillary.Shoots", 
+  "ASCTUB.Abun.1m", "ASCTUB.Abun.2m", 
+  "Crab.Spider.Abun", "Height.1st.Longest", 
+  "Height.2nd.Longest", "Height.3rd.Longest", 
+  "MonarchImmatures1", "MonarchImmatures2", 
+  "Shrub.Abun.1m", "Tot.Bitten.Stems", "Num.Flowering.Stems.Bitten",
+  "Num.Bitten.Stems.w.Axillary.Shoots", "Tot.Axillary.Shoots", 
+  "Num.Axillary.Shoots.Bitten", "Num.Monarch.Eggs", 
+  "Num.Monarch.Larvae", "Monarch.Immature.Evidence", 
+  "Tot.Monarch.Immatures"))
 
-# Average number of buds or flowers
-sort(unique(milkweed.v3$Avg.Bud))
-sort(unique(milkweed.v3$Avg.Flr))
 
-# Total number of buds or flowers
-sort(unique(milkweed.v3$Tot.Bud))
-sort(unique(milkweed.v3$Tot.Flr))
 
-# Average bloom status
-sort(unique(milkweed.v3$Avg.Bloom.Status))
-milkweed.v3$Avg.Bloom.Status <- gsub("unknown", "", milkweed.v3$Avg.Bloom.Status)
-milkweed.v3$Avg.Bloom.Status <- as.numeric(milkweed.v3$Avg.Bloom.Status)
-sort(unique(milkweed.v3$Avg.Bloom.Status))
-
-# Number budding stems
-sort(unique(milkweed.v3$Num.Stems.Budding))
-milkweed.v3$Num.Stems.Budding <- gsub("could not find|plant|no sign of ", "",
-                                      milkweed.v3$Num.Stems.Budding)
-milkweed.v3$Num.Stems.Budding <- as.numeric(milkweed.v3$Num.Stems.Budding)
-sort(unique(milkweed.v3$Num.Stems.Budding))
-
-# Number flowering stems
-sort(unique(milkweed.v3$Num.Stems.Flowering))
-milkweed.v3$Num.Stems.Flowering <- as.numeric(milkweed.v3$Num.Stems.Flowering)
-sort(unique(milkweed.v3$Num.Stems.Flowering))
-
-# Number stems post flowering (but were once flowering)
-sort(unique(milkweed.v3$Num.Stems.PostFlower))
-milkweed.v3$Num.Stems.PostFlower <- as.numeric(milkweed.v3$Num.Stems.PostFlower)
-sort(unique(milkweed.v3$Num.Stems.PostFlower))
-
-# Number of stems that won't flower (at least that year)
-sort(unique(milkweed.v3$Num.Stems.Nonflowering))
-milkweed.v3$Num.Stems.Nonflowering <- gsub("1 \\(bitten off 8 \" from ground, presumably by deer",
-                                           "1", milkweed.v3$Num.Stems.Nonflowering)
-milkweed.v3$Num.Stems.Nonflowering <- gsub("1 dying", "1", milkweed.v3$Num.Stems.Nonflowering)
-milkweed.v3$Num.Stems.Nonflowering <- gsub("2- these particular stems are unusually weak",
-                                           "2", milkweed.v3$Num.Stems.Nonflowering)
-milkweed.v3$Num.Stems.Nonflowering <- as.numeric(milkweed.v3$Num.Stems.Nonflowering)
-sort(unique(milkweed.v3$Num.Stems.Nonflowering))
-
-# Number of stems in any flowering stage
-sort(unique(milkweed.v3$Num.Stems.ALL.Flowering.Stages))
-summary(milkweed.v3$Num.Stems.ALL.Flowering.Stages) # a lot of NAs, let's fix that
-milkweed.v3$Num.Stems.ALL.Flowering.Stages <- ifelse(is.na(milkweed.v3$Num.Stems.ALL.Flowering.Stages) == T,
-                                                     yes = with(milkweed.v3, (Num.Stems.Budding + Num.Stems.Flowering + Num.Stems.PostFlower)), 
-                                                     no = milkweed.v3$Num.Stems.ALL.Flowering.Stages)
-summary(milkweed.v3$Num.Stems.ALL.Flowering.Stages) # many NAs fixed!
-sort(unique(milkweed.v3$Num.Stems.ALL.Flowering.Stages))
-
-# Number of unbitten stems with axillary shoots
-sort(unique(milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots))
-milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots <- gsub("^n.a.$|^n\\/a$|^na$|^no data$|^u$|^unk$|^unknown$",
-                                                      "", milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots)
-milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots <- as.numeric(milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots)
-sort(unique(milkweed.v3$Num.Unbit.Stems.w.Axillary.Shoots))
-
-# Number of Asclepias tuberosa within 1 meter
-milkweed.v3$ASCTUB.Abun.1m <- tolower(milkweed.v3$ASCTUB.Abun.1m)
-sort(unique(milkweed.v3$ASCTUB.Abun.1m))
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^yes; one a. tuberosa with 1 flowering stem is 90cm to ssw$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-  ## Note judgement call
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^yes; number not recorded$",
-                                   "2", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^unk$|^uncertain$", NA, milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^tiny \\(5\" tall\\) a. tuberosa seedling only 40cm to sse$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^this plant is less than 1m from plants 105 and 106; ~20cm s$",
-                                   "2", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^there is 1 a. tuberosa \\(with 1 stem in bud\\) 35cm to se \\(~90 small green buds\\) and 1 a. tuberosa \\(1stem, bitten\\) 35cm to sw$",
-                                   "2", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^seedling 15cm tall 70cm to s$", "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^not recorded$|^no data$|^no$|^did not measure$|^did not assess$",
-                                   NA, milkweed.v3$ASCTUB.Abun.1m)
-  ### I double checked the raw data.
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^as on 6\\/29\\/2014$", "2", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^another robust a. tuberosa 1m to e and a smaller a. tuberosa 0.8m to wsw$",
-                                   "2", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^another a. tuberosa only 0.65m to wnw - named it paws1401$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-  ### Note judgement call
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 or more$", "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 at with 2 stems in bud only 80cm to ne$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with only 2 stems in bloom only 0.9m e$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with 3 stems in bloom \\(and 1 stem that won't bloom this year\\) only 1m to nnw$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with 2 stems in flower 1m to se; no other within 1.4m$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa with 1 stem in bud only 60cm to w$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa 0.9m to e$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^1 a. tuberosa \\(only 1 stem, not flowering\\) is 50cm ne of this plant$",
-                                   "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^0.65m wnw of paws1007$", "1", milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- gsub("^\\?$", NA, milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- as.numeric(milkweed.v3$ASCTUB.Abun.1m)
-sort(unique(milkweed.v3$ASCTUB.Abun.1m))
-
-# Number of Asclepias tuberosa within 2 meters
-milkweed.v3$ASCTUB.Abun.2m <- tolower(milkweed.v3$ASCTUB.Abun.2m)
-sort(unique(milkweed.v3$ASCTUB.Abun.2m))
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes; one$", "1", milkweed.v3$ASCTUB.Abun.2m)
-  ### Note judgement call
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes; number not recorded$|^yes; \\# unk$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes; 1 a. tuberosa 1.2m sw$", "1", milkweed.v3$ASCTUB.Abun.2m)
-  ### Note judgement call
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes, one plant 1.7m away, small plant with only 2 stems, neither will bloom; no monarch eggs on this neighbor$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-  ### Note judgement call
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^yes \\(\\# unk\\)$|^yes$|^1 or more$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^this plant is 1.7m ene of risc1002$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^there is another a. tuberosa 1.5m n of gps point \\(2 stems with no flowers this year\\) and 1 a. tuberosa 1.5m se of gps point \\(1 stem with no flowers\\)$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^seedling 18cm tall \\(two stems\\) 1.2m to wsw$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^one 2m to ene, another 2m to nnw; both are healthy;$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^n2006 1.1m to nnw$", "1", milkweed.v3$ASCTUB.Abun.2m)
-  ## Note judgement call
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^multiple a. tuberosa within 1.5 m \\!!$", "3", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^healthy a. tuberosa with 2 stems in early bud is 1.5m to the w; that plant, which is earlier phenologically, does not have monarch eggs$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^closest milkweed is 1.1m north$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-  ## Note judgement call
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^at least 1$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa with 1 stem \\(no flowers\\) is 30cm to w of plant$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa 1.6m s of a. tuberosa$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa 1.1m s and another 1.4m nw$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^another a. tuberosa 1.1m away$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^a. tuberosa 1.5m to ne, which has 2 stems, each stem having hundreds of buds and/or flowers$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^12 ~1.2m from w1003$", "12", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 robust a. tuberosa 1.15m n of this plant \\(with 13 stems that are done flowering\\) and plant pawe2045 is 1.3m s of this plant$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 other a. tuberosa only 95cm to sw, it will not bloom this year$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 milkweed within 1.1m to se$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a.t. is 2m to the s$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tubersosa with 2 stems in bloom only 1.4m ne$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa only 1.7m to e; it had 3 stems, but all were bitten by cattle, and none will bloom$",
-                                   "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.9m to s$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.5m to e \\(with 1 stem that won't flower this year\\); 1 a. tuberosa to s \\(with 1 stem in bud\\) with 13 buds and no signs of monarch immatures$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.5m to e$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa 1.3 m to sw$", "1", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^1 a. tuberosa \\(with 2 stems\\) 2.0 m nw, 1 a.tuberosa 2.0m sw \\(with 1 stem in bloom\\)$",
-                                   "2", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^no$|^no data$|^unk$|^unknown$|^not recorded$|^did not assess$|^did not measure$|^\\?$",
-                                   NA, milkweed.v3$ASCTUB.Abun.2m)
-# Non A. tuberosa congeners
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^no; a. syriaca, but protecte dby two branches of dead tree \\(1.3m n of a. tuberosa\\)$",
-                                   "0", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^no; 6 whorled milkweed \\(non-flowering\\)$",
-                                   "0", milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- gsub("^no; 1 asclep. hirtella approx. 2m to e$", "0", milkweed.v3$ASCTUB.Abun.2m)
-# Make R read the column as numbers
-milkweed.v3$ASCTUB.Abun.2m <- as.numeric(milkweed.v3$ASCTUB.Abun.2m)
-sort(unique(milkweed.v3$ASCTUB.Abun.2m))
-
-# Okay, now let's do a quick fix for if only one of the two values (1m versus 2m) was entered
-  ## If 1m is blank replace with 2m
-summary(milkweed.v3$ASCTUB.Abun.1m)
-milkweed.v3$ASCTUB.Abun.1m <- ifelse(is.na(milkweed.v3$ASCTUB.Abun.1m) == T,
-                                     yes = milkweed.v3$ASCTUB.Abun.2m,
-                                     no = milkweed.v3$ASCTUB.Abun.1m)
-summary(milkweed.v3$ASCTUB.Abun.1m) # Fixed some at least
-
-  ## Vice versa
-summary(milkweed.v3$ASCTUB.Abun.2m)
-milkweed.v3$ASCTUB.Abun.2m <- ifelse(is.na(milkweed.v3$ASCTUB.Abun.2m) == T,
-                                     yes = milkweed.v3$ASCTUB.Abun.1m,
-                                     no = milkweed.v3$ASCTUB.Abun.2m)
-summary(milkweed.v3$ASCTUB.Abun.2m) # We did our best
 
 # Preserve our work to this point
 milkweed.v4 <- milkweed.v3

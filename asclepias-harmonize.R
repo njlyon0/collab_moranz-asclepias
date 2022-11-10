@@ -14,7 +14,7 @@ rm(list = ls())
 librarian::shelf(readxl, tidyverse, vegan, writexl, njlyon0/helpR)
 
 # Read in metadata file
-mkwd_13_16_meta <- readxl::read_excel(file.path("Data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata") %>%
+mkwd_13_16_meta <- readxl::read_excel(file.path("raw_data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata") %>%
   # Fix an ID column name
   dplyr::rename(AsclepTransID = AsclepTransIDauto)
 
@@ -22,7 +22,7 @@ mkwd_13_16_meta <- readxl::read_excel(file.path("Data", "Asclepias-2016-RAW.xlsx
                # 2012 Rough Tidying ####
 ## ------------------------------------------------ ##
 # Read in the data for 2012
-mkwd_12_v1 <- read_excel(path = file.path("Data", "Asclepias-2012-RAW.xlsx"),
+mkwd_12_v1 <- read_excel(path = file.path("raw_data", "Asclepias-2012-RAW.xlsx"),
                          sheet = "MAIN Trimbled minus not 3yrs")
 
 # Take a look at the data
@@ -87,7 +87,7 @@ dplyr::glimpse(mkwd_12_v2)
               # 2013 Rough Tidying ####
 ## ------------------------------------------------ ##
 # Read in data
-mkwd_13_v1 <- read.csv(file.path("Data", "Asclepias-2013-RAW-plants.csv"))
+mkwd_13_v1 <- read.csv(file.path("raw_data", "Asclepias-2013-RAW-plants.csv"))
 
 # Glimpse it
 dplyr::glimpse(mkwd_13_v1)
@@ -106,7 +106,7 @@ mkwd_13_v2 <- mkwd_13_v1 %>%
                 Name.from.2012, X2013.Plant.ID.Code,
                 StemsBUD, StemsFLOWER, StemsDONE, StemsNOflowers) %>%
   # Rename remaining columns
-  dplyr::rename(Plant.ID.R1 = PlantID.Code.from.2012,
+  dplyr::rename(Plant.ID = PlantID.Code.from.2012,
                 Plant.ID.V2 = Name.from.2012,
                 Plant.ID.V3 = X2013.Plant.ID.Code,
                 Num.Stems.Budding = StemsBUD,
@@ -119,11 +119,15 @@ mkwd_13_v2 <- mkwd_13_v1 %>%
 # Glimpse again
 dplyr::glimpse(mkwd_13_v2)
 
+# Some needed data was in another sheet of the Excel file
+mkwd_13_stm_v0 <- read.csv(file.path("raw_data", "Asclepias-2013-RAW-stems.csv"))
+
+
 ## ------------------------------------------------ ##
               # 2014 Rough Tidying ####
 ## ------------------------------------------------ ##
 # Read in data
-mkwd_14_v1 <- read.csv(file.path("Data", "Asclepias-2014-RAW-plants.csv"))
+mkwd_14_v1 <- read.csv(file.path("raw_data", "Asclepias-2014-RAW-plants.csv"))
 
 # Glimpse it
 dplyr::glimpse(mkwd_14_v1)
@@ -151,7 +155,7 @@ mkwd_14_v2 <- mkwd_14_v1 %>%
                 X..of.BITTEN.Axillary.shoots) %>%
   # Rename remaining columns
   dplyr::rename(Year = YearVis,
-                Plant.ID.R1 = PlantID.Code.from.2012,
+                Plant.ID = PlantID.Code.from.2012,
                 Plant.ID.V3 = X2013.Plant.ID.Code,
                 MonarchImmatures2 = Monarch.immatures2., 
                 Tot.Bitten.Stems = total...bitten.stems,
@@ -180,7 +184,7 @@ dplyr::glimpse(mkwd_14_v2)
             # 2015 Rough Tidying ####
 ## ------------------------------------------------ ##
 # Read in data
-mkwd_15_v1 <- read.csv(file.path("Data", "Asclepias-2015-RAW-plants.csv"))
+mkwd_15_v1 <- read.csv(file.path("raw_data", "Asclepias-2015-RAW-plants.csv"))
 
 # Glimpse it
 dplyr::glimpse(mkwd_15_v1)
@@ -212,7 +216,7 @@ mkwd_15_v2 <- mkwd_15_v1 %>%
                 X..of.BITTEN.Axillary.shoots) %>%
   # Rename remaining columns
   dplyr::rename(Year = YearVis,
-                Plant.ID.R1 = PlantID.Code.from.2012,
+                Plant.ID = PlantID.Code.from.2012,
                 Length.StObs1 = Length.St1,
                 Length.StObs2 = LengthSt2,
                 Length.StObs3 = LengthSt3,
@@ -252,7 +256,7 @@ dplyr::glimpse(mkwd_15_v2)
               # 2016 Rough Tidying ####
 ## ------------------------------------------------ ##
 # Read in data
-mkwd_16_v1 <- read.csv(file.path("Data", "Asclepias-2016-RAW-plants.csv"))
+mkwd_16_v1 <- read.csv(file.path("raw_data", "Asclepias-2016-RAW-plants.csv"))
 
 # Glimpse it
 dplyr::glimpse(mkwd_16_v1)
@@ -280,7 +284,7 @@ mkwd_16_v2 <- mkwd_16_v1 %>%
                 X..of.BITTEN.Axillary.shoots) %>%
   # Rename remaining columns
   dplyr::rename(Year = YearVis,
-                Plant.ID.R1 = PlantID.Code.from.2012, 
+                Plant.ID = PlantID.Code.from.2012, 
                 Length.StObs1 = Length.St1,
                 Length.StObs2 = LengthSt2,
                 Length.StObs3 = LengthSt3,
@@ -316,10 +320,36 @@ mkwd_16_v2 <- mkwd_16_v1 %>%
 # Glimpse again
 dplyr::glimpse(mkwd_16_v2)
 
+## ------------------------------------------------ ##
+        # Data Combination Pre-Requisites ####
+## ------------------------------------------------ ##
+
+# Check for differences in names of objects
+names(mkwd_12_v2)
+names(mkwd_13_v2)
+names(mkwd_14_v2)
+names(mkwd_15_v2)
+names(mkwd_16_v2)
 
 
 
 
+
+
+
+
+
+# view(mkwd_12_v2)
+
+
+
+
+
+
+
+
+
+# End ----
 
 
 
@@ -690,7 +720,7 @@ summary(milkweed.v12$Num.Stems.Nonflowering) # 586 (of 643) NAs fixed
 #
 
 # Read in the data files
-mkwd_16_v1 <- read.csv(file.path("Data", "Asclepias-2016-RAW-plants.csv"))
+mkwd_16_v1 <- read.csv(file.path("raw_data", "Asclepias-2016-RAW-plants.csv"))
 
 ## ------------------------------------------------ ##
            # "2013-16" Initial Wrangling ####

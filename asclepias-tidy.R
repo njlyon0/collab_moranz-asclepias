@@ -24,7 +24,7 @@ mkwd_v1 <- read.csv(file = file.path("tidy_data", "Asclepias-HARMONIZED.csv"))
 dplyr::glimpse(mkwd_v1)
 
 ## ------------------------------------------------ ##
-# Handle Multi-Stem Observations ----
+        # Handle Multi-Stem Observations ----
 ## ------------------------------------------------ ##
 
 # We want to wrangle the per stem observations into averages across the three
@@ -144,11 +144,11 @@ helpR::diff_chk(old = names(mkwd_v3), new = names(mkwd_v4))
              # Monarch Info Wrangling ----
 ## ------------------------------------------------ ##
 # Monarch immatures checks
-sort(unique(mkwd_16_v5$MonarchImmatures2))
+sort(unique(mkwd_v4$MonarchImmatures2))
 ## This combines eggs and larvae (caterpillars) but we want them separated
 
-# To do this, we'll do the following:
-mkwd_16_v6 <- mkwd_16_v5 %>%
+# Let's handle that here
+mkwd_v5 <- mkwd_v4 %>%
   # Standardize the format of every qualitative entry
   dplyr::mutate(immatures_simp = dplyr::case_when(
     ## Format is # egg_# larvae_evidence
@@ -159,7 +159,7 @@ mkwd_16_v6 <- mkwd_16_v5 %>%
       "maybe; some insect has been eating some buds (in fashion of monarch larva)",
       "na", "no", "No", "NO", "no (could not find plant!)", "no data",
       "no; frass found on leaves but not of monarch",
-      "presum no", "trans", "unk (not recorded)",
+      "presum no", "trans", "unk (not recorded)", "not recorded",
       "n/a; no; caterpillar poop on stem, some missing buds (eaten?)"
     ) ~ "__",
     ## 0 eggs & 0 larvae
@@ -234,7 +234,7 @@ mkwd_16_v6 <- mkwd_16_v5 %>%
     MonarchImmatures2 == "yes; 2 monarch eggs on buds. 1 monarch larva (2nd instar) in buds. Frass from large 5th instar larva." ~ "2_1_1",
     MonarchImmatures2 == "2 2nd instars on Stem A (eating buds), 1 egg on bud of Stem B, 1 2nd instar and 1 egg on Stem C (on buds)" ~ "2_3_1",
     MonarchImmatures2 == "10 monarch eggs (7 eggs on buds, 3 on leaves)" ~ "10_0_1",
-    TRUE ~ "ISSUE")) %>%
+    TRUE ~ "ISSUE__")) %>%
   # Split that fixed column apart
   tidyr::separate(col = immatures_simp, sep = "_", remove = T,
                   into = c("eggs", "larvae", "evidence")) %>%
@@ -252,10 +252,141 @@ mkwd_16_v6 <- mkwd_16_v5 %>%
         na.rm = TRUE),
       no = NA))
 
+# Make sure we fixed all possible comments
+mkwd_v5 %>%
+  dplyr::filter(eggs == "ISSUE") %>%
+  select(MonarchImmatures2) %>%
+  unique()
+
 # Glimpse data
-dplyr::glimpse(mkwd_16_v6)
+dplyr::glimpse(mkwd_v5)
 
 ## ------------------------------------------------ ##
+              # Streamline Columns ----
+## ------------------------------------------------ ##
+# Time to pare down columns
+mkwd_v6 <- mkwd_v5 %>%
+  # Add Whittaker number to patch
+  dplyr::mutate(Patch = paste0(Patch, "-", Whittaker)) %>%
+  # Pare down to desired columns
+  dplyr::select(Year, Date, Site, Patch, Plant.ID,
+                Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud,
+                Tot.Flr, Avg.Bloom.Status, 
+                Num.Stems.Budding, Num.Stems.Flowering,
+                Num.Stems.PostFlower, Num.Stems.Nonflowering,
+                Num.Unbit.Stems.w.Axillary.Shoots,
+                ASCTUB.Abun.1m, ASCTUB.Abun.2m, 
+                Crab.Spider.Abun, GrazingLawn, Shrub.Abun.1m,
+                Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
+                Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, 
+                Num.Axillary.Shoots.Bitten, Num.Monarch.Eggs,
+                Num.Monarch.Larvae, Monarch.Immature.Evidence,
+                Tot.Monarch.Immatures)
+
+# Check what was lost / gained
+helpR::diff_chk(old = names(mkwd_v5), new = names(mkwd_v6))
+
+# Glimpse this
+dplyr::glimpse(mkwd_v6)
+
+## ------------------------------------------------ ##
+          # Site & Date Format Wrangling ----
+## ------------------------------------------------ ##
+# Now more wrangling
+mkwd_v7 <- mkwd_v6 %>%
+  # Make year into a number
+  dplyr::mutate(Year = as.numeric(as.character(Year))) %>%
+  # Handle the issues with the date column
+  dplyr::mutate(
+    # Standardize format of date
+    Date_2 = ifelse(stringr::str_sub(string = Date,
+                                    start = 1, end = 4) == "2012",
+                   yes = stringr::str_sub(string = Date,
+                                          start = 7, end = 10),
+                   no = paste0(stringr::str_sub(string = Date,
+                                                start = 4, end = 6), "-",
+                               stringr::str_sub(string = Date,
+                                                start = 1, end = 2)))
+    ) %>%
+  # Handle weirdness with month
+  dplyr::mutate(
+    Date_3 = gsub(pattern = "Jul", replacement = "7", x = Date_2),
+    Date_4 = gsub(pattern = "Jun", replacement = "6", x = Date_3)) %>%
+  # Finish with date!
+  dplyr::mutate(Date = as.numeric(gsub(pattern = "-", replacement = ".",
+                                       x = Date_4))) %>%
+  # Drop intermediary columns
+  dplyr::select(-dplyr::starts_with("Date_")) %>%
+  # Simplify site names
+  dplyr::mutate(Site = dplyr::case_when(
+    Site == "Gilleland" ~ "GIL", 
+    Site == "Lee Trail Rd" ~ "LTR", 
+    Site == "Pawnee Prairie" ~ "PAW", 
+    Site == "Pyland North" ~ "PYN", 
+    Site == "Pyland South" ~ "PYS", 
+    Site == "Pyland West" ~ "PYW", 
+    Site == "Richardson" ~ "RCH", 
+    Site == "Ringgold North" ~ "RIN", 
+    Site == "Ringgold South" ~ "RIS")) %>%
+  # Fix some patch information that is contained in the plant ID column
+  dplyr::mutate(Patch = dplyr::case_when(
+    ## Some have correct information in Plant ID column
+    Patch %in% c("East and Center-1 &2", "East and Center-NA",
+                 "East and Center-",
+                 "multiple-2", "North & Center-1 & 2") ~ Plant.ID,
+    TRUE ~ Patch)) %>%
+  # Simplify all patches
+  dplyr::mutate(Patch = dplyr::case_when(
+    ## North patches
+    Patch %in% c("N1", "N2", "N1-", "N2-", "North-1", "North-1 and 2", 
+                 "North-1and2", "North-2", "North-2 and 3", 
+                 "North-N1W1", "North-N2W2", "GILN1001") ~ "N",
+    ## South patches
+    Patch %in% c("S1", "S2", "S3", "S1-", "S2-", "S3-", 
+                 "South-1", "South-1 & 2", 
+                 "South-1 and 2", "South-1 and 3", "South-1,2", 
+                 "South-1and2", "South-1and3", "South-2", 
+                 "South-3") ~ "S",
+    ## East patches
+    Patch %in% c("E1", "E2", "E1-", "E2-", "East-1", "East-2", "East-1 & 2",
+                 "LTRE1001", "LTRE2001", "LTRE2002", "LTRE2003",
+                 "LTRE2004") ~ "E",
+    ## West patches
+    Patch %in% c("W1", "W2", "W3", "West-1", "W1-", "W2-", "W3-", 
+                 "West-", "West-1 and 2", 
+                 "West-2", "West-NA", "Y-1", "LTRW2001") ~ "W",
+    ## Center patches
+    Patch %in% c("C1", "C2", "C3", "C1-", "C2-", "C3-", 
+                 "Center-1", "Center-1 and 2",
+                 "Center-1,2,3", "Center-2", "Center-3",
+                 "GIL-C-2013-901", "GIL-C-2013-902", 
+                 "GIL-C1-13-R1-001", "GILC1001", "GILC1002", 
+                 "GILC1003", "LTRC1001", "LTRC2001", "LTRC2003",
+                 "LTRC2007", "LTRC2008", "LTRC2009", "LTRC2015") ~ "C",
+    # Fix blank too
+    Patch == "NA-NA" ~ "",
+    # If not specified, keep old entry
+    TRUE ~ Patch)) %>%
+  # Filter out accidental rows
+  dplyr::filter(!Plant.ID %in% c("(accidental row)", "accidental row",
+                                 "Accidental row", "ACCIDENTAL ROW"))
+
+# Glimpse this
+dplyr::glimpse(mkwd_v7)
+
+# Check out remaining contents
+sort(unique(mkwd_v7$Date))
+sort(unique(mkwd_v7$Site))
+sort(unique(mkwd_v7$Patch))
+
+
+
+
+
+
+
+
+`## ------------------------------------------------ ##
         # "2013-16" Remaining Wrangling ----
 ## ------------------------------------------------ ##
 
@@ -306,84 +437,6 @@ helpR::diff_chk(old = names(mkwd_16_v6), new = names(mkwd_16_v7))
 dplyr::glimpse(mkwd_16_v7)
 
 
-
-## ------------------------------------------------ ##
-          # Combine 2012 with 2013-16 ----
-## ------------------------------------------------ ##
-
-# What is in the 2013-16 data that isn't in the 2012 data?
-## And vice versa
-helpR::diff_chk(old = names(mkwd_16_v4), new = names(mkwd_12_v3))
-
-# Time to combine!
-milkweed_v1 <- mkwd_12_v3 %>%
-  dplyr::bind_rows(mkwd_16_v7)
-
-# Check it out
-dplyr::glimpse(milkweed_v1)
-  ## Looks good!
-
-## ------------------------------------------------ ##
-         # Site & Date Format Wrangling ----
-## ------------------------------------------------ ##
-# Now more wrangling
-milkweed_v2 <- milkweed_v1 %>%
-  # Make year into a number
-  dplyr::mutate(Year = as.numeric(as.character(Year))) %>%
-  # Get a simplified date
-  dplyr::mutate(
-    Date = as.numeric(
-      gsub(pattern = "-", replacement = ".",
-           x = str_sub(string = Date, start = 7, end = 10)))) %>%
-  # Simplify site names
-  dplyr::mutate(Site = dplyr::case_when(
-    Site == "Gilleland" ~ "GIL", 
-    Site == "Lee Trail Rd" ~ "LTR", 
-    Site == "Pawnee Prairie" ~ "PAW", 
-    Site == "Pyland North" ~ "PYN", 
-    Site == "Pyland South" ~ "PYS", 
-    Site == "Pyland West" ~ "PYW", 
-    Site == "Richardson" ~ "RCH", 
-    Site == "Ringgold North" ~ "RIN", 
-    Site == "Ringgold South" ~ "RIS")) %>%
-  # Fix some patch information that is contained in the plant ID column
-  dplyr::mutate(Patch = dplyr::case_when(
-    ## Some have correct information in Plant ID column
-    Patch %in% c("East and Center-1 &2", "East and Center-NA",
-                 "multiple-2", "North & Center-1 & 2") ~ Plant.ID,
-    TRUE ~ Patch)) %>%
-  # Simplify all patches
-  dplyr::mutate(Patch = dplyr::case_when(
-    ## North patches
-    Patch %in% c("N1", "N2", "North-1", "North-1 and 2", 
-                 "North-1and2", "North-2", "North-2 and 3", 
-                 "North-N1W1", "North-N2W2", "GILN1001") ~ "N",
-    ## South patches
-    Patch %in% c("S1", "S2", "S3", "South-1", "South-1 & 2", 
-                 "South-1 and 2", "South-1 and 3", "South-1,2", 
-                 "South-1and2", "South-1and3", "South-2", 
-                 "South-3") ~ "S",
-    ## East patches
-    Patch %in% c("E1", "E2", "East-1", "East-2", "East-1 & 2",
-                 "LTRE1001", "LTRE2001", "LTRE2002", "LTRE2003",
-                 "LTRE2004") ~ "E",
-    ## West patches
-    Patch %in% c("W1", "W2", "W3", "West-1", "West-1 and 2", 
-                 "West-2", "West-NA", "Y-1", "LTRW2001") ~ "W",
-    ## Center patches
-    Patch %in% c("C1", "C2", "C3", "Center-1", "Center-1 and 2",
-                 "Center-1,2,3", "Center-2", "Center-3",
-                 "GIL-C-2013-901", "GIL-C-2013-902", 
-                 "GIL-C1-13-R1-001", "GILC1001", "GILC1002", 
-                 "GILC1003", "LTRC1001", "LTRC2001", "LTRC2003",
-                 "LTRC2007", "LTRC2008", "LTRC2009", "LTRC2015") ~ "C",
-    # Fix blank too
-    Patch == "NA-NA" ~ "",
-    # If not specified, keep old entry
-    TRUE ~ Patch)) %>%
-  # Filter out accidental rows
-  dplyr::filter(!Plant.ID %in% c("(accidental row)", "accidental row",
-                                 "Accidental row", "ACCIDENTAL ROW"))
 
 # Glimpse it
 dplyr::glimpse(milkweed_v2)

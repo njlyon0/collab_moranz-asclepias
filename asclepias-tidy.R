@@ -24,11 +24,11 @@ mkwd_v1 <- read.csv(file = file.path("tidy_data", "Asclepias-HARMONIZED.csv"))
 dplyr::glimpse(mkwd_v1)
 
 ## ------------------------------------------------ ##
-# 
+# Handle Multi-Stem Observations ----
 ## ------------------------------------------------ ##
 
 # We want to wrangle the per stem observations into averages across the three
-mkwd_16_v4 <- mkwd_16_v3 %>%
+mkwd_v2 <- mkwd_v1 %>%
   # Mutate stem columns into characters so we can combine them
   dplyr::mutate(dplyr::across(.cols = dplyr::contains(".StObs"), .fns = as.character)) %>%
   # Add an id column to use for pivoting back
@@ -39,30 +39,43 @@ mkwd_16_v4 <- mkwd_16_v3 %>%
                       values_to = "stem_value")
 
 # Take a look
-dplyr::glimpse(mkwd_16_v4)
+dplyr::glimpse(mkwd_v2)
 
 # Check for non-numbers in the value column
-helpR::num_chk(data = mkwd_16_v4, col = "stem_value")
+helpR::num_chk(data = mkwd_v2, col = "stem_value")
+# Also existing multi-stem summarization columns
+helpR::multi_num_chk(data = mkwd_v2,
+                     col_vec = c("Avg.Height", "Avg.Bloom.Status"))
 
 # Fix those issues (note judgement calls)
-mkwd_16_v4$stem_value <- gsub(pattern = "not meas|not counted|too early|\\?|to early|no data|tiny|not recorded",
-                              replacement = "",
-                              x = mkwd_16_v4$stem_value)
-mkwd_16_v4$stem_value <- gsub(pattern = "dozens",
-                              replacement = "24",
-                              x = mkwd_16_v4$stem_value)
-mkwd_16_v4$stem_value <- gsub(pattern = "35\\(dead\\)",
-                              replacement = "35",
-                              x = mkwd_16_v4$stem_value)
+mkwd_v3 <- mkwd_v2 %>%
+  dplyr::mutate(
+    stem_value = dplyr::case_when(
+      stem_value %in% c("not meas", "not counted", "no data",
+                        "not recorded", "skipped", "?") ~ "",
+      stem_value %in% c("too early", "to early", "tiny") ~ "0",
+      stem_value == "dozens" ~ "24",
+      stem_value == "35(dead)" ~ "35",
+      TRUE ~ stem_value)) %>%
+  dplyr::mutate(
+    Avg.Height = ifelse(
+      Avg.Height == "no data",
+      yes = "", no = Avg.Height),
+    Avg.Bloom.Status = ifelse(
+      Avg.Bloom.Status == "unknown",
+      yes = "", no = Avg.Bloom.Status))
 
 # Check to see that they are resolved
-helpR::num_chk(data = mkwd_16_v4, col = "stem_value")
-
-# Make that column numeric!
-mkwd_16_v4$stem_value <- as.numeric(mkwd_16_v4$stem_value)
+helpR::num_chk(data = mkwd_v3, col = "stem_value")
+helpR::multi_num_chk(data = mkwd_v3,
+                     col_vec = c("Avg.Height", "Avg.Bloom.Status"))
 
 # Now we can move on
-mkwd_16_v5 <- mkwd_16_v4 %>%
+mkwd_v4 <- mkwd_v3 %>%
+  # Make that column numeric
+  dplyr::mutate(stem_value = as.numeric(stem_value),
+                Avg.Height = as.numeric(Avg.Height),
+                Avg.Bloom.Status = as.numeric(Avg.Bloom.Status)) %>%
   # Pivot back to wide format
   tidyr::pivot_wider(names_from = stem_metric,
                      values_from = stem_value) %>%
@@ -72,45 +85,63 @@ mkwd_16_v5 <- mkwd_16_v4 %>%
   dplyr::rowwise() %>%
   dplyr::mutate(
     ## Average height
-    Avg.Height = mean(
+    Avg.Height_2 = mean(
       dplyr::c_across(cols = dplyr::contains("Length.StObs")),
       na.rm = TRUE),
     ## Average buds
-    Avg.Bud = mean(
+    Avg.Bud_2 = mean(
       dplyr::c_across(cols = dplyr::contains("Buds.StObs")),
       na.rm = TRUE),
     ## Total buds
     bud_na = sum(is.na(
       dplyr::c_across(cols = dplyr::contains("Buds.StObs")))),
-    Tot.Bud = ifelse(test = bud_na == 3,
+    Tot.Bud_2 = ifelse(test = bud_na == 3,
                      yes = NA,
                      no = sum(dplyr::c_across(
                        cols = dplyr::contains("Buds.StObs")),
                        na.rm = TRUE)),
     ## Average flowers
-    Avg.Flr = mean(
+    Avg.Flr_2 = mean(
       dplyr::c_across(cols = dplyr::contains("Flow.StObs")),
       na.rm = TRUE),
     ## Total flowers
     flow_na = sum(is.na(
       dplyr::c_across(cols = dplyr::contains("Flow.StObs")))),
-    Tot.Flr = ifelse(test = bud_na == 3,
+    Tot.Flr_2 = ifelse(test = bud_na == 3,
                      yes = NA,
                      no = sum(dplyr::c_across(
                        cols = dplyr::contains("Flow.StObs")),
                        na.rm = TRUE)),
     ## Average bloom status
-    Avg.Bloom.Status = mean(
+    Avg.Bloom.Status_2 = mean(
       dplyr::c_across(cols = dplyr::contains("BlooStatus.StObs")),
       na.rm = TRUE)) %>%
   # Drop unwanted columns
-  dplyr::select(-dplyr::contains(".StObs"), -bud_na, -flow_na)
+  dplyr::select(-dplyr::contains(".StObs"), -bud_na, -flow_na) %>%
+  # Coalesce these calculated columns with their directly-recorded parallels
+  dplyr::mutate(
+    ## Prioritize one we just calculated
+    Avg.Height = dplyr::coalesce(Avg.Height_2, Avg.Height),
+    Avg.Bud = dplyr::coalesce(Avg.Bud_2, Avg.Bud),
+    Tot.Bud = dplyr::coalesce(Tot.Bud_2, Tot.Bud),
+    Avg.Flr = dplyr::coalesce(Avg.Flr_2, Avg.Flr),
+    Tot.Flr = dplyr::coalesce(Tot.Flr_2, Tot.Flr),
+    Avg.Bloom.Status = dplyr::coalesce(Avg.Bloom.Status_2, Avg.Bloom.Status)) %>%
+  # Drop calculated columns now that they are integrated where necessary
+  dplyr::select(-dplyr::ends_with("_2"))
 
-# Glimpse this
-dplyr::glimpse(mkwd_16_v5)
+# Glimpse it
+dplyr::glimpse(mkwd_v4)
+
+# See how many observations this fixed!
+summary(dplyr::select(mkwd_v3, Avg.Height:Avg.Bloom.Status))
+summary(dplyr::select(mkwd_v4, Avg.Height:Avg.Bloom.Status))
+
+# Check to make sure we didn't lose any wanted columns
+helpR::diff_chk(old = names(mkwd_v3), new = names(mkwd_v4))
 
 ## ------------------------------------------------ ##
-        # "2013-16" Monarch Info Wrangling ----
+             # Monarch Info Wrangling ----
 ## ------------------------------------------------ ##
 # Monarch immatures checks
 sort(unique(mkwd_16_v5$MonarchImmatures2))

@@ -332,7 +332,7 @@ mkwd_14_v2 <- mkwd_14_v1 %>%
   # If year is missing, fill with first bit of date
   dplyr::mutate(Year = ifelse(
     test = is.na(Year) | nchar(Year) == 0,
-    yes = stringr::str_sub(string = Date, start = 1, end = 4),
+    yes = paste0("20", stringr::str_sub(string = Date, start = 8, end = 9)),
     no = Year)) %>%
   # Create a useful plant ID code
   dplyr::mutate(Plant.ID.Code = paste0(Year, "_", Plant.ID),
@@ -413,7 +413,7 @@ mkwd_15_v2 <- mkwd_15_v1 %>%
   # If year is missing, fill with first bit of date
   dplyr::mutate(Year = ifelse(
     test = is.na(Year) | nchar(Year) == 0,
-    yes = stringr::str_sub(string = Date, start = 1, end = 4),
+    yes = paste0("20", stringr::str_sub(string = Date, start = 8, end = 9)),
     no = Year))
 
   # Glimpse again

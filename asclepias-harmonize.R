@@ -14,7 +14,7 @@ librarian::shelf(readxl, tidyverse, vegan, writexl, njlyon0/helpR)
 rm(list = ls())
 
 # Read in metadata file
-mkwd_13_16_meta <- readxl::read_excel(file.path("raw_data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata") %>%
+mkwd_13_16_meta <- read.csv(file.path("raw_data", "Asclepias-metadata.csv")) %>%
   # Fix an ID column name
   dplyr::rename(AsclepTransID = AsclepTransIDauto)
 
@@ -506,7 +506,9 @@ dplyr::glimpse(mkwd_16_v2)
 # Let's take each of the datasets and...
 mkwd_13 <- mkwd_13_v2 %>%
   # Get a row number column
-  dplyr::mutate(row_id = 1:nrow(.)) %>%
+  dplyr::mutate(row_id = 1:nrow(.),
+                Plant.ID.Code = paste0(Year, "_", Plant.ID),
+                .before = dplyr::everything()) %>%
   # Pivot longer
   tidyr::pivot_longer(cols = Num.Stems.Budding:Tot.Bud.n.Flr) %>%
   # Filter out missing values (we don't care about them for filling gaps)
@@ -520,7 +522,9 @@ dplyr::glimpse(mkwd_13)
 
 # Do the same for 2014
 mkwd_14 <- mkwd_14_v2 %>%
-  dplyr::mutate(row_id = 1:nrow(.)) %>%
+  dplyr::mutate(row_id = 1:nrow(.),
+                Plant.ID.Code = paste0(Year, "_", Plant.ID),
+                .before = dplyr::everything()) %>%
   tidyr::pivot_longer(cols = MonarchImmatures2:Tot.Bud.n.Flr) %>%
   dplyr::filter(!is.na(value) & nchar(value) != 0 & value != "NaN") %>%
   tidyr::pivot_wider(names_from = name, values_from = value,
@@ -531,7 +535,9 @@ dplyr::glimpse(mkwd_14)
 
 # And 2015
 mkwd_15 <- mkwd_15_v2 %>%
-  dplyr::mutate(row_id = 1:nrow(.)) %>%
+  dplyr::mutate(row_id = 1:nrow(.),
+                Plant.ID.Code = paste0(Year, "_", Plant.ID),
+                .before = dplyr::everything()) %>%
   tidyr::pivot_longer(cols = Length.StObs1:Num.Axillary.Shoots.Bitten) %>%
   dplyr::filter(!is.na(value) & nchar(value) != 0 & value != "NaN") %>%
   tidyr::pivot_wider(names_from = name, values_from = value,
@@ -559,137 +565,28 @@ helpR::diff_chk(old = c(names(mkwd_12_v2), names(mkwd_16_v2)),
               # Data Integration ####
 ## ------------------------------------------------ ##
 
-# Now we can work on integrating missing data
+# Quickly standardize missing values
 milkweed_v1 <- mkwd_12_16 %>%
-  # First, identify for each response whether the data are missing
-  dplyr::mutate(
-    miss_a = ifelse(is.na(Avg.Height) | nchar(Avg.Height) == 0 | 
-                      Avg.Height == "NaN",
-                    yes = TRUE, no = FALSE),
-    miss_b = ifelse(is.na(Avg.Bud) | nchar(Avg.Bud) == 0 | 
-                      Avg.Bud == "NaN",
-                    yes = TRUE, no = FALSE),
-    miss_c = ifelse(is.na(Avg.Flr) | nchar(Avg.Flr) == 0 | 
-                      Avg.Flr == "NaN",
-                    yes = TRUE, no = FALSE),
-    miss_d = ifelse(is.na(Tot.Bud) | nchar(Tot.Bud) == 0 | 
-                      Tot.Bud == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_e = ifelse(is.na(Tot.Flr) | nchar(Tot.Flr) == 0 | 
-                      Tot.Flr == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_f = ifelse(is.na(Avg.Bloom.Status) | nchar(Avg.Bloom.Status) == 0 | 
-                      Avg.Bloom.Status == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_g = ifelse(is.na(Num.Stems.Budding) | nchar(Num.Stems.Budding) == 0 |
-                      Num.Stems.Budding == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_h = ifelse(is.na(Num.Stems.Flowering) | 
-                      nchar(Num.Stems.Flowering) == 0 | 
-                      Num.Stems.Flowering == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_i = ifelse(is.na(Num.Stems.PostFlower) | 
-                      nchar(Num.Stems.PostFlower) == 0 | 
-                      Num.Stems.PostFlower == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_j = ifelse(is.na(Num.Stems.Nonflowering) | 
-                      nchar(Num.Stems.Nonflowering) == 0 |
-                      Num.Stems.Nonflowering == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_k = ifelse(is.na(Num.Stems.ALL.Flowering.Stages ) |
-                      nchar(Num.Stems.ALL.Flowering.Stages) == 0 | 
-                      Num.Stems.ALL.Flowering.Stages == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_l = ifelse(is.na(Num.Unbit.Stems.w.Axillary.Shoots) | 
-                     nchar(Num.Unbit.Stems.w.Axillary.Shoots) == 0 |
-                     Num.Unbit.Stems.w.Axillary.Shoots == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_m = ifelse(is.na(ASCTUB.Abun.1m) | nchar(ASCTUB.Abun.1m) == 0 | 
-                     ASCTUB.Abun.1m== "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_n = ifelse(is.na(ASCTUB.Abun.2m) | nchar(ASCTUB.Abun.2m) == 0 |
-                     ASCTUB.Abun.2m == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_o = ifelse(is.na(Crab.Spider.Abun) | nchar(Crab.Spider.Abun) == 0 | 
-                     Crab.Spider.Abun == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_p = ifelse(is.na(GrazingLawn) | nchar(GrazingLawn) == 0 |
-                     GrazingLawn == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_q = ifelse(is.na(MonarchImmatures1) | nchar(MonarchImmatures1) == 0 |
-                     MonarchImmatures1 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_r = ifelse(is.na(MonarchImmatures2) | nchar(MonarchImmatures2) == 0 | 
-                     MonarchImmatures2 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_s = ifelse(is.na(Shrub.Abun.1m) | nchar(Shrub.Abun.1m) == 0 | 
-                     Shrub.Abun.1m == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_t = ifelse(is.na(Tot.Bitten.Stems) | nchar(Tot.Bitten.Stems) == 0 | 
-                     Tot.Bitten.Stems == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_u = ifelse(is.na(Length.StObs1) | nchar(Length.StObs1) == 0 |
-                     Length.StObs1 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_v = ifelse(is.na(Length.StObs2) | nchar(Length.StObs2) == 0 |
-                     Length.StObs2 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_w = ifelse(is.na(Length.StObs3) | nchar(Length.StObs3) == 0 |
-                     Length.StObs3 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_x = ifelse(is.na(Buds.StObs1) | nchar(Buds.StObs1) == 0 | 
-                     Buds.StObs1 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_y = ifelse(is.na(Buds.StObs2) | nchar(Buds.StObs2) == 0 | 
-                     Buds.StObs2 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_z = ifelse(is.na(Buds.StObs3) | nchar(Buds.StObs3) == 0 | 
-                     Buds.StObs3 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_aa = ifelse(is.na(Flow.StObs1) | nchar(Flow.StObs1) == 0 | 
-                     Flow.StObs1 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_bb = ifelse(is.na(Flow.StObs2) | nchar(Flow.StObs2) == 0 | 
-                     Flow.StObs2 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_cc = ifelse(is.na(Flow.StObs3) | nchar(Flow.StObs3) == 0 | 
-                     Flow.StObs3 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_dd = ifelse(is.na(BlooStatus.StObs1) | nchar(BlooStatus.StObs1) == 0 | 
-                     BlooStatus.StObs1 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_ee = ifelse(is.na(BlooStatus.StObs2) | nchar(BlooStatus.StObs2) == 0 | 
-                     BlooStatus.StObs2 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_ff = ifelse(is.na(BlooStatus.StObs3) | nchar(BlooStatus.StObs3) == 0 | 
-                     BlooStatus.StObs3 == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_gg = ifelse(is.na(Num.Flowering.Stems.Bitten) |
-                     nchar(Num.Flowering.Stems.Bitten) == 0 | 
-                     Num.Flowering.Stems.Bitten == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_hh = ifelse(is.na(Num.Bitten.Stems.w.Axillary.Shoots) | 
-                     nchar(Num.Bitten.Stems.w.Axillary.Shoots) == 0 | 
-                     Num.Bitten.Stems.w.Axillary.Shoots == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_ii = ifelse(is.na(Tot.Axillary.Shoots) | 
-                     nchar(Tot.Axillary.Shoots) == 0 | 
-                     Tot.Axillary.Shoots == "NaN",
-                   yes = TRUE, no = FALSE),
-    miss_jj = ifelse(is.na(Num.Axillary.Shoots.Bitten) | 
-                     nchar(Num.Axillary.Shoots.Bitten) == 0 | 
-                     Num.Axillary.Shoots.Bitten == "NaN",
-                   yes = TRUE, no = FALSE))
+  # Make a row number column
+  dplyr::mutate(row_id = 1:nrow(.), .before = dplyr::everything()) %>%
+  # Relocate the whittaker column
+  dplyr::relocate(Whittaker, .after = Patch) %>%
+  # Pivot long
+  tidyr::pivot_longer(cols = Avg.Height:Num.Axillary.Shoots.Bitten) %>%
+  # Conditionally standardize missing vaues
+  dplyr::mutate(value = dplyr::case_when(
+    is.na(value) ~ "",
+    value %in% c("unk", "unk.", "n.a.", "n/a", "na") ~ "",
+    !is.na(value) & nchar(value) == 0 ~ "",
+    TRUE ~ value)) %>%
+  # Pivot wider to reclaim original structures
+  tidyr::pivot_wider(names_from = name,
+                     values_from = value) %>%
+  # Drop row id column
+  dplyr::select(-row_id)
 
-    
-
-
-
-## ------------------------------------------------ ##
-# Missing Data Retrieval Actual ####
-## ------------------------------------------------ ##
-# Make a new dataframe in case something goes wrong
-milkweed.v11 <- milkweed.v10
+# Glimpse it
+dplyr::glimpse(milkweed_v1)
 
 # Let's go variable by variable
 ## This will allow for easy fixes if my guess of a column's contents was wrong
@@ -700,10 +597,12 @@ milkweed.v11 <- milkweed.v10
 ## 2) Add each year's data
 ## 3) Double check the number of NAs
 
+milkweed.v11 <- mkwd_12_16
+
 # Fix average height
 summary(milkweed.v11$Avg.Height)
 milkweed.v11$Avg.Height <- ifelse(test = is.na(milkweed.v11$Avg.Height) == T,
-                                  yes = mkwd.13.v3$Avg.Height[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
+                                  yes = mkwd_13$Avg.Height[match(milkweed.v11$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
                                   no = milkweed.v11$Avg.Height)
 milkweed.v11$Avg.Height <- ifelse(test = is.na(milkweed.v11$Avg.Height) == T,
                                   yes = mkwd.14.v3$Avg.Height[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],

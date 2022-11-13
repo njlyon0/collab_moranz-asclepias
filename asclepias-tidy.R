@@ -717,60 +717,41 @@ summary(mkwd_v10)
   ## (4) Julian day
 
 # Bring in the index file that connects sites/patches with treatments
+julian.index <- read.csv(file.path("indices", "index_julian.csv"))
+mgmt.index <- read.csv(file.path("indices", "index_mgmt.csv")) %>%
+  dplyr::rename(Site = Pasture)
 
-julian.index <- read_excel("./Data/-Asclepias-Indices.xlsx", sheet = "Julian")
-mgmt.index <- read_excel("./Data/-Asclepias-Indices.xlsx", sheet = "Site Management")
-str(mgmt.index)
+# Glimpse 'em
+dplyr::glimpse(julian.index)
+dplyr::glimpse(mgmt.index)
 
-# The following lines will do these three things:
-  ## (1) Create the necessary concatenated column in the data file
-  ## (2) Pull in the variable of interest from the index file
-  ## (3) Check for (and resolve) any errors
+# Attach the relevant information
+mkwd_v11 <- mkwd_v10 %>%
+  # Julian day
+  dplyr::left_join(y = julian.index, by = "Date") %>%
+  ## Relocate Julian day after Date
+  dplyr::relocate(Julian, .after = Date) %>%
+  # Management information
+  dplyr::left_join(y = mgmt.index, by = c("Site", "Patch", "Year")) %>%
+  # Move columns around
+  dplyr::relocate(Management.Method, TSF, Stocking.Type,
+                  .after = Patch) %>%
+  # Drop unwanted columns
+  dplyr::select(-Pasture.Patch, -Pasture.Patch.Year, -FireTreat,
+                -HerbExp.14.18, -HerbTreat.14.18)
+  
+# Take another look
+dplyr::glimpse(mkwd_v11)
 
-# Time since fire (hereafter 'TSF') needs a column including 'Site-Patch-Year'
-  ## Make concatenated index code
-milkweed.v9$TSF.Index.Code <- with(milkweed.v9, paste0(Site, "-", Patch, "-", Year))
-sort(unique(milkweed.v9$TSF.Index.Code))
-  ## Bring in desired variable
-milkweed.v9$TSF <- mgmt.index$TSF[match(milkweed.v9$TSF.Index.Code, mgmt.index$Pasture.Patch.Year)]
-  ## Check it
-sort(unique(milkweed.v9$TSF))
-summary(milkweed.v9$TSF)
-  ## Looks good! On to the next one!
+# Check column contents
+sort(unique(mkwd_v11$TSF))
+sort(unique(mkwd_v11$Management.Method))
+sort(unique(mkwd_v11$Stocking.Type))
 
-# Management method
-  ### Index code not needed because it correlates with site
-  ### Desired variable
-milkweed.v9$Management <- as.factor(mgmt.index$Management.Method[match(milkweed.v9$Site, mgmt.index$Pasture)])
-  ### Check it
-sort(unique(milkweed.v9$Management))
-summary(milkweed.v9$Management)
 
-# Stocking rate needs 'Year-Site'
-  ### Stocking can use the TSF index code
-  ### Desired variable
-milkweed.v9$Stocking <- as.factor(mgmt.index$Stocking.Type[match(milkweed.v9$TSF.Index.Code, mgmt.index$Pasture.Patch.Year)])
-  ### Check
-sort(unique(milkweed.v9$Stocking))
-summary(milkweed.v9$Stocking)
 
-# Julian day just needs 'Date'!
-str(julian.index)
-sort(unique(milkweed.v9$Date))
-milkweed.v9$Julian <- julian.index$Julian[match(milkweed.v9$Date, julian.index$Date)]
-sort(unique(milkweed.v9$Julian))
-summary(milkweed.v9$Julian)
 
-# Once we have all of these columns, pare down to just the columns we need
-  ## I.e., ditch the various concatenated index columns we needed to bring in the new variables
-milkweed.v10 <- milkweed.v9 %>%
-  select(Year:Date, Julian, Site:Plant.ID, TSF:Stocking, GrazingLawn,
-         Avg.Height:Tot.Flr, Tot.Bud.n.Flr, Ratio.Bitten.vs.Total.Stems, Ratio.Flowering.vs.Total.Stems,
-         Avg.Bloom.Status:ASCTUB.Abun.2m, Crab.Spider.Abun, Shrub.Abun.1m:Nectaring.Bfly.Rich)
 
-# Check what we ditched (should be just the unneeded index code)
-setdiff(names(milkweed.v9), names(milkweed.v10))
-  ## Looks good!
 
 
 ## ------------------------------------------------ ##

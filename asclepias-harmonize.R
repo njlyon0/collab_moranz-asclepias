@@ -487,8 +487,10 @@ mkwd_16_v2 <- mkwd_16_v1 %>%
   # If year is missing, fill with first bit of date
   dplyr::mutate(Year = ifelse(
     test = is.na(Year) | nchar(Year) == 0,
-    yes = stringr::str_sub(string = Date, start = 1, end = 4),
+    yes = paste0("20", stringr::str_sub(string = Date, start = 8, end = 9)),
     no = Year)) %>%
+  # Drop an empty row with a bad Year
+  dplyr::filter(Year != "20") %>%
   # Create a useful plant ID code
   dplyr::mutate(Plant.ID.Code = paste0(Year, "_", Plant.ID),
                 .before = dplyr::everything())
@@ -601,7 +603,7 @@ dplyr::glimpse(milkweed_v1)
 # How many responses are unrecorded?
 milkweed_v1 %>%
   dplyr::filter(nchar(value) == 0 | is.na(value)) %>%
-  nrow() # 29,513 (across all vars)
+  nrow() # 29,477 (across all vars)
 
 # Now match in the non-missing values
 milkweed_v2 <- milkweed_v1 %>%
@@ -613,13 +615,13 @@ milkweed_v2 <- milkweed_v1 %>%
 # How many are still problematic?
 milkweed_v2 %>%
   dplyr::filter(nchar(value) == 0 | is.na(value)) %>%
-  nrow() # 25,639 continued absent
+  nrow() # 25,196 continued absent
 
 # Check how many got fixed!
 str <- nrow(dplyr::filter(milkweed_v1, nchar(value) == 0 | is.na(value)))
 end <- nrow(dplyr::filter(milkweed_v2, nchar(value) == 0 | is.na(value)))
 str-end
-## 3,874 problems fixed!
+## 4,281 problems fixed!
 
 # Now reclaim the original data structure
 milkweed_v3 <- milkweed_v2 %>%

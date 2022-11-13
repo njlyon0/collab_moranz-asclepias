@@ -770,29 +770,4 @@ dir.create("tidy_data", showWarnings = F)
 write.csv(x = mkwd_v12, na = "", row.names = F,
           file = file.path("tidy_data", "Asclepias-TIDY.csv"))
 
-## ------------------------------------------------ ##
-               # Acknowledgements ----
-## ------------------------------------------------ ##
-# Important to remember who helped!
-sort(unique(tolower(mkwd.12.v0$Observer)))
-  ## Ben Nagel
-  ## Courtney Grula
-  ## Ray Moranz
-  ## Shannon Rusk
-  ## Toni Proescholdt
-
-sort(unique(tolower(mkwd.13.16.meta$Observer)))
-  ## Anna Holtermann
-  ## Audrey McCombs
-  ## Chaz Abarr
-  ## Gatha [last name?]
-  ## Jake Mortensen
-  ## Jessica Williams
-  ## John Delaney
-  ## Karin Grimlund
-  ## Marina Osier
-  ## Shannon Rusk
-  ## Veronica Mecko [Meeko?]
-
 # END ----
-

@@ -4,17 +4,36 @@
 # Code written by Nicholas J Lyon
 
 # PURPOSE ----
-## This code wrangles raw data into tidy data
+## This code wrangles mostly untidy but harmonized data into truly tidy data
+
+## ------------------------------------------------ ##
+                    # Housekeeping ----
+## ------------------------------------------------ ##
+
+# Call any needed libraries here (good to centralize this step)
+# install.packages("librarian")
+librarian::shelf(tidyverse, njlyon0/helpR)
 
 # Clear the environment
 rm(list = ls())
 
-# Call any needed libraries here (good to centralize this step)
-# install.packages("librarian")
-librarian::shelf(readxl, tidyverse, vegan, writexl, njlyon0/helpR)
+# Read in data
+mkwd_v1 <- read.csv(file = file.path("tidy_data", "Asclepias-HARMONIZED.csv"))
+
+# Glimpse this!
+dplyr::glimpse(mkwd_v1)
 
 ## ------------------------------------------------ ##
-               # 2012 Rough Tidying ####
+# 
+## ------------------------------------------------ ##
+
+
+
+
+
+
+## ------------------------------------------------ ##
+               # 2012 Rough Tidying ----
 ## ------------------------------------------------ ##
 # Before we can get to tidying in earnest
   ## it will be best to join 2012 to the other years
@@ -97,7 +116,7 @@ sort(unique(mkwd_12_v3$Avg.Bloom.Status))
 dplyr::glimpse(mkwd_12_v3)
 
 ## ------------------------------------------------ ##
-# Missing Data Retrieval Prep ####
+# Missing Data Retrieval Prep ----
 ## ------------------------------------------------ ##
 # Each year's file has *some* data found nowhere else
 ## This is usually, but not always, in the 2013-16 data (no I don't know why this was done)
@@ -303,7 +322,7 @@ summary(milkweed.v10)
 ## So let's just do the variables that were consistently collected across the years
 
 ## ------------------------------------------------ ##
-# Missing Data Retrieval Actual ####
+# Missing Data Retrieval Actual ----
 ## ------------------------------------------------ ##
 # Make a new dataframe in case something goes wrong
 milkweed.v11 <- milkweed.v10
@@ -458,7 +477,7 @@ summary(milkweed.v12$Num.Stems.Nonflowering) # 586 (of 643) NAs fixed
 
 
 ## ------------------------------------------------ ##
-            # 2013-16 Rough Tidying ####
+            # 2013-16 Rough Tidying ----
 ## ------------------------------------------------ ##
 # Read in metadata file
 mkwd_13_16_meta <- readxl::read_excel(file.path("Data", "Asclepias-2016-RAW.xlsx"), sheet = "Metadata") %>%
@@ -470,7 +489,7 @@ mkwd_16_v1 <- read.csv(file.path("Data", "Asclepias-2016-RAW-plants.csv"))
 
 
 ## ------------------------------------------------ ##
-           # "2013-16" Initial Wrangling ####
+           # "2013-16" Initial Wrangling ----
 ## ------------------------------------------------ ##
 # Quotes around 2013-16 header will be explained later
 
@@ -627,7 +646,7 @@ mkwd_16_v5 <- mkwd_16_v4 %>%
 dplyr::glimpse(mkwd_16_v5)
 
 ## ------------------------------------------------ ##
-        # "2013-16" Monarch Info Wrangling ####
+        # "2013-16" Monarch Info Wrangling ----
 ## ------------------------------------------------ ##
 # Monarch immatures checks
 sort(unique(mkwd_16_v5$MonarchImmatures2))
@@ -742,7 +761,7 @@ mkwd_16_v6 <- mkwd_16_v5 %>%
 dplyr::glimpse(mkwd_16_v6)
 
 ## ------------------------------------------------ ##
-        # "2013-16" Remaining Wrangling ####
+        # "2013-16" Remaining Wrangling ----
 ## ------------------------------------------------ ##
 
 # Check for some bad entries (we'll resolve them shortly)
@@ -794,7 +813,7 @@ dplyr::glimpse(mkwd_16_v7)
 
 
 ## ------------------------------------------------ ##
-          # Combine 2012 with 2013-16 ####
+          # Combine 2012 with 2013-16 ----
 ## ------------------------------------------------ ##
 
 # What is in the 2013-16 data that isn't in the 2012 data?
@@ -810,7 +829,7 @@ dplyr::glimpse(milkweed_v1)
   ## Looks good!
 
 ## ------------------------------------------------ ##
-         # Site & Date Format Wrangling ####
+         # Site & Date Format Wrangling ----
 ## ------------------------------------------------ ##
 # Now more wrangling
 milkweed_v2 <- milkweed_v1 %>%
@@ -880,7 +899,7 @@ sort(unique(milkweed_v2$Site))
 sort(unique(milkweed_v2$Patch))
 
 ## ------------------------------------------------ ##
-        # Numeric Column Checks & Fixes ####
+        # Numeric Column Checks & Fixes ----
 ## ------------------------------------------------ ##
 
 # Check 
@@ -1128,7 +1147,7 @@ helpR::multi_num_chk(data = milkweed_v3, col_vec = c(
   "Tot.Monarch.Immatures"))
 
 ## ------------------------------------------------ ##
-       # Character Column Standardization ####
+       # Character Column Standardization ----
 ## ------------------------------------------------ ##
 
 # Want to standardize some character columns
@@ -1170,7 +1189,7 @@ sort(unique(milkweed_v4$GrazingLawn))
 dplyr::glimpse(milkweed_v4)
 
 ## ------------------------------------------------ ##
-        # Response Variable Calculation ####
+        # Response Variable Calculation ----
 ## ------------------------------------------------ ##
 
 # Drop entirely empty rows
@@ -1222,7 +1241,7 @@ milkweed.v9$Ratio.Flowering.vs.Total.Stems <- with(milkweed.v9, (Num.Stems.ALL.F
 sort(unique(milkweed.v9$Ratio.Flowering.vs.Total.Stems))
 
 ## ------------------------------------------------ ##
-        # Explanatory Variable Retrieval ####
+        # Explanatory Variable Retrieval ----
 ## ------------------------------------------------ ##
 # None of our explanatory variables are in here yet
 # We want the following variables:
@@ -1288,7 +1307,7 @@ setdiff(names(milkweed.v9), names(milkweed.v10))
 
 
 ## ------------------------------------------------ ##
-            # "New" Data Checking ####
+            # "New" Data Checking ----
 ## ------------------------------------------------ ##
 # As the previous 2000+ lines made abundantly clear, this raw data is remarkably error prone
   ## So, we now need to re-check all of our "new" columns again before calling it a day
@@ -1368,7 +1387,7 @@ milkweed.v12$Ratio.Bitten.vs.Total.Stems <- as.numeric(milkweed.v12$Ratio.Bitten
 sort(unique(milkweed.v12$Ratio.Bitten.vs.Total.Stems))
 
 ## ------------------------------------------------ ##
-            # Monarch Adult Tidying ####
+            # Monarch Adult Tidying ----
 ## ------------------------------------------------ ##
 # Load in the full tidying data from the other part of the GRG study
 grg.bfly.v0 <- read_excel("./Data/2007-2018 GRG INVERTS MASTER DATA.xlsx",
@@ -1448,7 +1467,7 @@ grg.bfly.v4 <- left_join(grg.bfly.v3, julian.index, by = "Date")
 head(grg.bfly.v4)
 
 ## ------------------------------------------------ ##
-             # Final Tidying Steps ####
+             # Final Tidying Steps ----
 ## ------------------------------------------------ ##
 # Remove the temporary plant code column we needed from earlier
 milkweed.v13 <- milkweed.v12 %>%
@@ -1478,7 +1497,7 @@ write_xlsx(list(Data = grg.bfly.v4),
            col_names = T, format_headers = T)
 
 ## ------------------------------------------------ ##
-               # Acknowledgements ####
+               # Acknowledgements ----
 ## ------------------------------------------------ ##
 # Important to remember who helped!
 sort(unique(tolower(mkwd.12.v0$Observer)))
@@ -1501,5 +1520,5 @@ sort(unique(tolower(mkwd.13.16.meta$Observer)))
   ## Shannon Rusk
   ## Veronica Mecko [Meeko?]
 
-# END ####
+# END ----
 

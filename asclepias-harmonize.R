@@ -513,9 +513,8 @@ mkwd_13 <- mkwd_13_v2 %>%
   tidyr::pivot_longer(cols = Num.Stems.Budding:Tot.Bud.n.Flr) %>%
   # Filter out missing values (we don't care about them for filling gaps)
   dplyr::filter(!is.na(value) & nchar(value) != 0 & value != "NaN") %>%
-  # Pivot wide again
-  tidyr::pivot_wider(names_from = name, values_from = value,
-                     values_fill = NA)
+  # Now make an ID for plant + variable
+  dplyr::mutate(Variable.ID = paste0(Plant.ID.Code, "-", name))
 
 # Glimpse 
 dplyr::glimpse(mkwd_13)
@@ -527,8 +526,7 @@ mkwd_14 <- mkwd_14_v2 %>%
                 .before = dplyr::everything()) %>%
   tidyr::pivot_longer(cols = MonarchImmatures2:Tot.Bud.n.Flr) %>%
   dplyr::filter(!is.na(value) & nchar(value) != 0 & value != "NaN") %>%
-  tidyr::pivot_wider(names_from = name, values_from = value,
-                     values_fill = NA)
+  dplyr::mutate(Variable.ID = paste0(Plant.ID.Code, "-", name))
 
 ## Check it out
 dplyr::glimpse(mkwd_14)
@@ -540,11 +538,30 @@ mkwd_15 <- mkwd_15_v2 %>%
                 .before = dplyr::everything()) %>%
   tidyr::pivot_longer(cols = Length.StObs1:Num.Axillary.Shoots.Bitten) %>%
   dplyr::filter(!is.na(value) & nchar(value) != 0 & value != "NaN") %>%
-  tidyr::pivot_wider(names_from = name, values_from = value,
-                     values_fill = NA)
+  dplyr::mutate(Variable.ID = paste0(Plant.ID.Code, "-", name))
 
 ## Check
 dplyr::glimpse(mkwd_15)
+
+# Bind these objects together
+mkwd_13_14_15 <- mkwd_13 %>%
+  dplyr::bind_rows(mkwd_14) %>%
+  dplyr::bind_rows(mkwd_15) %>%
+  # Filter out missing values
+  dplyr::filter(!is.na(value) & nchar(value) != 0) %>%
+  # Drop missing IDs
+  dplyr::filter(!is.na(Variable.ID)) %>%
+  # Pare down to only bare minimum needed columns
+  dplyr::select(Variable.ID, value) %>%
+  # Drop duplicates
+  unique()
+
+# Glimpse this
+dplyr::glimpse(mkwd_13_14_15)
+
+## ------------------------------------------------ ##
+              # Data Integration ####
+## ------------------------------------------------ ##
 
 # Okay, we can bind 2012 to '13-16 without fear
 mkwd_12_16 <- mkwd_12_v2 %>%
@@ -561,10 +578,6 @@ dplyr::glimpse(mkwd_12_16)
 helpR::diff_chk(old = c(names(mkwd_12_v2), names(mkwd_16_v2)),
                 new = names(mkwd_12_16))
 
-## ------------------------------------------------ ##
-              # Data Integration ####
-## ------------------------------------------------ ##
-
 # Quickly standardize missing values
 milkweed_v1 <- mkwd_12_16 %>%
   # Make a row number column
@@ -579,125 +592,50 @@ milkweed_v1 <- mkwd_12_16 %>%
     value %in% c("unk", "unk.", "n.a.", "n/a", "na") ~ "",
     !is.na(value) & nchar(value) == 0 ~ "",
     TRUE ~ value)) %>%
-  # Pivot wider to reclaim original structures
+  # Make a variable ID column here too
+  dplyr::mutate(Variable.ID = paste0(Plant.ID.Code, "-", name))
+
+# Glimpse this
+dplyr::glimpse(milkweed_v1)
+
+# How many responses are unrecorded?
+milkweed_v1 %>%
+  dplyr::filter(nchar(value) == 0 | is.na(value)) %>%
+  nrow() # 29,513 (across all vars)
+
+# Now match in the non-missing values
+milkweed_v2 <- milkweed_v1 %>%
+  dplyr::mutate(value = dplyr::case_when(
+    nchar(value) == 0 ~ mkwd_13_14_15$value[match(.$Variable.ID,
+                                                  mkwd_13_14_15$Variable.ID)],
+    TRUE ~ value))
+
+# How many are still problematic?
+milkweed_v2 %>%
+  dplyr::filter(nchar(value) == 0 | is.na(value)) %>%
+  nrow() # 25,639 continued absent
+
+# Check how many got fixed!
+str <- nrow(dplyr::filter(milkweed_v1, nchar(value) == 0 | is.na(value)))
+end <- nrow(dplyr::filter(milkweed_v2, nchar(value) == 0 | is.na(value)))
+str-end
+## 3,874 problems fixed!
+
+# Now reclaim the original data structure
+milkweed_v3 <- milkweed_v2 %>%
+  # Drop variable ID column
+  dplyr::select(-Variable.ID) %>%
+  # Pivot wider to reclaim original structure
   tidyr::pivot_wider(names_from = name,
                      values_from = value) %>%
   # Drop row id column
   dplyr::select(-row_id)
 
 # Glimpse it
-dplyr::glimpse(milkweed_v1)
-
-# For each of the following:
-  ## 1) Check the number of NAs before attempting the "fix"
-  ## 2) Add each year's data
-  ## 3) Double check the number of NAs
-
-# Fix average height
-nrow(filter(milkweed_v1, nchar(Avg.Height) == 0))
-milkweed_v1$Avg.Height <- ifelse(test = nchar(milkweed_v1$Avg.Height) == 0,
-                                  yes = mkwd_13$Avg.Height[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                  no = milkweed_v1$Avg.Height)
-milkweed_v1$Avg.Height <- ifelse(test = nchar(milkweed_v1$Avg.Height) == 0,
-                                  yes = mkwd_14$Avg.Height[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                  no = milkweed_v1$Avg.Height)
-nrow(filter(milkweed_v1, nchar(Avg.Height) == 0)) # all fixed (964)
-
-# Fix average number of buds
-nrow(filter(milkweed_v1, nchar(Avg.Bud) == 0))
-milkweed_v1$Avg.Bud <- ifelse(test = nchar(milkweed_v1$Avg.Bud) == 0,
-                                 yes = mkwd_13$Avg.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Avg.Bud)
-milkweed_v1$Avg.Bud <- ifelse(test = nchar(milkweed_v1$Avg.Bud) == 0,
-                                 yes = mkwd_14$Avg.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Avg.Bud)
-nrow(filter(milkweed_v1, nchar(Avg.Bud) == 0)) # all fixed (964)
-
-# Fix average number of flowers
-nrow(filter(milkweed_v1, nchar(Avg.Flr) == 0))
-milkweed_v1$Avg.Flr <- ifelse(test = nchar(milkweed_v1$Avg.Flr) == 0,
-                                 yes = mkwd_13$Avg.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Avg.Flr)
-milkweed_v1$Avg.Flr <- ifelse(test = nchar(milkweed_v1$Avg.Flr) == 0,
-                                 yes = mkwd_14$Avg.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Avg.Flr)
-nrow(filter(milkweed_v1, nchar(Avg.Flr) == 0)) # all fixed (964)
-
-# Fix total number of buds
-nrow(filter(milkweed_v1, nchar(Tot.Bud) == 0))
-milkweed_v1$Tot.Bud <- ifelse(test = nchar(milkweed_v1$Tot.Bud) == 0,
-                                 yes = mkwd_13$Tot.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Tot.Bud)
-milkweed_v1$Tot.Bud <- ifelse(test = nchar(milkweed_v1$Tot.Bud) == 0,
-                                 yes = mkwd_14$Tot.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Tot.Bud)
-nrow(filter(milkweed_v1, nchar(Tot.Bud) == 0)) # all fixed (964)
-
-# Fix total number of flowers
-nrow(filter(milkweed_v1, nchar(Tot.Flr) == 0))
-milkweed_v1$Tot.Flr <- ifelse(test = nchar(milkweed_v1$Tot.Flr) == 0,
-                                 yes = mkwd_13$Tot.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Tot.Flr)
-milkweed_v1$Tot.Flr <- ifelse(test = nchar(milkweed_v1$Tot.Flr) == 0,
-                                 yes = mkwd_14$Tot.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Tot.Flr)
-nrow(filter(milkweed_v1, nchar(Tot.Flr) == 0)) # all fixed
-
-# Fix average bloom status
-nrow(filter(milkweed_v1, nchar(Avg.Bloom.Status) == 0))
-milkweed_v1$Avg.Bloom.Status <- ifelse(test = nchar(milkweed_v1$Avg.Bloom.Status) == 0,
-                                 yes = mkwd_13$Avg.Bloom.Status[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Avg.Bloom.Status)
-milkweed_v1$Avg.Bloom.Status <- ifelse(test = nchar(milkweed_v1$Avg.Bloom.Status) == 0,
-                                 yes = mkwd_14$Avg.Bloom.Status[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Avg.Bloom.Status)
-nrow(filter(milkweed_v1, nchar(Avg.Bloom.Status) == 0))
-
-# Fix number of budding stems
-nrow(filter(milkweed_v1, nchar(Num.Stems.Budding) == 0))
-milkweed_v1$Num.Stems.Budding <- ifelse(test = nchar(milkweed_v1$Num.Stems.Budding) == 0,
-                                 yes = mkwd_13$Num.Stems.Budding[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.Budding)
-milkweed_v1$Num.Stems.Budding <- ifelse(test = nchar(milkweed_v1$Num.Stems.Budding) == 0,
-                                 yes = mkwd_14$Num.Stems.Budding[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.Budding)
-nrow(filter(milkweed_v1, nchar(Num.Stems.Budding) == 0)) # all fixed (112)
-
-# Fix number of flowering stems
-nrow(filter(milkweed_v1, nchar(Num.Stems.Flowering) == 0))
-milkweed_v1$Num.Stems.Flowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Flowering) == 0,
-                                 yes = mkwd_13$Num.Stems.Flowering[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.Flowering)
-milkweed_v1$Num.Stems.Flowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Flowering) == 0,
-                                 yes = mkwd_14$Num.Stems.Flowering[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.Flowering)
-nrow(filter(milkweed_v1, nchar(Num.Stems.Flowering) == 0)) # all fixed (117)
-
-# Fix number of stems post flowering (i.e., senesced)
-nrow(filter(milkweed_v1, nchar(Num.Stems.PostFlower) == 0))
-milkweed_v1$Num.Stems.PostFlower <- ifelse(test = nchar(milkweed_v1$Num.Stems.PostFlower) == 0,
-                                 yes = mkwd_13$Num.Stems.PostFlower[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.PostFlower)
-milkweed_v1$Num.Stems.PostFlower <- ifelse(test = nchar(milkweed_v1$Num.Stems.PostFlower) == 0,
-                                 yes = mkwd_14$Num.Stems.PostFlower[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.PostFlower)
-nrow(filter(milkweed_v1, nchar(Num.Stems.PostFlower) == 0)) # all fixed (117)
-
-# Fix number of non-flowering stems
-nrow(filter(milkweed_v1, nchar(Num.Stems.Nonflowering) == 0))
-milkweed_v1$Num.Stems.Nonflowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Nonflowering) == 0,
-                                 yes = mkwd_13$Num.Stems.Nonflowering[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.Nonflowering)
-milkweed_v1$Num.Stems.Nonflowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Nonflowering) == 0,
-                                 yes = mkwd_14$Num.Stems.Nonflowering[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
-                                 no = milkweed_v1$Num.Stems.Nonflowering)
-nrow(filter(milkweed_v1, nchar(Num.Stems.Nonflowering) == 0)) # all fixed (115)
-
-# Glimpse this again
-dplyr::glimpse(milkweed_v1)
+dplyr::glimpse(milkweed_v3)
 
 ## ------------------------------------------------ ##
-# Export ----
+                      # Export ----
 ## ------------------------------------------------ ##
 
 # Make a folder to export to

@@ -588,165 +588,124 @@ milkweed_v1 <- mkwd_12_16 %>%
 # Glimpse it
 dplyr::glimpse(milkweed_v1)
 
-# Let's go variable by variable
-## This will allow for easy fixes if my guess of a column's contents was wrong
-## Guessing is only necessary because of column abbreviations whose defs have been lost to time
-
 # For each of the following:
-## 1) Check the number of NAs before attempting the "fix"
-## 2) Add each year's data
-## 3) Double check the number of NAs
-
-milkweed.v11 <- mkwd_12_16
+  ## 1) Check the number of NAs before attempting the "fix"
+  ## 2) Add each year's data
+  ## 3) Double check the number of NAs
 
 # Fix average height
-summary(milkweed.v11$Avg.Height)
-milkweed.v11$Avg.Height <- ifelse(test = is.na(milkweed.v11$Avg.Height) == T,
-                                  yes = mkwd_13$Avg.Height[match(milkweed.v11$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
-                                  no = milkweed.v11$Avg.Height)
-milkweed.v11$Avg.Height <- ifelse(test = is.na(milkweed.v11$Avg.Height) == T,
-                                  yes = mkwd.14.v3$Avg.Height[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                  no = milkweed.v11$Avg.Height)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Avg.Height) # 1021 NAs fixed
+nrow(filter(milkweed_v1, nchar(Avg.Height) == 0))
+milkweed_v1$Avg.Height <- ifelse(test = nchar(milkweed_v1$Avg.Height) == 0,
+                                  yes = mkwd_13$Avg.Height[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                  no = milkweed_v1$Avg.Height)
+milkweed_v1$Avg.Height <- ifelse(test = nchar(milkweed_v1$Avg.Height) == 0,
+                                  yes = mkwd_14$Avg.Height[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                  no = milkweed_v1$Avg.Height)
+nrow(filter(milkweed_v1, nchar(Avg.Height) == 0)) # all fixed (964)
 
 # Fix average number of buds
-summary(milkweed.v11$Avg.Bud)
-milkweed.v11$Avg.Bud <- ifelse(test = is.na(milkweed.v11$Avg.Bud) == T,
-                               yes = mkwd.13.v3$Avg.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Avg.Bud)
-milkweed.v11$Avg.Bud <- ifelse(test = is.na(milkweed.v11$Avg.Bud) == T,
-                               yes = mkwd.14.v3$Avg.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Avg.Bud)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Avg.Bud) # 991 NAs fixed
+nrow(filter(milkweed_v1, nchar(Avg.Bud) == 0))
+milkweed_v1$Avg.Bud <- ifelse(test = nchar(milkweed_v1$Avg.Bud) == 0,
+                                 yes = mkwd_13$Avg.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Avg.Bud)
+milkweed_v1$Avg.Bud <- ifelse(test = nchar(milkweed_v1$Avg.Bud) == 0,
+                                 yes = mkwd_14$Avg.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Avg.Bud)
+nrow(filter(milkweed_v1, nchar(Avg.Bud) == 0)) # all fixed (964)
 
 # Fix average number of flowers
-summary(milkweed.v11$Avg.Flr)
-milkweed.v11$Avg.Flr <- ifelse(test = is.na(milkweed.v11$Avg.Flr) == T,
-                               yes = mkwd.13.v3$Avg.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Avg.Flr)
-milkweed.v11$Avg.Flr <- ifelse(test = is.na(milkweed.v11$Avg.Flr) == T,
-                               yes = mkwd.14.v3$Avg.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Avg.Flr)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Avg.Flr) # 1019 NAs fixed
+nrow(filter(milkweed_v1, nchar(Avg.Flr) == 0))
+milkweed_v1$Avg.Flr <- ifelse(test = nchar(milkweed_v1$Avg.Flr) == 0,
+                                 yes = mkwd_13$Avg.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Avg.Flr)
+milkweed_v1$Avg.Flr <- ifelse(test = nchar(milkweed_v1$Avg.Flr) == 0,
+                                 yes = mkwd_14$Avg.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Avg.Flr)
+nrow(filter(milkweed_v1, nchar(Avg.Flr) == 0)) # all fixed (964)
 
 # Fix total number of buds
-summary(milkweed.v11$Tot.Bud)
-milkweed.v11$Tot.Bud <- ifelse(test = is.na(milkweed.v11$Tot.Bud) == T,
-                               yes = mkwd.13.v3$Tot.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Tot.Bud)
-milkweed.v11$Tot.Bud <- ifelse(test = is.na(milkweed.v11$Tot.Bud) == T,
-                               yes = mkwd.14.v3$Tot.Bud[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Tot.Bud)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Tot.Bud) # 991 NAs fixed
+nrow(filter(milkweed_v1, nchar(Tot.Bud) == 0))
+milkweed_v1$Tot.Bud <- ifelse(test = nchar(milkweed_v1$Tot.Bud) == 0,
+                                 yes = mkwd_13$Tot.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Tot.Bud)
+milkweed_v1$Tot.Bud <- ifelse(test = nchar(milkweed_v1$Tot.Bud) == 0,
+                                 yes = mkwd_14$Tot.Bud[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Tot.Bud)
+nrow(filter(milkweed_v1, nchar(Tot.Bud) == 0)) # all fixed (964)
 
 # Fix total number of flowers
-summary(milkweed.v11$Tot.Flr)
-milkweed.v11$Tot.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Flr) == T,
-                               yes = mkwd.13.v3$Tot.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Tot.Flr)
-milkweed.v11$Tot.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Flr) == T,
-                               yes = mkwd.14.v3$Tot.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                               no = milkweed.v11$Tot.Flr)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Tot.Flr) # 1019 NAs fixed
-
-# Fix total number of buds AND flowers
-summary(milkweed.v11$Tot.Bud.n.Flr)
-milkweed.v11$Tot.Bud.n.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Bud.n.Flr) == T,
-                                     yes = mkwd.13.v3$Tot.Bud.n.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                                     no = milkweed.v11$Tot.Bud.n.Flr)
-milkweed.v11$Tot.Bud.n.Flr <- ifelse(test = is.na(milkweed.v11$Tot.Bud.n.Flr) == T,
-                                     yes = mkwd.14.v3$Tot.Bud.n.Flr[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                     no = milkweed.v11$Tot.Bud.n.Flr)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Tot.Bud.n.Flr) # 988 NAs fixed
+nrow(filter(milkweed_v1, nchar(Tot.Flr) == 0))
+milkweed_v1$Tot.Flr <- ifelse(test = nchar(milkweed_v1$Tot.Flr) == 0,
+                                 yes = mkwd_13$Tot.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Tot.Flr)
+milkweed_v1$Tot.Flr <- ifelse(test = nchar(milkweed_v1$Tot.Flr) == 0,
+                                 yes = mkwd_14$Tot.Flr[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Tot.Flr)
+nrow(filter(milkweed_v1, nchar(Tot.Flr) == 0)) # all fixed
 
 # Fix average bloom status
-summary(milkweed.v11$Avg.Bloom.Status)
-milkweed.v11$Avg.Bloom.Status <- ifelse(test = is.na(milkweed.v11$Avg.Bloom.Status) == T,
-                                        yes = mkwd.13.v3$Avg.Bloom.Status[match(milkweed.v11$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                                        no = milkweed.v11$Avg.Bloom.Status)
-milkweed.v11$Avg.Bloom.Status <- ifelse(test = is.na(milkweed.v11$Avg.Bloom.Status) == T,
-                                        yes = mkwd.14.v3$Avg.Bloom.Status[match(milkweed.v11$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                        no = milkweed.v11$Avg.Bloom.Status)
-# 2015 excluded due to lack of pre-existing column (each stem's data included though if needed)
-summary(milkweed.v11$Avg.Bloom.Status) # 1005 NAs fixed
-
-# This is (roughly) the halfway point so make a new dataframe
-milkweed.v12 <- milkweed.v11
+nrow(filter(milkweed_v1, nchar(Avg.Bloom.Status) == 0))
+milkweed_v1$Avg.Bloom.Status <- ifelse(test = nchar(milkweed_v1$Avg.Bloom.Status) == 0,
+                                 yes = mkwd_13$Avg.Bloom.Status[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Avg.Bloom.Status)
+milkweed_v1$Avg.Bloom.Status <- ifelse(test = nchar(milkweed_v1$Avg.Bloom.Status) == 0,
+                                 yes = mkwd_14$Avg.Bloom.Status[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Avg.Bloom.Status)
+nrow(filter(milkweed_v1, nchar(Avg.Bloom.Status) == 0))
 
 # Fix number of budding stems
-summary(milkweed.v12$Num.Stems.Budding)
-milkweed.v12$Num.Stems.Budding <- ifelse(test = is.na(milkweed.v12$Num.Stems.Budding) == T,
-                                         yes = mkwd.13.v3$TRIMBStemsBUD[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                                         no = milkweed.v12$Num.Stems.Budding)
-milkweed.v12$Num.Stems.Budding <- ifelse(test = is.na(milkweed.v12$Num.Stems.Budding) == T,
-                                         yes = mkwd.14.v3$TRIMBSBUD[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                         no = milkweed.v12$Num.Stems.Budding)
-milkweed.v12$Num.Stems.Budding <- ifelse(test = is.na(milkweed.v12$Num.Stems.Budding) == T,
-                                         yes = mkwd.15.v3$TRIMBSBUD[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                         no = milkweed.v12$Num.Stems.Budding)
-milkweed.v12$Num.Stems.Budding <- as.numeric(milkweed.v12$Num.Stems.Budding)
-summary(milkweed.v12$Num.Stems.Budding) # 586 (of 643) NAs fixed
+nrow(filter(milkweed_v1, nchar(Num.Stems.Budding) == 0))
+milkweed_v1$Num.Stems.Budding <- ifelse(test = nchar(milkweed_v1$Num.Stems.Budding) == 0,
+                                 yes = mkwd_13$Num.Stems.Budding[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.Budding)
+milkweed_v1$Num.Stems.Budding <- ifelse(test = nchar(milkweed_v1$Num.Stems.Budding) == 0,
+                                 yes = mkwd_14$Num.Stems.Budding[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.Budding)
+nrow(filter(milkweed_v1, nchar(Num.Stems.Budding) == 0)) # all fixed (112)
 
 # Fix number of flowering stems
-summary(milkweed.v12$Num.Stems.Flowering)
-milkweed.v12$Num.Stems.Flowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Flowering) == T,
-                                           yes = mkwd.13.v3$TRIMBStemsFLOW[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                                           no = milkweed.v12$Num.Stems.Flowering)
-milkweed.v12$Num.Stems.Flowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Flowering) == T,
-                                           yes = mkwd.14.v3$TRIMBSFLOW[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                           no = milkweed.v12$Num.Stems.Flowering)
-milkweed.v12$Num.Stems.Flowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Flowering) == T,
-                                           yes = mkwd.15.v3$TRIMBSFLOW[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                           no = milkweed.v12$Num.Stems.Flowering)
-milkweed.v12$Num.Stems.Flowering <- as.numeric(milkweed.v12$Num.Stems.Flowering)
-summary(milkweed.v12$Num.Stems.Flowering) # 586 (of 643) NAs fixed
+nrow(filter(milkweed_v1, nchar(Num.Stems.Flowering) == 0))
+milkweed_v1$Num.Stems.Flowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Flowering) == 0,
+                                 yes = mkwd_13$Num.Stems.Flowering[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.Flowering)
+milkweed_v1$Num.Stems.Flowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Flowering) == 0,
+                                 yes = mkwd_14$Num.Stems.Flowering[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.Flowering)
+nrow(filter(milkweed_v1, nchar(Num.Stems.Flowering) == 0)) # all fixed (117)
 
 # Fix number of stems post flowering (i.e., senesced)
-summary(milkweed.v12$Num.Stems.PostFlower)
-milkweed.v12$Num.Stems.PostFlower <- ifelse(test = is.na(milkweed.v12$Num.Stems.PostFlower) == T,
-                                            yes = mkwd.13.v3$TRIMBStemsDONE[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                                            no = milkweed.v12$Num.Stems.PostFlower)
-milkweed.v12$Num.Stems.PostFlower <- ifelse(test = is.na(milkweed.v12$Num.Stems.PostFlower) == T,
-                                            yes = mkwd.14.v3$TRIMBSDONE[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                            no = milkweed.v12$Num.Stems.PostFlower)
-milkweed.v12$Num.Stems.PostFlower <- ifelse(test = is.na(milkweed.v12$Num.Stems.PostFlower) == T,
-                                            yes = mkwd.15.v3$TRIMBSDONE[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                            no = milkweed.v12$Num.Stems.PostFlower)
-milkweed.v12$Num.Stems.PostFlower <- as.numeric(milkweed.v12$Num.Stems.PostFlower)
-summary(milkweed.v12$Num.Stems.PostFlower) # 586 (of 643) NAs fixed
+nrow(filter(milkweed_v1, nchar(Num.Stems.PostFlower) == 0))
+milkweed_v1$Num.Stems.PostFlower <- ifelse(test = nchar(milkweed_v1$Num.Stems.PostFlower) == 0,
+                                 yes = mkwd_13$Num.Stems.PostFlower[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.PostFlower)
+milkweed_v1$Num.Stems.PostFlower <- ifelse(test = nchar(milkweed_v1$Num.Stems.PostFlower) == 0,
+                                 yes = mkwd_14$Num.Stems.PostFlower[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.PostFlower)
+nrow(filter(milkweed_v1, nchar(Num.Stems.PostFlower) == 0)) # all fixed (117)
 
 # Fix number of non-flowering stems
-summary(milkweed.v12$Num.Stems.Nonflowering)
-milkweed.v12$Num.Stems.Nonflowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Nonflowering) == T,
-                                              yes = mkwd.13.v3$TRIMBStemsNOflow[match(milkweed.v12$Temp.Plant.Code, mkwd.13.v3$Temp.Plant.Code)],
-                                              no = milkweed.v12$Num.Stems.Nonflowering)
-milkweed.v12$Num.Stems.Nonflowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Nonflowering) == T,
-                                              yes = mkwd.14.v3$TRIMBS.NOflow[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                              no = milkweed.v12$Num.Stems.Nonflowering)
-milkweed.v12$Num.Stems.Nonflowering <- ifelse(test = is.na(milkweed.v12$Num.Stems.Nonflowering) == T,
-                                              yes = mkwd.15.v3$TRIMBS.NOflow[match(milkweed.v12$Temp.Plant.Code, mkwd.14.v3$Temp.Plant.Code)],
-                                              no = milkweed.v12$Num.Stems.Nonflowering)
-milkweed.v12$Num.Stems.Nonflowering <- as.numeric(milkweed.v12$Num.Stems.Nonflowering)
-summary(milkweed.v12$Num.Stems.Nonflowering) # 586 (of 643) NAs fixed
+nrow(filter(milkweed_v1, nchar(Num.Stems.Nonflowering) == 0))
+milkweed_v1$Num.Stems.Nonflowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Nonflowering) == 0,
+                                 yes = mkwd_13$Num.Stems.Nonflowering[match(milkweed_v1$Plant.ID.Code, mkwd_13$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.Nonflowering)
+milkweed_v1$Num.Stems.Nonflowering <- ifelse(test = nchar(milkweed_v1$Num.Stems.Nonflowering) == 0,
+                                 yes = mkwd_14$Num.Stems.Nonflowering[match(milkweed_v1$Plant.ID.Code, mkwd_14$Plant.ID.Code)],
+                                 no = milkweed_v1$Num.Stems.Nonflowering)
+nrow(filter(milkweed_v1, nchar(Num.Stems.Nonflowering) == 0)) # all fixed (115)
 
-
-
-
+# Glimpse this again
+dplyr::glimpse(milkweed_v1)
 
 ## ------------------------------------------------ ##
-              # Data Combination ####
+# Export ----
 ## ------------------------------------------------ ##
 
+# Make a folder to export to
+dir.create("tidy_data", showWarnings = F)
 
-
-# Glimpse this
-dplyr::glimpse(mkwd_12_16_v1)
+# Export this harmonized object
+write.csv(x = milkweed_v1, na = "", row.names = F,
+          file = file.path("tidy_data", "Asclepias-HARMONIZED.csv"))
 
 # End ----
 

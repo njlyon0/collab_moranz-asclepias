@@ -49,5 +49,6 @@ vignettes/*.pdf
 
 # Ignore all data and visuals folders
 raw_data/
+tidy_data/
 figures/
 graphs/

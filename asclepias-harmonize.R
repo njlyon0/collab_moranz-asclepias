@@ -642,7 +642,7 @@ dplyr::glimpse(milkweed_v3)
 dir.create("tidy_data", showWarnings = F)
 
 # Export this harmonized object
-write.csv(x = milkweed_v1, na = "", row.names = F,
+write.csv(x = milkweed_v3, na = "", row.names = F,
           file = file.path("tidy_data", "Asclepias-HARMONIZED.csv"))
 
 # End ----

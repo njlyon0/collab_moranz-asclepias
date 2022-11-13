@@ -749,34 +749,26 @@ sort(unique(mkwd_v11$Management.Method))
 sort(unique(mkwd_v11$Stocking.Type))
 
 ## ------------------------------------------------ ##
-             # Final Tidying Steps ----
+              # Final Tidying Steps ----
 ## ------------------------------------------------ ##
-# Remove the temporary plant code column we needed from earlier
-milkweed.v13 <- milkweed.v12 %>%
-  ## Remove that column while we're here
-  select(-Temp.Plant.Code) %>%
-  as.data.frame()
-
-# Somehow there are duplicate rows that need removing here
-  ## "Duplicate" as in every single row is duplicated
-  ## It gets worse:
-  ## Some of the response variables are duplicated across ostensibly different patches
-  ## To fix this, let's strip out the patch codes and plant IDs (neither is used anyway)
-  ## This is almost certainly an artifact of combining the different years separately earlier
-    ### See "Missing Data Retrieval Prep" & "... Actual"
-milkweed.v14 <- milkweed.v13 %>%
-  select(-Plant.ID, -Patch) %>%
+# Final processing here
+mkwd_v12 <- mkwd_v11 %>%
+  # Make the "Patch" column include site info
+  dplyr::mutate(Patch = paste0(Site, "-", Patch)) %>%
+  # Drop (entirely hypothetical) duplicate rows
   unique()
+  
+# Glimpse it
+dplyr::glimpse(mkwd_v12)
 
-# Save the tidy data to use for analysis later
-write_xlsx(list(Data = milkweed.v14),
-           path = "./Data/Asclepias-TIDY.xlsx",
-           col_names = T, format_headers = T)
+# Check out new patch column versus old one
+sort(unique(mkwd_v11$Patch))
+sort(unique(mkwd_v12$Patch))
 
-# Save the monarch adult data as well
-write_xlsx(list(Data = grg.bfly.v4),
-           path = "./Data/Monarch-Adult-TIDY.xlsx",
-           col_names = T, format_headers = T)
+# Write this out!
+dir.create("tidy_data", showWarnings = F)
+write.csv(x = mkwd_v12, na = "", row.names = F,
+          file = file.path("tidy_data", "Asclepias-TIDY.csv"))
 
 ## ------------------------------------------------ ##
                # Acknowledgements ----

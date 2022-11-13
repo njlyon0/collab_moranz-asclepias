@@ -379,103 +379,47 @@ sort(unique(mkwd_v7$Date))
 sort(unique(mkwd_v7$Site))
 sort(unique(mkwd_v7$Patch))
 
-
-
-
-
-
-
-
-`## ------------------------------------------------ ##
-        # "2013-16" Remaining Wrangling ----
-## ------------------------------------------------ ##
-
-# Check for some bad entries (we'll resolve them shortly)
-helpR::num_chk(data = mkwd_16_v6, col = "Tot.Bitten.Stems")
-
-# More wrangling
-mkwd_16_v7 <- mkwd_16_v6 %>%
-  # Fix problematic entries
-  dplyr::mutate(
-    Tot.Bitten.Stems = as.numeric(dplyr::case_when(
-      Tot.Bitten.Stems %in% c("unk", "unk.", "unknown",
-                              "na", "unk (plant gone",
-                              "unk (likely they've atrophied)",
-                              "unk (probably had stems that were eaten and atrophied)"
-                              ) ~ "",
-      Tot.Bitten.Stems == "at least 4" ~ "4",
-      TRUE ~ Tot.Bitten.Stems))
-    ) %>%
-  # Add Whittaker number to patch
-  dplyr::mutate(Patch = paste0(Patch, "-", Whittaker)) %>%
-  # Rename two columns
-  dplyr::rename(Site = Pasture,
-                Plant.ID = Plant.ID.R1) %>%
-  # Pare down to desired columns
-  dplyr::select(Year, Date, Site, Patch, Plant.ID,
-                Avg.Height, Avg.Bud, Avg.Flr, Tot.Bud,
-                Tot.Flr, Avg.Bloom.Status, 
-                Num.Stems.Budding, Num.Stems.Flowering,
-                Num.Stems.PostFlower, Num.Stems.Nonflowering,
-                Num.Unbit.Stems.w.Axillary.Shoots, ASCTUB.Abun.1m,
-                ASCTUB.Abun.2m, BfliesNectaring,
-                Crab.Spider.Abun, GrazingLawn, Shrub.Abun.1m,
-                Tot.Bitten.Stems, Num.Flowering.Stems.Bitten,
-                Num.Bitten.Stems.w.Axillary.Shoots, Tot.Axillary.Shoots, 
-                Num.Axillary.Shoots.Bitten, Num.Monarch.Eggs,
-                Num.Monarch.Larvae, Monarch.Immature.Evidence,
-                Tot.Monarch.Immatures)
-
-# Check that entries are fixed
-helpR::num_chk(data = mkwd_16_v7, col = "Tot.Bitten.Stems")
-sort(unique(mkwd_16_v7$Tot.Bitten.Stems))
-
-# Check for lost columns
-helpR::diff_chk(old = names(mkwd_16_v6), new = names(mkwd_16_v7))
-
-# Glimpse full dataset
-dplyr::glimpse(mkwd_16_v7)
-
-
-
-# Glimpse it
-dplyr::glimpse(milkweed_v2)
-
-# Check specific columns
-sort(unique(milkweed_v2$Date))
-sort(unique(milkweed_v2$Site))
-sort(unique(milkweed_v2$Patch))
-
 ## ------------------------------------------------ ##
         # Numeric Column Checks & Fixes ----
 ## ------------------------------------------------ ##
-
-# Check 
-helpR::multi_num_chk(data = milkweed_v2, col_vec = c(
-  "Avg.Height", "Avg.Bud", "Avg.Flr" , "Tot.Bud", "Tot.Flr", 
-  "Avg.Bloom.Status", "Num.Stems.Budding", "Num.Stems.Flowering", 
-  "Num.Stems.PostFlower" , "Num.Stems.Nonflowering",
-  "Num.Stems.ALL.Flowering.Stages", 
+# Check for some bad entries (we'll resolve them shortly)
+helpR::multi_num_chk(data = mkwd_v7, col_vec = c(
+  "Num.Stems.Budding", "Num.Stems.Flowering", 
+  "Num.Stems.PostFlower" , "Num.Stems.Nonflowering", "Tot.Bitten.Stems",
   "Num.Unbit.Stems.w.Axillary.Shoots", 
-  "ASCTUB.Abun.1m", "ASCTUB.Abun.2m", 
-  "Crab.Spider.Abun", "Height.1st.Longest", 
-  "Height.2nd.Longest", "Height.3rd.Longest", 
-  "MonarchImmatures1", "MonarchImmatures2", 
+  "ASCTUB.Abun.1m", "ASCTUB.Abun.2m", "Crab.Spider.Abun",
   "Shrub.Abun.1m", "Tot.Bitten.Stems", "Num.Flowering.Stems.Bitten",
   "Num.Bitten.Stems.w.Axillary.Shoots", "Tot.Axillary.Shoots", 
-  "Num.Axillary.Shoots.Bitten", "Num.Monarch.Eggs", 
-  "Num.Monarch.Larvae", "Monarch.Immature.Evidence", 
-  "Tot.Monarch.Immatures"))
+  "Num.Axillary.Shoots.Bitten"))
 
 # Address these issues
-milkweed_v3 <- milkweed_v2 %>%
+mkwd_v8 <- mkwd_v7 %>%
+  # Fix problematic entries
+  dplyr::mutate(
+    # Total bitten stems
+    Tot.Bitten.Stems = dplyr::case_when(
+      Tot.Bitten.Stems %in% c("unk", "unk.", "unknown", "na", 
+                              "unk (plant gone", "skipped",
+                              "unk (likely they've atrophied)",
+                              "unk (probably had stems that were eaten and atrophied)") ~ "",
+      Tot.Bitten.Stems == "at least 4" ~ "4",
+      TRUE ~ Tot.Bitten.Stems)) %>%
   # Budding stems
   dplyr::mutate(Num.Stems.Budding = dplyr::case_when(
     Num.Stems.Budding %in% c("no sign of plant", "could not find plant",
-                             "could not find") ~ "",
+                             "skipped", "could not find") ~ "",
     TRUE ~ Num.Stems.Budding)) %>%
+  # Flowering stems
+  dplyr::mutate(Num.Stems.Flowering = dplyr::case_when(
+    Num.Stems.Flowering == "skipped" ~ "",
+    TRUE ~ Num.Stems.Flowering)) %>%
+  # Postflower stems
+  dplyr::mutate(Num.Stems.PostFlower = dplyr::case_when(
+    Num.Stems.PostFlower == "skipped" ~ "",
+    TRUE ~ Num.Stems.PostFlower)) %>%
   # Nonflowering stems
   dplyr::mutate(Num.Stems.Nonflowering = dplyr::case_when(
+    Num.Stems.Nonflowering == "skipped" ~ "",
     Num.Stems.Nonflowering %in% c(
       "1 (bitten off 8 \" from ground, presumably by deer",
       "1 dying") ~ "1",
@@ -490,7 +434,7 @@ milkweed_v3 <- milkweed_v2 %>%
   dplyr::mutate(ASCTUB.Abun.1m = dplyr::case_when(
     ASCTUB.Abun.1m %in% c(
       "NO DATA", "no data", "unk", "uncertain", "did not assess",
-      "did not measure", "not recorded", "?") ~ "",
+      "did not measure", "not recorded", "skipped", "?") ~ "",
     ASCTUB.Abun.1m %in% c("no", "No") ~ "0",
     ASCTUB.Abun.1m %in% c(
       "1 A. tuberosa with 2 stems in flower 1m to SE; no other within 1.4m",
@@ -518,7 +462,7 @@ milkweed_v3 <- milkweed_v2 %>%
   # Asclepias tuberosa conspecifics within 2 meters
   dplyr::mutate(ASCTUB.Abun.2m = dplyr::case_when(
     ASCTUB.Abun.2m %in% c(
-      "NO DATA", "unknown", "unk", "did not assess",
+      "NO DATA", "unknown", "unk", "did not assess", "skipped", 
       "did not measure", "not recorded", "?", "no data") ~ "",
     ASCTUB.Abun.2m %in% c(
       "no", "1 A. tuberosa 1.3 m to SW", "No", 
@@ -574,7 +518,7 @@ milkweed_v3 <- milkweed_v2 %>%
   dplyr::mutate(Shrub.Abun.1m = dplyr::case_when(
     Shrub.Abun.1m %in% c(
       "no data", "NO DATA", "unknown", "unk", "did not measure",
-      "did not assess") ~ "",
+      "did not assess", "not recorded") ~ "",
     Shrub.Abun.1m %in% c(
       "no", "0, but 3 Baptistia alba nearby", "0, but 1 Baptisia alba",
       "0, but 2 Baptisia alba and Solidago rigida", "2 Baptisia alba",
@@ -666,7 +610,7 @@ milkweed_v3 <- milkweed_v2 %>%
     TRUE ~ Tot.Axillary.Shoots)) %>%
   # Axillary shoots bitten
   dplyr::mutate(Num.Axillary.Shoots.Bitten = dplyr::case_when(
-    Num.Axillary.Shoots.Bitten %in% c("?", "no data", "unk", 
+    Num.Axillary.Shoots.Bitten %in% c("?", "no data", "unk", "not recorded",
                                       "unknown", "na") ~ "",
     TRUE ~ Num.Axillary.Shoots.Bitten)) %>%
   # For the conspecifics columns we can fix it if only one is recorded
@@ -678,32 +622,25 @@ milkweed_v3 <- milkweed_v2 %>%
       no = ASCTUB.Abun.2m))
 
 # Check again to ensure issues are resolved
-helpR::multi_num_chk(data = milkweed_v3, col_vec = c(
-  "Avg.Height", "Avg.Bud", "Avg.Flr" , "Tot.Bud", "Tot.Flr", 
-  "Avg.Bloom.Status", "Num.Stems.Budding", "Num.Stems.Flowering", 
-  "Num.Stems.PostFlower" , "Num.Stems.Nonflowering",
-  "Num.Stems.ALL.Flowering.Stages", 
+helpR::multi_num_chk(data = mkwd_v8, col_vec = c(
+  "Num.Stems.Budding", "Num.Stems.Flowering", 
+  "Num.Stems.PostFlower" , "Num.Stems.Nonflowering", "Tot.Bitten.Stems",
   "Num.Unbit.Stems.w.Axillary.Shoots", 
-  "ASCTUB.Abun.1m", "ASCTUB.Abun.2m", 
-  "Crab.Spider.Abun", "Height.1st.Longest", 
-  "Height.2nd.Longest", "Height.3rd.Longest", 
-  "MonarchImmatures1", "MonarchImmatures2", 
+  "ASCTUB.Abun.1m", "ASCTUB.Abun.2m", "Crab.Spider.Abun",
   "Shrub.Abun.1m", "Tot.Bitten.Stems", "Num.Flowering.Stems.Bitten",
   "Num.Bitten.Stems.w.Axillary.Shoots", "Tot.Axillary.Shoots", 
-  "Num.Axillary.Shoots.Bitten", "Num.Monarch.Eggs", 
-  "Num.Monarch.Larvae", "Monarch.Immature.Evidence", 
-  "Tot.Monarch.Immatures"))
+  "Num.Axillary.Shoots.Bitten"))
 
 ## ------------------------------------------------ ##
        # Character Column Standardization ----
 ## ------------------------------------------------ ##
 
 # Want to standardize some character columns
-milkweed_v4 <- milkweed_v3 %>%
+mkwd_v9 <- mkwd_v8 %>%
   # Grazing lawn
   dplyr::mutate(GrazingLawn = dplyr::case_when(
     GrazingLawn %in% c("did not measure", "no data", 
-                       "NO DATA", "unk") ~ "",
+                       "NO DATA", "unk", "not recorded") ~ "",
     GrazingLawn %in% c(
       "no", "No", "NO", "maybe last year", "No, but in cattle path",
       "no; 9 cattle bedding spots within 12m radius",
@@ -731,62 +668,43 @@ milkweed_v4 <- milkweed_v3 %>%
     TRUE ~ GrazingLawn))
 
 # Check out columns
-sort(unique(milkweed_v4$GrazingLawn))
+sort(unique(mkwd_v9$GrazingLawn))
 
 # Look at the whole data now
-dplyr::glimpse(milkweed_v4)
+dplyr::glimpse(mkwd_v9)
 
 ## ------------------------------------------------ ##
         # Response Variable Calculation ----
 ## ------------------------------------------------ ##
 
 # Drop entirely empty rows
-milkweed_v5 <- milkweed_v4[complete.cases(milkweed_v4[, "Site"]), ] %>%
-  # Drop some columns
-  dplyr::select(-Comments, -Major.Issues, 
-                -dplyr::starts_with("MonarchImmatures"),
-                -dplyr::ends_with(".Longest"),
-                -BfliesNectaring) %>%
+mkwd_v10 <- mkwd_v9[complete.cases(mkwd_v9[, "Site"]), ] %>%
   # Move grazing lawn column to the left
-  dplyr::relocate(GrazingLawn, .after = Plant.ID.R2) %>%
+  dplyr::relocate(GrazingLawn, .after = Plant.ID) %>%
   # Make numeric columns truly numeric
   dplyr::mutate(dplyr::across(.cols = Avg.Height:Tot.Monarch.Immatures,
                               .fns = as.numeric)) %>%
   # Calculate some needed response variables
   dplyr::mutate(
     Tot.Bud.n.Flr = (Tot.Bud + Tot.Flr),
+    Num.Stems.ALL.Flowering.Stages = (Num.Stems.Budding + Num.Stems.Flowering + Num.Stems.PostFlower),
     Tot.Stems = (Num.Stems.ALL.Flowering.Stages + Num.Stems.Nonflowering),
-    Ratio.Bitten.vs.Total.Stems = (Tot.Bitten.Stems / Tot.Stems)
-  )
+    Ratio.Bitten.vs.Total.Stems = ifelse(
+      test = Tot.Bitten.Stems < Tot.Stems,
+      yes = (Tot.Bitten.Stems / Tot.Stems),
+      no = NA))
 
 # Check dimensions
-dim(milkweed_v4); dim(milkweed_v5)
+dim(mkwd_v9); dim(mkwd_v10)
 
 # Identify gained/lost columns
-helpR::diff_chk(old = names(milkweed_v4), new = names(milkweed_v5))
+helpR::diff_chk(old = names(mkwd_v9), new = names(mkwd_v10))
 
 # Glimpse data
-dplyr::glimpse(milkweed_v5)
+dplyr::glimpse(mkwd_v10)
 
 # Get a summary of the data
-summary(milkweed_v5)
-
-# Also also, let's get a ratio of bitten stems versus total stems
-  ## There is no "total stems" column so I am adding total reproductive vs. nonreproductive stems
-milkweed.v9$Ratio.Bitten.vs.Total.Stems <- with(milkweed.v9, (Tot.Bitten.Stems / (Num.Stems.ALL.Flowering.Stages + Num.Stems.Nonflowering)))
-  ## Check for issues
-sort(unique(milkweed.v9$Ratio.Bitten.vs.Total.Stems))
-  ## Fix 'em
-milkweed.v9$Ratio.Bitten.vs.Total.Stems <- ifelse(test = milkweed.v9$Ratio.Bitten.vs.Total.Stems == "Inf" | milkweed.v9$Ratio.Bitten.vs.Total.Stems > 1,
-                                                  yes = NA, no = milkweed.v9$Ratio.Bitten.vs.Total.Stems)
-  ## Check again
-sort(unique(milkweed.v9$Ratio.Bitten.vs.Total.Stems))
-
-# Also (x3), make a ratio of flowering to total stems
-  ## Calculate the new ratio column
-milkweed.v9$Ratio.Flowering.vs.Total.Stems <- with(milkweed.v9, (Num.Stems.ALL.Flowering.Stages / (Num.Stems.ALL.Flowering.Stages + Num.Stems.Nonflowering)))
-  ## Check for issues
-sort(unique(milkweed.v9$Ratio.Flowering.vs.Total.Stems))
+summary(mkwd_v10)
 
 ## ------------------------------------------------ ##
         # Explanatory Variable Retrieval ----
@@ -799,6 +717,7 @@ sort(unique(milkweed.v9$Ratio.Flowering.vs.Total.Stems))
   ## (4) Julian day
 
 # Bring in the index file that connects sites/patches with treatments
+
 julian.index <- read_excel("./Data/-Asclepias-Indices.xlsx", sheet = "Julian")
 mgmt.index <- read_excel("./Data/-Asclepias-Indices.xlsx", sheet = "Site Management")
 str(mgmt.index)

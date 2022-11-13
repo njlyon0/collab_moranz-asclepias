@@ -647,4 +647,69 @@ dir.create("tidy_data", showWarnings = F)
 write.csv(x = milkweed_v3, na = "", row.names = F,
           file = file.path("tidy_data", "Asclepias-HARMONIZED.csv"))
 
+## ------------------------------------------------ ##
+            # Acknowledgements Wrangling ----
+## ------------------------------------------------ ##
+# Important to remember who helped!
+helpers <- data.frame("raw" = c(tolower(mkwd_12_v1$Observer),
+                                tolower(mkwd_13_16_meta$Observer))) %>%
+  # Drop duplicate rows
+  unique() %>%
+  # Drop empty rows
+  dplyr::filter(!is.na(raw) & nchar(raw) != 0) %>%
+  # Do coarse tidying
+  dplyr::mutate(partial_tidy = gsub(pattern = "\\&|\\, |\\; |\\?\\?\\(and",
+                                    replacement = " and ",
+                                    x = raw)) %>%
+  # Split apart multi-name cells
+  tidyr::separate(col = partial_tidy, sep = " and ", fill = "right",
+                  into = c("person_1", "person_2", "person_3")) %>%
+  # Pivot longer
+  tidyr::pivot_longer(cols = dplyr::starts_with("person_"),
+                      names_to = "trash",
+                      values_to = "name") %>%
+  # Drop introduced NAs
+  dplyr::filter(!is.na(name)) %>%
+  # Clean up what's left
+  dplyr::mutate(
+    tidy = dplyr::case_when(
+    ## Ray
+      name %in% c(" ray??)", "ray  moranz", "ray m.", "ray moranz ",
+                  "ray moranz", "ray moranz (distance samp)",
+                  "ray moranz (distance)", "ray trimble", 
+                  "trimble by ray moranz") ~ "Ray Moranz",
+      ## Others
+      name %in% c(" chaz abarr") ~ "Chaz Abarr",
+      name %in% c(" v. mecko", "veronica meeko", "veronica mecko") ~ "Veronica Mecko",
+      name %in% c("and gatha", "gatha") ~ "Gatha",
+      name %in% c("anna", "anna h", "anna holtermann", 
+                  "anna holtermann (trimble)", "anna holtermann did distance",
+                  "anna holtermann distance") ~ "Anna Holtermann",
+      name %in% c("audrey", "audrey mc") ~ "Audrey McCombs",
+      name %in% c("ben nagel") ~ "Ben Nagel",
+      name %in% c("courtney grula") ~ "Courtney Grula",
+      name %in% c("jake m", "jake", "jake mortensen",
+                  "jake mortensen did trimble", 
+                  "jake mortensen distance") ~ "Jake Mortensen",
+      name %in% c("jessica williams") ~ "Jessica Williams",
+      name %in% c("john delaney") ~ "John Delaney",
+      name %in% c("karin grimlund") ~ "Karin Grimlund",
+      name %in% c("marina osier") ~ "Marina Osier",
+      name %in% c("shannon", "shannon rush", "shannon rusk") ~ "Shannon Rusk",
+      name %in% c("toni proescholdt") ~ "Toni Proescholdt",
+      TRUE ~ name)) %>%
+  # Pare down ot only fixed name column
+  dplyr::select(Helpers = tidy) %>%
+  # Ditch non-unique columns
+  unique() %>%
+  # Arrange by name
+  dplyr::arrange(Helpers)
+  
+# Glimpse it  
+dplyr::glimpse(helpers)
+
+# Export this file for posterity / ease of writing acknowledgements
+write.csv(x = helpers, na = "", row.names = F,
+          file = file.path("indices", "partial_acknowledgements.csv"))
+
 # End ----

@@ -686,13 +686,20 @@ mkwd_v10 <- mkwd_v9[complete.cases(mkwd_v9[, "Site"]), ] %>%
                               .fns = as.numeric)) %>%
   # Calculate some needed response variables
   dplyr::mutate(
+    ## Total buds and flowers
     Tot.Bud.n.Flr = (Tot.Bud + Tot.Flr),
-    Num.Stems.ALL.Flowering.Stages = (Num.Stems.Budding + Num.Stems.Flowering + Num.Stems.PostFlower),
+    ## Number stems of all flowering stages
+    Num.Stems.ALL.Flowering.Stages = (Num.Stems.Budding + 
+                                        Num.Stems.Flowering + 
+                                        Num.Stems.PostFlower),
+    ## Total stems
     Tot.Stems = (Num.Stems.ALL.Flowering.Stages + Num.Stems.Nonflowering),
+    ## Ratio bitten to total
     Ratio.Bitten.vs.Total.Stems = ifelse(
       test = Tot.Bitten.Stems < Tot.Stems,
       yes = (Tot.Bitten.Stems / Tot.Stems),
       no = NA),
+    ## Ratio flowering to total
     Ratio.Flowering.vs.Total.Stems = (Num.Stems.ALL.Flowering.Stages / Tot.Stems))
 
 # Check dimensions

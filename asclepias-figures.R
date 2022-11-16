@@ -29,37 +29,89 @@ mkwd <- read.csv(file = file.path("tidy_data", "Asclepias-TIDY.csv")) %>%
 # Glimpse it
 dplyr::glimpse(mkwd)
 
+# Create a folder to export to
+dir.create("figures", showWarnings = F)
+
 ## ------------------------------------------------ ##
-# Fig2 - # Bitten Stems ----
+          # Template ggplot Functions ----
 ## ------------------------------------------------ ##
-# Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Tot.Bitten.Stems))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Tot.Bitten.Stems))
 
-# Distribution check
-psych::multi.hist(mkwd_sub$Tot.Bitten.Stems)
+# Vector of colors for stocking types
+stock_colors <- c("None" = "#8073ac", "SLS" = "#fdb863", "IES" = "#b35806")
 
-# Check whether interaction is significant
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Create the ggplot architecture for the TSF figure
+tsf_fig_skeleton <- function(df, ylab){
+  ggplot(data = df, aes(x = TSF, y = mean, fill = "a")) +
+    geom_smooth(aes(color = "b"), method = 'lm',
+                se = F, formula = "y ~ x") +
+    geom_errorbar(aes(ymin = mean - std_error, ymax = mean + std_error),
+                  width = 0.25) +
+    geom_point(size = 3, pch = 23) + 
+    labs(x = "Time Since Fire (years)", y = ylab) +
+    scale_x_continuous(breaks = c(0, 1, 2)) +
+    scale_fill_manual(values = "gray45") +
+    scale_color_manual(values = 'black') +
+    theme(legend.position = "none") +
+    helpR::theme_lyon() }
 
-## For both factor levels
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Create ggplot template for stocking type figure
+grz_fig_skeleton <- function(df, ylab){
+ggplot(data = df, aes(x = Stocking.Type, y = mean,
+                     fill = Stocking.Type, color = "x")) +
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = mean - std_error, ymax = mean + std_error),
+                width = 0.25) + 
+  scale_fill_manual(values = stock_colors) +
+  labs(x = "Stocking Type", y = ylab) +
+  scale_color_manual(values = 'black') +
+  theme(legend.position = "none") +
+  helpR::theme_lyon()
+}
 
-# If not, re-run without interaction term
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
 
-## For both factor levels
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+## ------------------------------------------------ ##
+              # Fig2 - # Bitten Stems ----
+## ------------------------------------------------ ##
+
+# Results:
+## Time Since Fire (TSF) and Stocking *separately* affect number bitten stems
+
+# Create TSF plot
+tot_bitten_tsf <- mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("TSF"),
+                response = "Tot.Bitten.Stems", drop_na = T) %>%
+  # Generate plot
+  tsf_fig_skeleton(df = ., ylab = "Mean Bitten Stems")
+
+# Look at it
+tot_bitten_tsf
+
+# Now make the stocking rate one
+tot_bitten_mgmt <- mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+                       response = "Tot.Bitten.Stems") %>%
+  # Relevel factor
+  dplyr::mutate(Stocking.Type = factor(Stocking.Type,
+                                       levels = c("None", "SLS", "IES"))) %>%
+  # Make graph
+  grz_fig_skeleton(df = ., ylab = "Mean Bitten Stems") +
+  geom_text(label = "a", x = 0.7, y = 0.6, size = 6) +
+  geom_text(label = "b", x = 1.7, y = 1.3, size = 6) +
+  geom_text(label = "c", x = 2.7, y = 2.2, size = 6)
+  
+# Check it
+tot_bitten_mgmt
+
+# Combine the plots!
+cowplot::plot_grid(tot_bitten_tsf, tot_bitten_mgmt,
+                   nrow = 1, ncol = 2,
+                   labels = "AUTO")
+
+# Export
+ggsave(filename = file.path("figures", "Asclepias_Fig2.pdf"),
+       plot = last_plot(), width = 6.5, height = 4, unit = "in")
 
 ## ------------------------------------------------ ##
 # Q3 - # Flowering Stems ----

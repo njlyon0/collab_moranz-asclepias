@@ -692,7 +692,8 @@ mkwd_v10 <- mkwd_v9[complete.cases(mkwd_v9[, "Site"]), ] %>%
     Ratio.Bitten.vs.Total.Stems = ifelse(
       test = Tot.Bitten.Stems < Tot.Stems,
       yes = (Tot.Bitten.Stems / Tot.Stems),
-      no = NA))
+      no = NA),
+    Ratio.Flowering.vs.Total.Stems = (Num.Stems.ALL.Flowering.Stages / Tot.Stems))
 
 # Check dimensions
 dim(mkwd_v9); dim(mkwd_v10)

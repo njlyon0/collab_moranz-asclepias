@@ -44,7 +44,7 @@ dplyr::glimpse(mkwd_lvl2)
 levels(mkwd$Management.Method); levels(mkwd_lvl2$Management.Method)
 
 ## ------------------------------------------------ ##
-              # Q2 - # Bitten Stems ----
+              # Q1 - # Bitten Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
 mkwd_sub <- mkwd %>%
@@ -76,7 +76,7 @@ summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type +
                     data = mkwd_lvl2_sub, family = "poisson"))
 
 ## ------------------------------------------------ ##
-            # Q3 - # Flowering Stems ----
+            # Q2 - # Flowering Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
 mkwd_sub <- mkwd %>%
@@ -108,7 +108,7 @@ summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type +
                     data = mkwd_lvl2_sub, family = "poisson"))
 
 ## ------------------------------------------------ ##
-    # Q4 - Ratio of Flowering : Total Stems ----
+    # Q3 - Ratio of Flowering : Total Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
 mkwd_sub <- mkwd %>%
@@ -130,7 +130,7 @@ summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type +
                     data = mkwd_lvl2_sub, family = "binomial"))
 
 ## ------------------------------------------------ ##
-            # Q5 - # Buds & Flowers ----
+            # Q4 - # Buds & Flowers ----
 ## ------------------------------------------------ ##
 # Drop missing values
 mkwd_sub <- mkwd %>%
@@ -152,7 +152,7 @@ summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type +
                     data = mkwd_lvl2_sub, family = "poisson"))
 
 ## ------------------------------------------------ ##
-      # Q6 - Ratio Bitten : Total Stems ----
+      # Q5 - Ratio Bitten : Total Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
 mkwd_sub <- mkwd %>%
@@ -168,7 +168,7 @@ summary(lme4::glmer(Ratio.Bitten.vs.Total.Stems ~ Shrub.Abun.1m +
                     data = mkwd_sub, family = "binomial"))
 
 ## ------------------------------------------------ ##
-            # Q7 - Monarch Immatures ----
+            # Q6 - Monarch Immatures ----
 ## ------------------------------------------------ ##
 
 # Drop missing values

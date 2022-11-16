@@ -1,91 +1,206 @@
-## ----------------------------------------------------------------------- ##
-      # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
-## ----------------------------------------------------------------------- ##
-# Code written by Nicholas J Lyon
+## ---------------------------------------------------------- ##
+         # Moranz et al. Asclepias tuberosa Project
+## ---------------------------------------------------------- ##
+# Code written by Nick J Lyon
 
-# PURPOSE ####
-  ## This code performs all of the statistical tests in the paper
-  ## and (presumably) some tests that didn't make it to the paper
+# PURPOSE ----
+## This code performs all of the statistical tests in the paper
 
-# Clear the environment
-rm(list = ls())
-
-# Set the working directory
-  ## Session -> Set Working Directory -> Choose Directory...
-myWD <- getwd()
-setwd(myWD)
+## ------------------------------------------------ ##
+                # Housekeeping ----
+## ------------------------------------------------ ##
 
 # Call any needed libraries here (good to centralize this step)
-library(readxl); library(psych); library(tidyverse); library(glmmTMB)
+# install.packages("librarian")
+librarian::shelf(tidyverse, njlyon0/helpR, psych, lme4)
 
-## ------------------------------------------------ ##
-                # Housekeeping ####
-## ------------------------------------------------ ##
+# Clear environment
+rm(list = ls())
+
 # Read in data
-mkwd.v0 <- as.data.frame(read_excel("./Data/Asclepias-TIDY.xlsx",
-                      sheet = "Data", guess_max = 10000))
-bfly.v0 <- as.data.frame(read_excel("./Data/Monarch-Adult-TIDY.xlsx",
-                   sheet = "Data", guess_max = 10000))
+mkwd <- read.csv(file = file.path("tidy_data", "Asclepias-TIDY.csv")) %>%
+  # Change some columns into characters to start
+  dplyr::mutate(dplyr::across(.cols = c(Site:Management.Method,
+                                        Stocking.Type:GrazingLawn),
+                              .fns = as.factor)) %>%
+  # Filter out TSF > 2
+  dplyr::filter(TSF <= 2)
 
-# Check the structure
-str(mkwd.v0)
-str(bfly.v0)
-
-# Some of our columns are not the right format so let's fix 'em all here
-mkwd.v0$Site <- as.factor(mkwd.v0$Site)
-mkwd.v0$Management <- as.factor(mkwd.v0$Management)
-mkwd.v0$Stocking <- as.factor(mkwd.v0$Stocking)
-mkwd.v0$GrazingLawn <- as.factor(mkwd.v0$GrazingLawn)
-str(mkwd.v0)
-bfly.v0$Site <- as.factor(bfly.v0$Site)
-bfly.v0$Stocking.Type <- as.factor(bfly.v0$Stocking.Type)
-str(bfly.v0)
-
-# Give the summary of the df a quick once-over too
-summary(mkwd.v0)
-summary(bfly.v0)
-
-# Now remove the TSF > 2
-mkwd <- filter(mkwd.v0, TSF <= 2)
-sort(unique(mkwd$TSF))
-bfly <- filter(bfly.v0, TSF <= 2)
-sort(unique(bfly$TSF))
+# Glimpse it
+dplyr::glimpse(mkwd)
 
 # Okay, if we want to get all of our pairwise comparisons we need to change the factor levels
-  ## The first level gets 'sucked into' the intercept so we need a second version of the data
-  ## Where a different factor level is "first"
-mkwd.lvl2 <- mkwd
-levels(mkwd.lvl2$Stocking)
-levels(mkwd.lvl2$Management)
-mkwd.lvl2$Stocking <- factor(mkwd.lvl2$Stocking, levels = c("None", "SLS", "IES"))
-mkwd.lvl2$Management <- factor(mkwd.lvl2$Management, levels = c("GB", "PBG", "BO"))
-levels(mkwd.lvl2$Stocking)
-levels(mkwd.lvl2$Management)
-  ## So, to get all three comparisons you just run the same test once with each version of the data
+## The first level gets 'sucked into' the intercept so we need a second version of the data where a different factor level is "first"
+mkwd_lvl2 <- mkwd %>%
+  dplyr::mutate(
+    Stocking.Type = factor(Stocking.Type, levels = c("None", "SLS", "IES")),
+    Management.Method = factor(Management.Method,
+                               levels = c("GB", "PBG", "BO")))
 
-# Do the same for the butterfly stocking column
-bfly.lvl2 <- bfly
-levels(bfly.lvl2$Stocking.Type)
-bfly.lvl2$Stocking.Type <- factor(bfly.lvl2$Stocking.Type,
-                            levels = c("None", "SLS", "IES"))
-levels(bfly.lvl2$Stocking.Type)
+# Glimpse this
+dplyr::glimpse(mkwd_lvl2)
 
-# We are now ready to do the analyses!
+# Check factor levels
+levels(mkwd$Management.Method); levels(mkwd_lvl2$Management.Method)
 
-# For each test,
-  ## 1 - check the distribution of the data
-  ## 2 - transform if necessary
-  ## 3 - then run the test
+## ------------------------------------------------ ##
+              # Q2 - # Bitten Stems ----
+## ------------------------------------------------ ##
+# Drop missing values
+mkwd_sub <- mkwd %>%
+  dplyr::filter(!is.na(Tot.Bitten.Stems))
+mkwd_lvl2_sub <- mkwd_lvl2 %>%
+  dplyr::filter(!is.na(Tot.Bitten.Stems))
+
+# Distribution check
+psych::multi.hist(mkwd_sub$Tot.Bitten.Stems)
+
+# Check whether interaction is significant
+summary(lme4::glmer(Tot.Bitten.Stems ~ TSF * Stocking.Type + 
+              (1|Julian) + (1|Year) + (1|Site),
+            data = mkwd_sub, family = "poisson"))
+
+## For both factor levels
+summary(lme4::glmer(Tot.Bitten.Stems ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_lvl2_sub, family = "poisson"))
+
+# If not, re-run without interaction term
+summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "poisson"))
+
+## For both factor levels
+summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_lvl2_sub, family = "poisson"))
+
+## ------------------------------------------------ ##
+            # Q3 - # Flowering Stems ----
+## ------------------------------------------------ ##
+# Drop missing values
+mkwd_sub <- mkwd %>%
+  dplyr::filter(!is.na(Num.Stems.ALL.Flowering.Stages))
+mkwd_lvl2_sub <- mkwd_lvl2 %>%
+  dplyr::filter(!is.na(Num.Stems.ALL.Flowering.Stages))
+
+# Distribution check
+psych::multi.hist(mkwd_sub$Num.Stems.ALL.Flowering.Stages)
+
+# Check whether interaction is significant
+summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "poisson"))
+
+## For both factor levels
+summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_lvl2_sub, family = "poisson"))
+
+# If not, re-run without interaction term
+summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "poisson"))
+
+## For both factor levels
+summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_lvl2_sub, family = "poisson"))
+
+## ------------------------------------------------ ##
+    # Q4 - Ratio of Flowering : Total Stems ----
+## ------------------------------------------------ ##
+# Drop missing values
+mkwd_sub <- mkwd %>%
+  dplyr::filter(!is.na(Ratio.Flowering.vs.Total.Stems))
+mkwd_lvl2_sub <- mkwd_lvl2 %>%
+  dplyr::filter(!is.na(Ratio.Flowering.vs.Total.Stems))
+
+# Distribution check
+psych::multi.hist(mkwd_sub$Ratio.Flowering.vs.Total.Stems)
+
+# Check whether interaction is significant
+summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "binomial"))
+
+## For both factor levels
+summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_lvl2_sub, family = "binomial"))
+
+## ------------------------------------------------ ##
+            # Q5 - # Buds & Flowers ----
+## ------------------------------------------------ ##
+# Drop missing values
+mkwd_sub <- mkwd %>%
+  dplyr::filter(!is.na(Tot.Bud.n.Flr))
+mkwd_lvl2_sub <- mkwd_lvl2 %>%
+  dplyr::filter(!is.na(Tot.Bud.n.Flr))
+
+# Distribution check
+psych::multi.hist(mkwd_sub$Tot.Bud.n.Flr)
+
+# Check whether interaction is significant
+summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "poisson"))
+
+## For both factor levels
+summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_lvl2_sub, family = "poisson"))
+
+## ------------------------------------------------ ##
+      # Q6 - Ratio Bitten : Total Stems ----
+## ------------------------------------------------ ##
+# Drop missing values
+mkwd_sub <- mkwd %>%
+  dplyr::filter(!is.na(Ratio.Bitten.vs.Total.Stems) &
+                  !is.na(Shrub.Abun.1m))
+
+# Distribution check
+psych::multi.hist(mkwd_sub$Ratio.Bitten.vs.Total.Stems)
+
+# Check result of single explanatory var
+summary(lme4::glmer(Ratio.Bitten.vs.Total.Stems ~ Shrub.Abun.1m + 
+                      (1|Julian) + (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "binomial"))
+
+## ------------------------------------------------ ##
+            # Q7 - Monarch Immatures ----
+## ------------------------------------------------ ##
+
+# Drop missing values
+mkwd_sub <- mkwd %>%
+  dplyr::filter(!is.na(Tot.Monarch.Immatures))
+
+# Distribution check
+psych::multi.hist(mkwd_sub$Tot.Monarch.Immatures)
+
+# Check whether interaction is significant
+summary(lme4::glmer(Tot.Monarch.Immatures ~ Stocking.Type + 
+                      (1|Year) + (1|Site),
+                    data = mkwd_sub, family = "poisson"))
+
+# Skip checking other factor level because there were no immatures in the "No" grazing so we can't put that factor in the intercept
+
+mkwd_sub %>%
+  dplyr::group_by(Stocking.Type) %>%
+  dplyr::summarize(mean_monarch = mean(Tot.Monarch.Immatures, na.rm = T))
+
+# End ----
+
 
 ## ------------------------------------------------ ##
       # Q1 - # stems of any flowering stage ####
 ## ------------------------------------------------ ##
 ### Number of stems with buds + flowers + dead flowers
 # Distribution check
-multi.hist(mkwd$Num.Stems.ALL.Flowering.Stages)
+psych::multi.hist(mkwd$Num.Stems.ALL.Flowering.Stages)
 
 # Tests
-summary(glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking + (1|Year) + (1|Site),
+summary(glmmTMB::glmmTMB(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + (1|Year) + (1|Site),
                 data = mkwd, family = genpois()))
 
 # Run again with the other factor order
@@ -150,26 +265,6 @@ summary(glmmTMB(Avg.Height ~ TSF + Stocking + (1|Year) + (1|Julian) + (1|Site),
 
 summary(glmmTMB(Avg.Height ~ TSF + Stocking + (1|Year) + (1|Julian) + (1|Site),
                 data = mkwd.lvl2, family = gaussian()))
-
-## ------------------------------------------------ ##
-        # Q5 - total # bitten stems ####
-## ------------------------------------------------ ##
-# Distribution check
-multi.hist(mkwd$Tot.Bitten.Stems)
-
-# Tests
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
-                data = mkwd, family = genpois()))
-
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF * Stocking + (1|Julian) + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = genpois()))
-
-# Re-run without interaction
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF + Stocking + (1|Julian) + (1|Year) + (1|Site),
-                data = mkwd, family = genpois()))
-
-summary(glmmTMB(Tot.Bitten.Stems ~ TSF + Stocking + (1|Julian) + (1|Year) + (1|Site),
-                data = mkwd.lvl2, family = genpois()))
 
 ## ------------------------------------------------ ##
   # Q6 - ratio of bitten stems : total stems ####

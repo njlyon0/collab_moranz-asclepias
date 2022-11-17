@@ -65,6 +65,22 @@ ggplot(data = df, aes(x = Stocking.Type, y = mean,
   theme(legend.position = "none") +
   helpR::theme_lyon() }
 
+# Interaction figure skeleton
+ixn_fig_skeleton <- function(df, ylab){
+  ggplot(data = df, aes(x = TSF, y = mean, shape = Stocking.Type,
+                       fill = Stocking.Type)) +
+    geom_smooth(aes(color = Stocking.Type), method = "lm",
+                formula = "y ~ x", se = F) +
+    geom_errorbar(aes(ymin = mean - std_error, ymax = mean + std_error),
+                  width = 0.25, position = position_dodge(width = 0.5)) +     
+    geom_point(stat = 'identity', size = 3,
+               position = position_dodge(width = 0.5)) +
+    labs(x = "Time Since Fire (years)", y = ylab) +
+    scale_x_continuous(breaks = c(0, 1, 2)) +
+    scale_fill_manual(values = stock_colors) +
+    scale_color_manual(values = stock_colors) +
+    scale_shape_manual(values = 21:23) +
+    helpR::theme_lyon() }
 
 ## ------------------------------------------------ ##
               # Fig2 - # Bitten Stems ----
@@ -124,7 +140,8 @@ flr_stem_tsf <- mkwd %>%
   helpR::summary_table(data = ., groups = c("TSF"),
                        response = "Num.Stems.ALL.Flowering.Stages") %>%
   # Generate plot
-  tsf_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)")
+  tsf_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)") +
+  geom_text(label = "NS", x = 2, y = 3.7, size = 6)
 
 # Look at it
 flr_stem_tsf
@@ -138,7 +155,8 @@ flr_stem_mgmt <- mkwd %>%
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
                                        levels = c("None", "SLS", "IES"))) %>%
   # Make graph
-  grz_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)")
+  grz_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)") +
+  geom_text(label = "NS", x = 3.2, y = 4, size = 6)
 
 # Check it
 flr_stem_mgmt
@@ -152,26 +170,25 @@ ggsave(filename = file.path("figures", "Asclepias_Fig3.pdf"),
        plot = last_plot(), width = 6.5, height = 4, unit = "in")
 
 ## ------------------------------------------------ ##
-# Q4 - Ratio of Flowering : Total Stems ----
+    # Fig4 - Ratio of Flowering : Total Stems ----
 ## ------------------------------------------------ ##
-# Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Ratio.Flowering.vs.Total.Stems))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Ratio.Flowering.vs.Total.Stems))
 
-# Distribution check
-psych::multi.hist(mkwd_sub$Ratio.Flowering.vs.Total.Stems)
+# Results
+## Significant TSF x Stocking interaction
+mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("TSF", "Stocking.Type"),
+                       response = "Ratio.Flowering.vs.Total.Stems") %>%
+  # Re-level factor
+  dplyr::mutate(Stocking.Type = factor(Stocking.Type,
+                                       levels = c("None", "SLS", "IES"))) %>%
+  # Make plot
+  ixn_fig_skeleton(df = ., ylab = "Flowering:Total Stems") +
+  theme(legend.position = c(0.8, 0.85))
 
-# Check whether interaction is significant
-summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "binomial"))
-
-## For both factor levels
-summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "binomial"))
+# Export this figure
+ggsave(filename = file.path("figures", "Asclepias_Fig4.pdf"),
+       plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
 # Q5 - # Buds & Flowers ----
@@ -239,114 +256,6 @@ mkwd_sub %>%
 
 
 
-## ----------------------------------------------------------------------- ##
-      # Moranz et al. Butterfly Milkweed (Asclepias tuberosa) Project
-## ----------------------------------------------------------------------- ##
-# Code written by Nicholas J Lyon
-
-# PURPOSE ####
-  ## Creates publication-quality figures for this project
-  ## This code differs from the "-plots.R" in that it focuses only on figures
-  ## and does not necessarily graph every result
-
-# Clear the environment
-rm(list = ls())
-
-# Set the working directory
-  ## Session -> Set Working Directory -> Choose Directory...
-myWD <- getwd()
-setwd(myWD)
-
-# Call any needed libraries here (good to centralize this step)
-library(readxl); library(psych); library(tidyverse)
-library(Rmisc); library(egg); library(cowplot)
-
-## ------------------------------------------------ ##
-                  # Housekeeping ####
-## ------------------------------------------------ ##
-# Read in data
-all.mkwd <- read_excel("./Data/Asclepias-TIDY.xlsx",
-                       sheet = "Data", guess_max = 10000)
-all.bfly <- read_excel("./Data/Monarch-Adult-TIDY.xlsx",
-                       sheet = "Data", guess_max = 10000)
-
-# Check the structure
-str(all.mkwd)
-str(all.bfly)
-
-# Some of our columns are not the right format so let's fix 'em all here
-all.mkwd$Site <- as.factor(all.mkwd$Site)
-all.mkwd$Management <- as.factor(all.mkwd$Management)
-all.mkwd$Stocking <- factor(all.mkwd$Stocking, 
-                            levels = c("None", "SLS", "IES"))
-all.mkwd$GrazingLawn <- as.factor(all.mkwd$GrazingLawn)
-str(all.mkwd)
-
-all.bfly$Site <- as.factor(all.bfly$Site)
-str(all.bfly)
-
-# For ease of plotting, let's give our plotting the right aesthetics
-all.mkwd$Grazing <- all.mkwd$Stocking
-all.mkwd$Grazing <- gsub("IES", "Intensive Early", all.mkwd$Grazing)
-all.mkwd$Grazing <- gsub("SLS", "Season Long", all.mkwd$Grazing)
-all.mkwd$Grazing <- factor(all.mkwd$Grazing,
-                           levels = c("None", "Season Long", "Intensive Early"))
-sort(unique(all.mkwd$Grazing))
-
-all.bfly$Grazing <- all.bfly$Stocking.Type
-all.bfly$Grazing <- gsub("IES", "Intensive Early", all.bfly$Grazing)
-all.bfly$Grazing <- gsub("SLS", "Season Long", all.bfly$Grazing)
-all.bfly$Grazing <- factor(all.bfly$Grazing,
-                           levels = c("None", "Season Long", "Intensive Early"))
-sort(unique(all.bfly$Grazing))
-
-# If we treat TSF as a factor and have significant TSF*Grazing interactions
-  ## We'll need a combo column for plotting that relationship
-all.mkwd$Combo.Factor <- with(all.mkwd, paste0(TSF, "-", Grazing))
-sort(unique(all.mkwd$Combo.Factor))
-
-# Factor this column and manually set the level order
-all.mkwd$Combo.Factor <- factor(all.mkwd$Combo.Factor,
-                                levels = c("0-None", "0-Season Long", "0-Intensive Early",
-                                           "1-None", "1-Season Long", "1-Intensive Early",
-                                           "2-None", "2-Season Long", "2-Intensive Early"))
-sort(unique(all.mkwd$Combo.Factor))
-
-# Give the summary of the df a quick once-over too
-summary(all.mkwd)
-
-# Subset the data to remove the TSF 3 & 4 data
-  ## Two sites that were ungrazed failed to be burned on schedule resulting in overly high TSF
-  ## These lack direct comparability with the other grazing types
-  ## Thus they are removed from consideration here
-mkwd <- filter(all.mkwd, TSF <= 2)
-sort(unique(mkwd$TSF))
-bfly <- filter(all.bfly, TSF <= 2)
-sort(unique(bfly$TSF))
-
-# Make any needed plotting aesthetics shared among graphs here
-stk_colors <- c("None" = "#b2abd2", #"SLS" = "#fdb863", "IES" = "#b35806",
-                "Season Long" = "#fdb863", "Intensive Early" = "#b35806")
-stk_shps <- c("None" = 21, "Season Long" = 25, "Intensive Early" = 24)
-mgmt_colors <- c("BO" = "#d73027", "GB" = "#e0f3f8", "PBG" = "#74add1")
-tsf_color <- "#FFFFFF"
-shrub_color <- "#7fbc41"
-btn_color <- "#35978f"
-dodge <- position_dodge(width = 0.5)
-pref_theme <- theme_classic() + theme(axis.text = element_text(size = 13),
-                                      axis.title = element_text(size = 15),
-                                      legend.position = "none",
-                                      legend.title.align = 0.5,
-                                      legend.background = element_blank(),
-                                      legend.text = element_text(size = 12),
-                                      legend.title = element_text(size = 13))
-axis_angle <- theme(axis.text.x = element_text(angle = 25, hjust = 1))
-tsf.x.brks <- scale_x_continuous(breaks = c(0, 1, 2))
-
-# Sometimes we will want all groups to have the same color/shape/fill (i.e., aesthetic)
-  ## It is easiest to do that by adding a dummy column here
-  ## Then calling that column to assign those aesthetics
-mkwd$For.Plotting <- rep("x", nrow(mkwd))
 
 ## ------------------------------------------------ ##
               # Stem Length Figure ####

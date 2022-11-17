@@ -42,8 +42,6 @@ stock_colors <- c("None" = "#8073ac", "SLS" = "#fdb863", "IES" = "#b35806")
 # Create the ggplot architecture for the TSF figure
 tsf_fig_skeleton <- function(df, ylab){
   ggplot(data = df, aes(x = TSF, y = mean, fill = "a")) +
-    geom_smooth(aes(color = "b"), method = 'lm',
-                se = F, formula = "y ~ x") +
     geom_errorbar(aes(ymin = mean - std_error, ymax = mean + std_error),
                   width = 0.25) +
     geom_point(size = 3, pch = 23) + 
@@ -65,8 +63,7 @@ ggplot(data = df, aes(x = Stocking.Type, y = mean,
   labs(x = "Stocking Type", y = ylab) +
   scale_color_manual(values = 'black') +
   theme(legend.position = "none") +
-  helpR::theme_lyon()
-}
+  helpR::theme_lyon() }
 
 
 ## ------------------------------------------------ ##
@@ -82,7 +79,9 @@ tot_bitten_tsf <- mkwd %>%
   helpR::summary_table(data = ., groups = c("TSF"),
                 response = "Tot.Bitten.Stems", drop_na = T) %>%
   # Generate plot
-  tsf_fig_skeleton(df = ., ylab = "Mean Bitten Stems")
+  tsf_fig_skeleton(df = ., ylab = "Bitten Stems") + 
+  geom_smooth(aes(color = "b"), formula = "y ~ x", 
+              se = F, method = 'lm')
 
 # Look at it
 tot_bitten_tsf
@@ -96,7 +95,7 @@ tot_bitten_mgmt <- mkwd %>%
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
                                        levels = c("None", "SLS", "IES"))) %>%
   # Make graph
-  grz_fig_skeleton(df = ., ylab = "Mean Bitten Stems") +
+  grz_fig_skeleton(df = ., ylab = "Bitten Stems") +
   geom_text(label = "a", x = 0.7, y = 0.6, size = 6) +
   geom_text(label = "b", x = 1.7, y = 1.3, size = 6) +
   geom_text(label = "c", x = 2.7, y = 2.2, size = 6)
@@ -106,44 +105,51 @@ tot_bitten_mgmt
 
 # Combine the plots!
 cowplot::plot_grid(tot_bitten_tsf, tot_bitten_mgmt,
-                   nrow = 1, ncol = 2,
-                   labels = "AUTO")
+                   nrow = 1, ncol = 2)
 
 # Export
 ggsave(filename = file.path("figures", "Asclepias_Fig2.pdf"),
        plot = last_plot(), width = 6.5, height = 4, unit = "in")
 
 ## ------------------------------------------------ ##
-# Q3 - # Flowering Stems ----
+          # Fig3 - # Flowering Stems ----
 ## ------------------------------------------------ ##
-# Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Num.Stems.ALL.Flowering.Stages))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Num.Stems.ALL.Flowering.Stages))
 
-# Distribution check
-psych::multi.hist(mkwd_sub$Num.Stems.ALL.Flowering.Stages)
+# Results
+## No sig differences
 
-# Check whether interaction is significant
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Create TSF plot
+flr_stem_tsf <- mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("TSF"),
+                       response = "Num.Stems.ALL.Flowering.Stages") %>%
+  # Generate plot
+  tsf_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)")
 
-## For both factor levels
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Look at it
+flr_stem_tsf
 
-# If not, re-run without interaction term
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Now make the stocking rate one
+flr_stem_mgmt <- mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+                       response = "Num.Stems.ALL.Flowering.Stages") %>%
+  # Relevel factor
+  dplyr::mutate(Stocking.Type = factor(Stocking.Type,
+                                       levels = c("None", "SLS", "IES"))) %>%
+  # Make graph
+  grz_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)")
 
-## For both factor levels
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Check it
+flr_stem_mgmt
+
+# Combine the plots!
+cowplot::plot_grid(flr_stem_tsf, flr_stem_mgmt,
+                   nrow = 1, ncol = 2)
+
+# Export
+ggsave(filename = file.path("figures", "Asclepias_Fig3.pdf"),
+       plot = last_plot(), width = 6.5, height = 4, unit = "in")
 
 ## ------------------------------------------------ ##
 # Q4 - Ratio of Flowering : Total Stems ----

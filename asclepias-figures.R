@@ -175,6 +175,8 @@ ggsave(filename = file.path("figures", "Asclepias_Fig3.pdf"),
 
 # Results
 ## Significant TSF x Stocking interaction
+
+# Generate plot
 mkwd %>%
   # Get summary table
   helpR::summary_table(data = ., groups = c("TSF", "Stocking.Type"),
@@ -191,26 +193,27 @@ ggsave(filename = file.path("figures", "Asclepias_Fig4.pdf"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
-# Q5 - # Buds & Flowers ----
+            # Fig5 - # Buds & Flowers ----
 ## ------------------------------------------------ ##
-# Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Tot.Bud.n.Flr))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Tot.Bud.n.Flr))
 
-# Distribution check
-psych::multi.hist(mkwd_sub$Tot.Bud.n.Flr)
+# Results
+## Significant TSF * Grazing interaction
 
-# Check whether interaction is significant
-summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Generate plot
+mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("TSF", "Stocking.Type"),
+                       response = "Tot.Bud.n.Flr") %>%
+  # Re-level factor
+  dplyr::mutate(Stocking.Type = factor(Stocking.Type,
+                                       levels = c("None", "SLS", "IES"))) %>%
+  # Make plot
+  ixn_fig_skeleton(df = ., ylab = "Buds & Flowers") +
+  theme(legend.position = c(0.8, 0.85))
 
-## For both factor levels
-summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Export this figure
+ggsave(filename = file.path("figures", "Asclepias_Fig5.pdf"),
+       plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
 # Q6 - Ratio Bitten : Total Stems ----

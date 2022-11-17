@@ -245,33 +245,27 @@ ggsave(filename = file.path("figures", "Asclepias_Fig6.pdf"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
-# Q7 - Monarch Immatures ----
+            # Fig7 - Monarch Immatures ----
 ## ------------------------------------------------ ##
 
-# Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Tot.Monarch.Immatures))
+# Results
+## Nonsignificant
 
-# Distribution check
-psych::multi.hist(mkwd_sub$Tot.Monarch.Immatures)
+# Make figure
+mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+                       response = "Tot.Monarch.Immatures") %>%
+  # Relevel factor
+  dplyr::mutate(Stocking.Type = factor(Stocking.Type,
+                                       levels = c("None", "SLS", "IES"))) %>%
+  # Make graph
+  grz_fig_skeleton(df = ., ylab = "Monarch Immatures") +
+  geom_text(label = "NS", x = 0.8, y = 0.6, size = 6)
 
-# Check whether interaction is significant
-summary(lme4::glmer(Tot.Monarch.Immatures ~ Stocking.Type + 
-                      (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
-
-# Skip checking other factor level because there were no immatures in the "No" grazing so we can't put that factor in the intercept
-
-mkwd_sub %>%
-  dplyr::group_by(Stocking.Type) %>%
-  dplyr::summarize(mean_monarch = mean(Tot.Monarch.Immatures, na.rm = T))
-
-
-
-
-
-
-
+# Export figure
+ggsave(filename = file.path("figures", "Asclepias_Fig7.pdf"),
+       plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
               # Stem Length Figure ####

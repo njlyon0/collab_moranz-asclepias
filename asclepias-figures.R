@@ -216,20 +216,33 @@ ggsave(filename = file.path("figures", "Asclepias_Fig5.pdf"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
-# Q6 - Ratio Bitten : Total Stems ----
+      # Fig6 - Ratio Bitten : Total Stems ----
 ## ------------------------------------------------ ##
-# Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Ratio.Bitten.vs.Total.Stems) &
-                  !is.na(Shrub.Abun.1m))
 
-# Distribution check
-psych::multi.hist(mkwd_sub$Ratio.Bitten.vs.Total.Stems)
+# Results
+## Significant effect of nearby shrubs
 
-# Check result of single explanatory var
-summary(lme4::glmer(Ratio.Bitten.vs.Total.Stems ~ Shrub.Abun.1m + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "binomial"))
+mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = "Shrub.Abun.1m",
+                       response = "Ratio.Bitten.vs.Total.Stems",
+                       drop_na = TRUE) %>%
+  # Make graph
+  ggplot(data = ., aes(x = Shrub.Abun.1m, y = mean, fill = "a")) +
+  geom_smooth(aes(color = "b"), method = "lm", formula = "y ~ x", se = F) +
+  geom_errorbar(aes(ymin = mean - std_error, ymax = mean + std_error),
+                width = 0.25) +
+  geom_point(size = 3, pch = 25) + 
+  labs(x = "Shrubs within 1 meter", y = "Bitten:Total Stems") +
+  scale_x_continuous() +
+  scale_fill_manual(values = "#35978f") +
+  scale_color_manual(values = 'black') +
+  theme(legend.position = "none") +
+  helpR::theme_lyon()
+
+# Export this figure
+ggsave(filename = file.path("figures", "Asclepias_Fig6.pdf"),
+       plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
 # Q7 - Monarch Immatures ----

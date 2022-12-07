@@ -124,7 +124,7 @@ cowplot::plot_grid(tot_bitten_tsf, tot_bitten_mgmt,
                    nrow = 1, ncol = 2)
 
 # Export
-ggsave(filename = file.path("figures", "Asclepias_Fig2.pdf"),
+ggsave(filename = file.path("figures", "Asclepias_Fig2.png"),
        plot = last_plot(), width = 6.5, height = 4, unit = "in")
 
 ## ------------------------------------------------ ##
@@ -166,7 +166,7 @@ cowplot::plot_grid(flr_stem_tsf, flr_stem_mgmt,
                    nrow = 1, ncol = 2)
 
 # Export
-ggsave(filename = file.path("figures", "Asclepias_Fig3.pdf"),
+ggsave(filename = file.path("figures", "Asclepias_Fig3.png"),
        plot = last_plot(), width = 6.5, height = 4, unit = "in")
 
 ## ------------------------------------------------ ##
@@ -189,7 +189,7 @@ mkwd %>%
   theme(legend.position = c(0.8, 0.85))
 
 # Export this figure
-ggsave(filename = file.path("figures", "Asclepias_Fig4.pdf"),
+ggsave(filename = file.path("figures", "Asclepias_Fig4.png"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
@@ -212,7 +212,7 @@ mkwd %>%
   theme(legend.position = c(0.8, 0.85))
 
 # Export this figure
-ggsave(filename = file.path("figures", "Asclepias_Fig5.pdf"),
+ggsave(filename = file.path("figures", "Asclepias_Fig5.png"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
@@ -241,7 +241,7 @@ mkwd %>%
   helpR::theme_lyon()
 
 # Export this figure
-ggsave(filename = file.path("figures", "Asclepias_Fig6.pdf"),
+ggsave(filename = file.path("figures", "Asclepias_Fig6.png"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
@@ -264,7 +264,7 @@ mkwd %>%
   geom_text(label = "NS", x = 0.8, y = 0.6, size = 6)
 
 # Export figure
-ggsave(filename = file.path("figures", "Asclepias_Fig7.pdf"),
+ggsave(filename = file.path("figures", "Asclepias_Fig7.png"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
 # END ----

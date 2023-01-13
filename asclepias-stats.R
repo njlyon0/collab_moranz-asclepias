@@ -44,6 +44,15 @@ dplyr::glimpse(mkwd_lvl2)
 levels(mkwd$Management.Method); levels(mkwd_lvl2$Management.Method)
 
 ## ------------------------------------------------ ##
+              # Sample Size Check ----
+## ------------------------------------------------ ##
+# Want to know number of plants per year / stocking type
+mkwd %>%
+  dplyr::group_by(TSF, Stocking.Type) %>%
+  dplyr::summarize(plant_num = dplyr::n()) %>%
+  dplyr::ungroup()
+
+## ------------------------------------------------ ##
               # Q1 - # Bitten Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values

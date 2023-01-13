@@ -51,6 +51,10 @@ mkwd %>%
   dplyr::group_by(TSF, Stocking.Type) %>%
   dplyr::summarize(plant_num = dplyr::n()) %>%
   dplyr::ungroup()
+## Note:
+### This is *not* necessarily the sample size of each response variable
+### Because it fails to account for plants where some (not all) variables were measured
+### That said, it is likely a reasonable proxy of sample size
 
 ## ------------------------------------------------ ##
               # Q1 - # Bitten Stems ----

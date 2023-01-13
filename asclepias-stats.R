@@ -56,6 +56,18 @@ mkwd %>%
 ### Because it fails to account for plants where some (not all) variables were measured
 ### That said, it is likely a reasonable proxy of sample size
 
+# Check just per TSF (i.e., sample size of non-sig interaction)
+mkwd %>%
+  dplyr::group_by(TSF) %>%
+  dplyr::summarize(plant_num = dplyr::n()) %>%
+  dplyr::ungroup()
+
+# And just per stocking type
+mkwd %>%
+  dplyr::group_by(Stocking.Type) %>%
+  dplyr::summarize(plant_num = dplyr::n()) %>%
+  dplyr::ungroup()
+
 ## ------------------------------------------------ ##
               # Q1 - # Bitten Stems ----
 ## ------------------------------------------------ ##

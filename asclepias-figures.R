@@ -87,7 +87,8 @@ ixn_fig_skeleton <- function(df, ylab){
 ## ------------------------------------------------ ##
 
 # Results:
-## Time Since Fire (TSF) and Stocking *separately* affect number bitten stems
+## Time Since Fire (TSF) doesn't affect number bitten stems
+## Stocking type does
 
 # Create TSF plot
 tot_bitten_tsf <- mkwd %>%
@@ -95,9 +96,9 @@ tot_bitten_tsf <- mkwd %>%
   helpR::summary_table(data = ., groups = c("TSF"),
                 response = "Tot.Bitten.Stems", drop_na = T) %>%
   # Generate plot
-  tsf_fig_skeleton(df = ., ylab = "Bitten Stems") + 
-  geom_smooth(aes(color = "b"), formula = "y ~ x", 
-              se = F, method = 'lm')
+  tsf_fig_skeleton(df = ., ylab = "Bitten Stems") +
+  geom_text(label = "NS", x = 2, y = 2.5, size = 6) +
+  ylim(0, 2.5)
 
 # Look at it
 tot_bitten_tsf
@@ -114,7 +115,9 @@ tot_bitten_mgmt <- mkwd %>%
   grz_fig_skeleton(df = ., ylab = "Bitten Stems") +
   geom_text(label = "a", x = 0.7, y = 0.6, size = 6) +
   geom_text(label = "b", x = 1.7, y = 1.3, size = 6) +
-  geom_text(label = "c", x = 2.7, y = 2.2, size = 6)
+  geom_text(label = "c", x = 2.7, y = 2.2, size = 6) +
+  ylim(0, 2.5) +
+  theme(axis.title.y = element_blank())
   
 # Check it
 tot_bitten_mgmt
@@ -132,7 +135,7 @@ ggsave(filename = file.path("figures", "Asclepias_Fig2.png"),
 ## ------------------------------------------------ ##
 
 # Results
-## No sig differences
+## TSF affects flowering stems while stocking doesn't
 
 # Create TSF plot
 flr_stem_tsf <- mkwd %>%
@@ -140,8 +143,10 @@ flr_stem_tsf <- mkwd %>%
   helpR::summary_table(data = ., groups = c("TSF"),
                        response = "Num.Stems.ALL.Flowering.Stages") %>%
   # Generate plot
-  tsf_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)") +
-  geom_text(label = "NS", x = 2, y = 3.7, size = 6)
+  tsf_fig_skeleton(df = ., ylab = "Reproductive Stems") +
+  geom_smooth(aes(color = "b"), formula = "y ~ x", 
+              se = F, method = 'lm') +
+  ylim(0, 4.5)
 
 # Look at it
 flr_stem_tsf
@@ -155,8 +160,10 @@ flr_stem_mgmt <- mkwd %>%
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
                                        levels = c("None", "SLS", "IES"))) %>%
   # Make graph
-  grz_fig_skeleton(df = ., ylab = "Flowering Stems (all stages)") +
-  geom_text(label = "NS", x = 3.2, y = 4, size = 6)
+  grz_fig_skeleton(df = ., ylab = "Reproductive Stems") +
+  geom_text(label = "NS", x = 3.2, y = 4.5, size = 6) +
+  ylim(0, 4.5) +
+  theme(axis.title.y = element_blank())
 
 # Check it
 flr_stem_mgmt
@@ -174,42 +181,89 @@ ggsave(filename = file.path("figures", "Asclepias_Fig3.png"),
 ## ------------------------------------------------ ##
 
 # Results
-## Significant TSF x Stocking interaction
+## TSF doesn't affect the ratio of flowering to total
+## Stocking's effect is marginally significant (p = 0.078)
 
-# Generate plot
-mkwd %>%
+# Create TSF plot
+rat_flr_tot_tsf <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("TSF", "Stocking.Type"),
+  helpR::summary_table(data = ., groups = c("TSF"),
+                       response = "Ratio.Flowering.vs.Total.Stems", 
+                       drop_na = T) %>%
+  # Generate plot
+  tsf_fig_skeleton(df = ., ylab = "Flowering:Total Stems") +
+  geom_text(label = "NS", x = 2, y = 1, size = 6) +
+  ylim(0, 1)
+
+# Look at it
+rat_flr_tot_tsf
+
+# Now make the stocking rate one
+rat_flr_tot_mgmt <- mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Ratio.Flowering.vs.Total.Stems") %>%
-  # Re-level factor
+  # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
                                        levels = c("None", "SLS", "IES"))) %>%
-  # Make plot
-  ixn_fig_skeleton(df = ., ylab = "Flowering:Total Stems") +
-  theme(legend.position = c(0.8, 0.85))
+  # Make graph
+  grz_fig_skeleton(df = ., ylab = "Flowering:Total Stems") +
+  geom_text(label = "a", x = 0.7, y = 0.9, size = 6) +
+  geom_text(label = "ab", x = 1.7, y = 0.88, size = 6) +
+  geom_text(label = "b", x = 2.7, y = 0.67, size = 6) +
+  ylim(0, 1) +
+  theme(axis.title.y = element_blank())
+
+# Check it
+rat_flr_tot_mgmt
+
+# Combine the plots!
+cowplot::plot_grid(rat_flr_tot_tsf, rat_flr_tot_mgmt,
+                   nrow = 1, ncol = 2)
 
 # Export this figure
 ggsave(filename = file.path("figures", "Asclepias_Fig4.png"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
-## ------------------------------------------------ ##
+ ## ------------------------------------------------ ##
             # Fig5 - # Buds & Flowers ----
 ## ------------------------------------------------ ##
 
 # Results
-## Significant TSF * Grazing interaction
+## No significant relationships with fixed effects
 
-# Generate plot
-mkwd %>%
+# Create TSF plot
+budflr_tsf <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("TSF", "Stocking.Type"),
+  helpR::summary_table(data = ., groups = c("TSF"),
+                       response = "Tot.Bud.n.Flr", drop_na = T) %>%
+  # Generate plot
+  tsf_fig_skeleton(df = ., ylab = "Buds & Flowers") +
+  geom_text(label = "NS", x = 2, y = 280, size = 6) +
+  ylim(0, 280)
+
+# Look at it
+budflr_tsf
+
+# Now make the stocking rate one
+budflr_mgmt <- mkwd %>%
+  # Get summary table
+  helpR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Tot.Bud.n.Flr") %>%
-  # Re-level factor
+  # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
                                        levels = c("None", "SLS", "IES"))) %>%
-  # Make plot
-  ixn_fig_skeleton(df = ., ylab = "Buds & Flowers") +
-  theme(legend.position = c(0.8, 0.85))
+  # Make graph
+  grz_fig_skeleton(df = ., ylab = "Buds & Flowers") +
+  geom_text(label = "NS", x = 3.2, y = 280, size = 6) +
+  ylim(0, 280) +
+  theme(axis.title.y = element_blank())
+
+# Check it
+budflr_mgmt
+
+# Combine the plots!
+cowplot::plot_grid(budflr_tsf, budflr_mgmt, nrow = 1, ncol = 2)
 
 # Export this figure
 ggsave(filename = file.path("figures", "Asclepias_Fig5.png"),
@@ -238,7 +292,8 @@ mkwd %>%
   scale_fill_manual(values = "#35978f") +
   scale_color_manual(values = 'black') +
   theme(legend.position = "none") +
-  helpR::theme_lyon()
+  helpR::theme_lyon() + 
+  ylim(0, 0.5)
 
 # Export this figure
 ggsave(filename = file.path("figures", "Asclepias_Fig6.png"),
@@ -249,9 +304,9 @@ ggsave(filename = file.path("figures", "Asclepias_Fig6.png"),
 ## ------------------------------------------------ ##
 
 # Results
-## Nonsignificant
+## Nonsignificant relationship between monarch immatures and stocking type
 
-# Make figure
+# Create TSF plot
 mkwd %>%
   # Get summary table
   helpR::summary_table(data = ., groups = c("Stocking.Type"),
@@ -261,10 +316,11 @@ mkwd %>%
                                        levels = c("None", "SLS", "IES"))) %>%
   # Make graph
   grz_fig_skeleton(df = ., ylab = "Monarch Immatures") +
-  geom_text(label = "NS", x = 0.8, y = 0.6, size = 6)
+  geom_text(label = "NS", x = 3.2, y = 1.5, size = 6) +
+  ylim(0, 1.5)
 
 # Export figure
 ggsave(filename = file.path("figures", "Asclepias_Fig7.png"),
        plot = last_plot(), width = 5, height = 5, unit = "in")
 
-# END ----
+# End ----

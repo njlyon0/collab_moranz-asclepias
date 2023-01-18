@@ -238,7 +238,7 @@ cowplot::plot_grid(rat_flr_tot_tsf, rat_flr_tot_mgmt,
 
 # Export this figure
 ggsave(filename = file.path("figures", "Asclepias_Fig4.png"),
-       plot = last_plot(), width = 5, height = 5, unit = "in")
+       plot = last_plot(), width = 6, height = 5, unit = "in")
 
  ## ------------------------------------------------ ##
             # Fig5 - # Buds & Flowers ----
@@ -286,7 +286,7 @@ cowplot::plot_grid(budflr_tsf, budflr_mgmt, nrow = 1, ncol = 2)
 
 # Export this figure
 ggsave(filename = file.path("figures", "Asclepias_Fig5.png"),
-       plot = last_plot(), width = 5, height = 5, unit = "in")
+       plot = last_plot(), width = 6, height = 5, unit = "in")
 
 ## ------------------------------------------------ ##
       # Fig6 - Ratio Bitten : Total Stems ----

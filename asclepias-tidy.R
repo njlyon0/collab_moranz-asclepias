@@ -369,7 +369,12 @@ mkwd_v7 <- mkwd_v6 %>%
     TRUE ~ Patch)) %>%
   # Filter out accidental rows
   dplyr::filter(!Plant.ID %in% c("(accidental row)", "accidental row",
-                                 "Accidental row", "ACCIDENTAL ROW"))
+                                 "Accidental row", "ACCIDENTAL ROW")) %>%
+  # If site is missing, fill with first three characters of Plant ID
+  dplyr::mutate(Site = ifelse(test = is.na(Site),
+                              yes = stringr::str_sub(string = Plant.ID,
+                                                     start = 1, end = 3),
+                              no = Site))
 
 # Glimpse this
 dplyr::glimpse(mkwd_v7)

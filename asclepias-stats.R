@@ -102,33 +102,27 @@ rm(list = setdiff(ls(), c("mkwd")))
             # Q2 - # Flowering Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Num.Stems.ALL.Flowering.Stages))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Num.Stems.ALL.Flowering.Stages))
+mkwd_sub <- dplyr::filter(mkwd, !is.na(Num.Stems.ALL.Flowering.Stages))
 
 # Distribution check
 psych::multi.hist(mkwd_sub$Num.Stems.ALL.Flowering.Stages)
 
-# Check whether interaction is significant
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Fit model
+mod <- lmerTest::lmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
 
-## For both factor levels
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Get results
+stats::anova(mod)
 
-# If not, re-run without interaction term
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Re-run without interaction 
+mod <- lmerTest::lmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
+stats::anova(mod)
 
-## For both factor levels
-summary(lme4::glmer(Num.Stems.ALL.Flowering.Stages ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Partially clear environment (necessary for safe object name re-use)
+rm(list = setdiff(ls(), c("mkwd")))
 
 ## ------------------------------------------------ ##
     # Q3 - Ratio of Flowering : Total Stems ----

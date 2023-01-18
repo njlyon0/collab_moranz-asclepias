@@ -90,6 +90,9 @@ ixn_fig_skeleton <- function(df, ylab){
 ## Time Since Fire (TSF) doesn't affect number bitten stems
 ## Stocking type does
 
+# Define y limits shared by both plots
+tot_bitten_ylim <- ylim(0, 2.5)
+
 # Create TSF plot
 tot_bitten_tsf <- mkwd %>%
   # Get summary table
@@ -98,7 +101,7 @@ tot_bitten_tsf <- mkwd %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Bitten Stems") +
   geom_text(label = "NS", x = 2, y = 2.5, size = 6) +
-  ylim(0, 2.5)
+  tot_bitten_ylim
 
 # Look at it
 tot_bitten_tsf
@@ -116,8 +119,9 @@ tot_bitten_mgmt <- mkwd %>%
   geom_text(label = "a", x = 0.7, y = 0.6, size = 6) +
   geom_text(label = "b", x = 1.7, y = 1.3, size = 6) +
   geom_text(label = "c", x = 2.7, y = 2.2, size = 6) +
-  ylim(0, 2.5) +
-  theme(axis.title.y = element_blank())
+  tot_bitten_ylim +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank())
   
 # Check it
 tot_bitten_mgmt
@@ -137,6 +141,9 @@ ggsave(filename = file.path("figures", "Asclepias_Fig2.png"),
 # Results
 ## TSF affects flowering stems while stocking doesn't
 
+# Define share y limits
+flr_stem_ylim <- ylim(0, 4.5)
+
 # Create TSF plot
 flr_stem_tsf <- mkwd %>%
   # Get summary table
@@ -146,7 +153,7 @@ flr_stem_tsf <- mkwd %>%
   tsf_fig_skeleton(df = ., ylab = "Reproductive Stems") +
   geom_smooth(aes(color = "b"), formula = "y ~ x", 
               se = F, method = 'lm') +
-  ylim(0, 4.5)
+  flr_stem_ylim
 
 # Look at it
 flr_stem_tsf
@@ -162,8 +169,9 @@ flr_stem_mgmt <- mkwd %>%
   # Make graph
   grz_fig_skeleton(df = ., ylab = "Reproductive Stems") +
   geom_text(label = "NS", x = 3.2, y = 4.5, size = 6) +
-  ylim(0, 4.5) +
-  theme(axis.title.y = element_blank())
+  flr_stem_ylim +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank())
 
 # Check it
 flr_stem_mgmt
@@ -184,6 +192,9 @@ ggsave(filename = file.path("figures", "Asclepias_Fig3.png"),
 ## TSF doesn't affect the ratio of flowering to total
 ## Stocking's effect is marginally significant (p = 0.078)
 
+# Define limit for y axis for both plots
+rat_flr_tot_ylim <- ylim(0, 1)
+
 # Create TSF plot
 rat_flr_tot_tsf <- mkwd %>%
   # Get summary table
@@ -193,7 +204,7 @@ rat_flr_tot_tsf <- mkwd %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Flowering:Total Stems") +
   geom_text(label = "NS", x = 2, y = 1, size = 6) +
-  ylim(0, 1)
+  rat_flr_tot_ylim
 
 # Look at it
 rat_flr_tot_tsf
@@ -211,8 +222,9 @@ rat_flr_tot_mgmt <- mkwd %>%
   geom_text(label = "a", x = 0.7, y = 0.9, size = 6) +
   geom_text(label = "ab", x = 1.7, y = 0.88, size = 6) +
   geom_text(label = "b", x = 2.7, y = 0.67, size = 6) +
-  ylim(0, 1) +
-  theme(axis.title.y = element_blank())
+  rat_flr_tot_ylim +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank())
 
 # Check it
 rat_flr_tot_mgmt
@@ -232,6 +244,9 @@ ggsave(filename = file.path("figures", "Asclepias_Fig4.png"),
 # Results
 ## No significant relationships with fixed effects
 
+# Set y limit
+budflr_ylim <- ylim(0, 300)
+
 # Create TSF plot
 budflr_tsf <- mkwd %>%
   # Get summary table
@@ -240,7 +255,7 @@ budflr_tsf <- mkwd %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Buds & Flowers") +
   geom_text(label = "NS", x = 2, y = 280, size = 6) +
-  ylim(0, 280)
+  budflr_ylim
 
 # Look at it
 budflr_tsf
@@ -256,8 +271,9 @@ budflr_mgmt <- mkwd %>%
   # Make graph
   grz_fig_skeleton(df = ., ylab = "Buds & Flowers") +
   geom_text(label = "NS", x = 3.2, y = 280, size = 6) +
-  ylim(0, 280) +
-  theme(axis.title.y = element_blank())
+  budflr_ylim +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank())
 
 # Check it
 budflr_mgmt
@@ -276,6 +292,7 @@ ggsave(filename = file.path("figures", "Asclepias_Fig5.png"),
 # Results
 ## Significant effect of nearby shrubs
 
+# Make figure
 mkwd %>%
   # Get summary table
   helpR::summary_table(data = ., groups = "Shrub.Abun.1m",

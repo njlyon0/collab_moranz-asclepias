@@ -12,7 +12,7 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(tidyverse, njlyon0/helpR, psych, lme4)
+librarian::shelf(tidyverse, njlyon0/helpR, psych, lmerTest)
 
 # Clear environment
 rm(list = ls())
@@ -24,20 +24,25 @@ mkwd <- read.csv(file = file.path("tidy_data", "Asclepias-TIDY.csv")) %>%
                                         Stocking.Type:GrazingLawn),
                               .fns = as.factor)) %>%
   # Filter out TSF > 2
-  dplyr::filter(TSF <= 2) %>%
-  # Create a re-leveled version of Stocking Type (see below for explanation)
-  dplyr::mutate(
-    Stocking.Re_level = factor(Stocking.Type, 
-                               levels = c("None", "SLS", "IES")),
-    .after = Stocking.Type)
+  dplyr::filter(TSF <= 2)
 
 # Glimpse it
 dplyr::glimpse(mkwd)
 
-# If we want to get all pairwise comparisons we need to use two level orders
-## The first level gets 'sucked into' the intercept so we need a second version of the data where a different factor level is "first"
-unique(mkwd$Stocking.Type)
-unique(mkwd$Stocking.Re_level)
+# Check explanatory variable content
+## Time Since Fire (years, 0 - 2)
+sort(unique(mkwd$TSF))
+## None vs. Season-Long Stocking vs. Intensive-Early Stocking
+sort(unique(mkwd$Stocking.Type))
+
+# Check random effect content
+## Julian Day
+sort(unique(mkwd$Julian))
+range(mkwd$Julian, na.rm = T)
+## Year
+sort(unique(mkwd$Year))
+## Site
+sort(unique(mkwd$Site))
 
 ## ------------------------------------------------ ##
               # Sample Size Check ----
@@ -70,31 +75,26 @@ mkwd %>%
 # Drop missing values
 mkwd_sub <- mkwd %>%
   dplyr::filter(!is.na(Tot.Bitten.Stems))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Tot.Bitten.Stems))
 
 # Distribution check
 psych::multi.hist(mkwd_sub$Tot.Bitten.Stems)
 
-# Check whether interaction is significant
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF * Stocking.Type + 
-              (1|Julian) + (1|Year) + (1|Site),
-            data = mkwd_sub, family = "poisson"))
+# Fit model
+mod <- lmerTest::lmer(Tot.Bitten.Stems ~ TSF * Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
 
-## For both factor levels
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Get results
+anova(mod)
 
-# If not, re-run without interaction term
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# If nonsignifiant, re-run without interaction 
+mod <- lmerTest::lmer(Tot.Bitten.Stems ~ TSF + Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
+anova(mod)
 
-## For both factor levels
-summary(lme4::glmer(Tot.Bitten.Stems ~ TSF + Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# If stocking type is significant (and interaction is *not*) do pairwise comparisons
+lmerTest::difflsmeans(model = mod)
 
 ## ------------------------------------------------ ##
             # Q2 - # Flowering Stems ----

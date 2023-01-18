@@ -128,45 +128,56 @@ rm(list = setdiff(ls(), c("mkwd")))
     # Q3 - Ratio of Flowering : Total Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Ratio.Flowering.vs.Total.Stems))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Ratio.Flowering.vs.Total.Stems))
+mkwd_sub <- dplyr::filter(mkwd, !is.na(Ratio.Flowering.vs.Total.Stems))
 
 # Distribution check
 psych::multi.hist(mkwd_sub$Ratio.Flowering.vs.Total.Stems)
 
-# Check whether interaction is significant
-summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "binomial"))
+# Fit model
+mod <- lmerTest::lmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
 
-## For both factor levels
-summary(lme4::glmer(Ratio.Flowering.vs.Total.Stems ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "binomial"))
+# Get results
+stats::anova(mod)
+
+# Re-run without interaction 
+mod <- lmerTest::lmer(Ratio.Flowering.vs.Total.Stems ~ TSF + Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
+stats::anova(mod)
+
+# Stocking is marginally sig. (i.e., p < 0.1) so doing pairwise comps
+lmerTest::difflsmeans(model = mod)
+
+# Partially clear environment (necessary for safe object name re-use)
+rm(list = setdiff(ls(), c("mkwd")))
 
 ## ------------------------------------------------ ##
             # Q4 - # Buds & Flowers ----
 ## ------------------------------------------------ ##
 # Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Tot.Bud.n.Flr))
-mkwd_lvl2_sub <- mkwd_lvl2 %>%
-  dplyr::filter(!is.na(Tot.Bud.n.Flr))
+mkwd_sub <- dplyr::filter(mkwd, !is.na(Tot.Bud.n.Flr))
 
 # Distribution check
 psych::multi.hist(mkwd_sub$Tot.Bud.n.Flr)
 
-# Check whether interaction is significant
-summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Fit model
+mod <- lmerTest::lmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
 
-## For both factor levels
-summary(lme4::glmer(Tot.Bud.n.Flr ~ TSF * Stocking.Type + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_lvl2_sub, family = "poisson"))
+# Get results
+stats::anova(mod)
+
+# Re-run without interaction 
+mod <- lmerTest::lmer(Tot.Bud.n.Flr ~ TSF + Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
+stats::anova(mod)
+
+# Partially clear environment (necessary for safe object name re-use)
+rm(list = setdiff(ls(), c("mkwd")))
 
 ## ------------------------------------------------ ##
       # Q5 - Ratio Bitten : Total Stems ----
@@ -179,31 +190,41 @@ mkwd_sub <- mkwd %>%
 # Distribution check
 psych::multi.hist(mkwd_sub$Ratio.Bitten.vs.Total.Stems)
 
-# Check result of single explanatory var
-summary(lme4::glmer(Ratio.Bitten.vs.Total.Stems ~ Shrub.Abun.1m + 
-                      (1|Julian) + (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "binomial"))
+# Fit model
+mod <- lmerTest::lmer(Ratio.Bitten.vs.Total.Stems ~ Shrub.Abun.1m +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
+
+# Get results
+stats::anova(mod)
+
+# Partially clear environment (necessary for safe object name re-use)
+rm(list = setdiff(ls(), c("mkwd")))
 
 ## ------------------------------------------------ ##
             # Q6 - Monarch Immatures ----
 ## ------------------------------------------------ ##
-
 # Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Tot.Monarch.Immatures))
+mkwd_sub <- dplyr::filter(mkwd, !is.na(Tot.Monarch.Immatures))
 
 # Distribution check
 psych::multi.hist(mkwd_sub$Tot.Monarch.Immatures)
 
-# Check whether interaction is significant
-summary(lme4::glmer(Tot.Monarch.Immatures ~ Stocking.Type + 
-                      (1|Year) + (1|Site),
-                    data = mkwd_sub, family = "poisson"))
+# Fit model
+mod <- lmerTest::lmer(Tot.Monarch.Immatures ~ TSF * Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
 
-# Skip checking other factor level because there were no immatures in the "No" grazing so we can't put that factor in the intercept
+# Get results
+stats::anova(mod)
 
-mkwd_sub %>%
-  dplyr::group_by(Stocking.Type) %>%
-  dplyr::summarize(mean_monarch = mean(Tot.Monarch.Immatures, na.rm = T))
+# Re-run without interaction 
+mod <- lmerTest::lmer(Tot.Monarch.Immatures ~ TSF + Stocking.Type +
+                        (1|Julian) + (1|Year) + (1|Site),
+                      data = mkwd_sub)
+stats::anova(mod)
+
+# Partially clear environment (necessary for safe object name re-use)
+rm(list = setdiff(ls(), c("mkwd")))
 
 # End ----

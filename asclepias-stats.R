@@ -210,18 +210,12 @@ mkwd_sub <- dplyr::filter(mkwd, !is.na(Tot.Monarch.Immatures))
 # Distribution check
 psych::multi.hist(mkwd_sub$Tot.Monarch.Immatures)
 
-# Fit model
-mod <- lmerTest::lmer(Tot.Monarch.Immatures ~ TSF * Stocking.Type +
+# Fit model (only stocking type for this one)
+mod <- lmerTest::lmer(Tot.Monarch.Immatures ~ Stocking.Type +
                         (1|Julian) + (1|Year) + (1|Site),
                       data = mkwd_sub)
 
 # Get results
-stats::anova(mod)
-
-# Re-run without interaction 
-mod <- lmerTest::lmer(Tot.Monarch.Immatures ~ TSF + Stocking.Type +
-                        (1|Julian) + (1|Year) + (1|Site),
-                      data = mkwd_sub)
 stats::anova(mod)
 
 # Partially clear environment (necessary for safe object name re-use)

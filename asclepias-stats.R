@@ -24,24 +24,20 @@ mkwd <- read.csv(file = file.path("tidy_data", "Asclepias-TIDY.csv")) %>%
                                         Stocking.Type:GrazingLawn),
                               .fns = as.factor)) %>%
   # Filter out TSF > 2
-  dplyr::filter(TSF <= 2)
+  dplyr::filter(TSF <= 2) %>%
+  # Create a re-leveled version of Stocking Type (to get all pairwise comparisons)
+  dplyr::mutate(
+    Stocking.Re_level = factor(Stocking.Type, 
+                               levels = c("None", "SLS", "IES")),
+    .after = Stocking.Type)
 
 # Glimpse it
 dplyr::glimpse(mkwd)
 
-# Okay, if we want to get all of our pairwise comparisons we need to change the factor levels
+# If we want to get all pairwise comparisons we need to use two level orders
 ## The first level gets 'sucked into' the intercept so we need a second version of the data where a different factor level is "first"
-mkwd_lvl2 <- mkwd %>%
-  dplyr::mutate(
-    Stocking.Type = factor(Stocking.Type, levels = c("None", "SLS", "IES")),
-    Management.Method = factor(Management.Method,
-                               levels = c("GB", "PBG", "BO")))
-
-# Glimpse this
-dplyr::glimpse(mkwd_lvl2)
-
-# Check factor levels
-levels(mkwd$Management.Method); levels(mkwd_lvl2$Management.Method)
+levels(mkwd$Stocking.Type)
+levels(mkwd$Stocking.Re_level)
 
 ## ------------------------------------------------ ##
               # Sample Size Check ----

@@ -119,6 +119,7 @@ tot_bitten_mgmt <- mkwd %>%
   geom_text(label = "a", x = 0.7, y = 0.6, size = 6) +
   geom_text(label = "b", x = 1.7, y = 1.3, size = 6) +
   geom_text(label = "c", x = 2.7, y = 2.2, size = 6) +
+  geom_text(label = "p = 0.012", x = 3, y = 2.5, size = 6) +
   tot_bitten_ylim +
   theme(axis.title.y = element_blank(),
         axis.text.y = element_blank())
@@ -153,6 +154,7 @@ flr_stem_tsf <- mkwd %>%
   tsf_fig_skeleton(df = ., ylab = "Reproductive Stems") +
   geom_smooth(aes(color = "b"), formula = "y ~ x", 
               se = F, method = 'lm') +
+  geom_text(label = "p = 0.033", x = 1.75, y = 4.5, size = 6) +
   flr_stem_ylim
 
 # Look at it
@@ -222,6 +224,7 @@ rat_flr_tot_mgmt <- mkwd %>%
   geom_text(label = "a", x = 0.7, y = 0.9, size = 6) +
   geom_text(label = "ab", x = 1.7, y = 0.88, size = 6) +
   geom_text(label = "b", x = 2.7, y = 0.67, size = 6) +
+  geom_text(label = "p = 0.078", x = 2.75, y = 1, size = 6) +
   rat_flr_tot_ylim +
   theme(axis.title.y = element_blank(),
         axis.text.y = element_blank())
@@ -254,7 +257,7 @@ budflr_tsf <- mkwd %>%
                        response = "Tot.Bud.n.Flr", drop_na = T) %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Buds & Flowers") +
-  geom_text(label = "NS", x = 2, y = 280, size = 6) +
+  geom_text(label = "NS", x = 2, y = 300, size = 6) +
   budflr_ylim
 
 # Look at it
@@ -270,7 +273,7 @@ budflr_mgmt <- mkwd %>%
                                        levels = c("None", "SLS", "IES"))) %>%
   # Make graph
   grz_fig_skeleton(df = ., ylab = "Buds & Flowers") +
-  geom_text(label = "NS", x = 3.2, y = 280, size = 6) +
+  geom_text(label = "NS", x = 3.2, y = 300, size = 6) +
   budflr_ylim +
   theme(axis.title.y = element_blank(),
         axis.text.y = element_blank())
@@ -310,7 +313,8 @@ mkwd %>%
   scale_color_manual(values = 'black') +
   theme(legend.position = "none") +
   helpR::theme_lyon() + 
-  ylim(0, 0.5)
+  ylim(0, 0.5) +
+  geom_text(label = "p = 0.018", x = 23, y = 0.5, size = 6)
 
 # Export this figure
 ggsave(filename = file.path("figures", "Asclepias_Fig6.png"),
@@ -338,6 +342,6 @@ mkwd %>%
 
 # Export figure
 ggsave(filename = file.path("figures", "Asclepias_Fig7.png"),
-       plot = last_plot(), width = 5, height = 5, unit = "in")
+       plot = last_plot(), width = 4, height = 4, unit = "in")
 
 # End ----

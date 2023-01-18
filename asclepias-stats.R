@@ -73,9 +73,8 @@ mkwd %>%
               # Q1 - # Bitten Stems ----
 ## ------------------------------------------------ ##
 # Drop missing values
-mkwd_sub <- mkwd %>%
-  dplyr::filter(!is.na(Tot.Bitten.Stems))
-
+mkwd_sub <- dplyr::filter(mkwd, !is.na(Tot.Bitten.Stems))
+  
 # Distribution check
 psych::multi.hist(mkwd_sub$Tot.Bitten.Stems)
 
@@ -85,16 +84,19 @@ mod <- lmerTest::lmer(Tot.Bitten.Stems ~ TSF * Stocking.Type +
                       data = mkwd_sub)
 
 # Get results
-anova(mod)
+stats::anova(mod)
 
 # If nonsignifiant, re-run without interaction 
 mod <- lmerTest::lmer(Tot.Bitten.Stems ~ TSF + Stocking.Type +
                         (1|Julian) + (1|Year) + (1|Site),
                       data = mkwd_sub)
-anova(mod)
+stats::anova(mod)
 
 # If stocking type is significant (and interaction is *not*) do pairwise comparisons
 lmerTest::difflsmeans(model = mod)
+
+# Partially clear environment (necessary for safe object name re-use)
+rm(list = setdiff(ls(), c("mkwd")))
 
 ## ------------------------------------------------ ##
             # Q2 - # Flowering Stems ----

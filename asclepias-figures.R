@@ -12,7 +12,7 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(tidyverse, njlyon0/helpR, psych, cowplot)
+librarian::shelf(tidyverse, supportR, psych, cowplot)
 
 # Clear environment
 rm(list = ls())
@@ -50,7 +50,7 @@ tsf_fig_skeleton <- function(df, ylab){
     scale_fill_manual(values = "gray45") +
     scale_color_manual(values = 'black') +
     theme(legend.position = "none") +
-    helpR::theme_lyon() }
+    supportR::theme_lyon() }
 
 # Create ggplot template for stocking type figure
 grz_fig_skeleton <- function(df, ylab){
@@ -63,7 +63,7 @@ ggplot(data = df, aes(x = Stocking.Type, y = mean,
   labs(x = "Stocking Type", y = ylab) +
   scale_color_manual(values = 'black') +
   theme(legend.position = "none") +
-  helpR::theme_lyon() }
+  supportR::theme_lyon() }
 
 # Interaction figure skeleton
 ixn_fig_skeleton <- function(df, ylab){
@@ -80,7 +80,7 @@ ixn_fig_skeleton <- function(df, ylab){
     scale_fill_manual(values = stock_colors) +
     scale_color_manual(values = stock_colors) +
     scale_shape_manual(values = 21:23) +
-    helpR::theme_lyon() }
+    supportR::theme_lyon() }
 
 ## ------------------------------------------------ ##
               # Fig2 - # Bitten Stems ----
@@ -96,7 +96,7 @@ tot_bitten_ylim <- ylim(0, 2.5)
 # Create TSF plot
 tot_bitten_tsf <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("TSF"),
+  supportR::summary_table(data = ., groups = c("TSF"),
                 response = "Tot.Bitten.Stems", drop_na = T) %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Bitten Stems") +
@@ -109,7 +109,7 @@ tot_bitten_tsf
 # Now make the stocking rate one
 tot_bitten_mgmt <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+  supportR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Tot.Bitten.Stems") %>%
   # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
@@ -148,7 +148,7 @@ flr_stem_ylim <- ylim(0, 4.5)
 # Create TSF plot
 flr_stem_tsf <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("TSF"),
+  supportR::summary_table(data = ., groups = c("TSF"),
                        response = "Num.Stems.ALL.Flowering.Stages") %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Reproductive Stems") +
@@ -163,7 +163,7 @@ flr_stem_tsf
 # Now make the stocking rate one
 flr_stem_mgmt <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+  supportR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Num.Stems.ALL.Flowering.Stages") %>%
   # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
@@ -200,7 +200,7 @@ rat_flr_tot_ylim <- ylim(0, 1)
 # Create TSF plot
 rat_flr_tot_tsf <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("TSF"),
+  supportR::summary_table(data = ., groups = c("TSF"),
                        response = "Ratio.Flowering.vs.Total.Stems", 
                        drop_na = T) %>%
   # Generate plot
@@ -214,7 +214,7 @@ rat_flr_tot_tsf
 # Now make the stocking rate one
 rat_flr_tot_mgmt <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+  supportR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Ratio.Flowering.vs.Total.Stems") %>%
   # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
@@ -253,7 +253,7 @@ budflr_ylim <- ylim(0, 300)
 # Create TSF plot
 budflr_tsf <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("TSF"),
+  supportR::summary_table(data = ., groups = c("TSF"),
                        response = "Tot.Bud.n.Flr", drop_na = T) %>%
   # Generate plot
   tsf_fig_skeleton(df = ., ylab = "Buds & Flowers") +
@@ -266,7 +266,7 @@ budflr_tsf
 # Now make the stocking rate one
 budflr_mgmt <- mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+  supportR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Tot.Bud.n.Flr") %>%
   # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,
@@ -298,7 +298,7 @@ ggsave(filename = file.path("figures", "Asclepias_Fig5.png"),
 # Make figure
 mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = "Shrub.Abun.1m",
+  supportR::summary_table(data = ., groups = "Shrub.Abun.1m",
                        response = "Ratio.Bitten.vs.Total.Stems",
                        drop_na = TRUE) %>%
   # Make graph
@@ -312,7 +312,7 @@ mkwd %>%
   scale_fill_manual(values = "#35978f") +
   scale_color_manual(values = 'black') +
   theme(legend.position = "none") +
-  helpR::theme_lyon() + 
+  supportR::theme_lyon() + 
   ylim(0, 0.5) +
   geom_text(label = "p = 0.018", x = 23, y = 0.5, size = 6)
 
@@ -330,7 +330,7 @@ ggsave(filename = file.path("figures", "Asclepias_Fig6.png"),
 # Create TSF plot
 mkwd %>%
   # Get summary table
-  helpR::summary_table(data = ., groups = c("Stocking.Type"),
+  supportR::summary_table(data = ., groups = c("Stocking.Type"),
                        response = "Tot.Monarch.Immatures") %>%
   # Relevel factor
   dplyr::mutate(Stocking.Type = factor(Stocking.Type,

@@ -8,7 +8,7 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(readxl, tidyverse, vegan, writexl, njlyon0/helpR)
+librarian::shelf(readxl, tidyverse, vegan, writexl, supportR)
 
 # Clear the environment
 rm(list = ls())
@@ -117,7 +117,7 @@ mkwd_13_stm_v2 <- mkwd_13_stm_v1 %>%
                       values_to = "values")
 
 # Check for bad entries
-helpR::num_chk(data = mkwd_13_stm_v2, col = "values")
+supportR::num_check(data = mkwd_13_stm_v2, col = "values")
 
 # Want to summarize within plants
 mkwd_13_stm_v3 <- mkwd_13_stm_v2 %>%
@@ -225,7 +225,7 @@ mkwd_14_stm_v2 <- mkwd_14_stm_v1 %>%
                       values_to = "values")
 
 # Check for bad entries
-helpR::num_chk(data = mkwd_14_stm_v2, col = "values")
+supportR::num_check(data = mkwd_14_stm_v2, col = "values")
 
 # Want to summarize within plants
 mkwd_14_stm_v3 <- mkwd_14_stm_v2 %>%
@@ -577,7 +577,7 @@ mkwd_12_16 <- mkwd_12_v2 %>%
 dplyr::glimpse(mkwd_12_16)
 
 # Make sure we're happy with which columns are dropped
-helpR::diff_chk(old = c(names(mkwd_12_v2), names(mkwd_16_v2)),
+supportR::diff_check(old = c(names(mkwd_12_v2), names(mkwd_16_v2)),
                 new = names(mkwd_12_16))
 
 # Quickly standardize missing values

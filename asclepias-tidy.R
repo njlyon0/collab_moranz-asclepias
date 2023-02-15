@@ -12,7 +12,7 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(tidyverse, njlyon0/helpR)
+librarian::shelf(tidyverse, supportR)
 
 # Clear the environment
 rm(list = ls())
@@ -42,9 +42,9 @@ mkwd_v2 <- mkwd_v1 %>%
 dplyr::glimpse(mkwd_v2)
 
 # Check for non-numbers in the value column
-helpR::num_chk(data = mkwd_v2, col = "stem_value")
+supportR::num_check(data = mkwd_v2, col = "stem_value")
 # Also existing multi-stem summarization columns
-helpR::multi_num_chk(data = mkwd_v2,
+supportR::multi_num_check(data = mkwd_v2,
                      col_vec = c("Avg.Height", "Avg.Bloom.Status"))
 
 # Fix those issues (note judgement calls)
@@ -66,8 +66,8 @@ mkwd_v3 <- mkwd_v2 %>%
       yes = "", no = Avg.Bloom.Status))
 
 # Check to see that they are resolved
-helpR::num_chk(data = mkwd_v3, col = "stem_value")
-helpR::multi_num_chk(data = mkwd_v3,
+supportR::num_check(data = mkwd_v3, col = "stem_value")
+supportR::multi_num_check(data = mkwd_v3,
                      col_vec = c("Avg.Height", "Avg.Bloom.Status"))
 
 # Now we can move on
@@ -138,7 +138,7 @@ summary(dplyr::select(mkwd_v3, Avg.Height:Avg.Bloom.Status))
 summary(dplyr::select(mkwd_v4, Avg.Height:Avg.Bloom.Status))
 
 # Check to make sure we didn't lose any wanted columns
-helpR::diff_chk(old = names(mkwd_v3), new = names(mkwd_v4))
+supportR::diff_check(old = names(mkwd_v3), new = names(mkwd_v4))
 
 ## ------------------------------------------------ ##
              # Monarch Info Wrangling ----
@@ -284,7 +284,7 @@ mkwd_v6 <- mkwd_v5 %>%
                 Tot.Monarch.Immatures)
 
 # Check what was lost / gained
-helpR::diff_chk(old = names(mkwd_v5), new = names(mkwd_v6))
+supportR::diff_check(old = names(mkwd_v5), new = names(mkwd_v6))
 
 # Glimpse this
 dplyr::glimpse(mkwd_v6)
@@ -388,7 +388,7 @@ sort(unique(mkwd_v7$Patch))
         # Numeric Column Checks & Fixes ----
 ## ------------------------------------------------ ##
 # Check for some bad entries (we'll resolve them shortly)
-helpR::multi_num_chk(data = mkwd_v7, col_vec = c(
+supportR::multi_num_check(data = mkwd_v7, col_vec = c(
   "Num.Stems.Budding", "Num.Stems.Flowering", 
   "Num.Stems.PostFlower" , "Num.Stems.Nonflowering", "Tot.Bitten.Stems",
   "Num.Unbit.Stems.w.Axillary.Shoots", 
@@ -627,7 +627,7 @@ mkwd_v8 <- mkwd_v7 %>%
       no = ASCTUB.Abun.2m))
 
 # Check again to ensure issues are resolved
-helpR::multi_num_chk(data = mkwd_v8, col_vec = c(
+supportR::multi_num_check(data = mkwd_v8, col_vec = c(
   "Num.Stems.Budding", "Num.Stems.Flowering", 
   "Num.Stems.PostFlower" , "Num.Stems.Nonflowering", "Tot.Bitten.Stems",
   "Num.Unbit.Stems.w.Axillary.Shoots", 
@@ -711,7 +711,7 @@ mkwd_v10 <- mkwd_v9[complete.cases(mkwd_v9[, "Site"]), ] %>%
 dim(mkwd_v9); dim(mkwd_v10)
 
 # Identify gained/lost columns
-helpR::diff_chk(old = names(mkwd_v9), new = names(mkwd_v10))
+supportR::diff_check(old = names(mkwd_v9), new = names(mkwd_v10))
 
 # Glimpse data
 dplyr::glimpse(mkwd_v10)

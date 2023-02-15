@@ -12,7 +12,7 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(tidyverse, njlyon0/helpR, psych, lmerTest)
+librarian::shelf(tidyverse, supportR, psych, lmerTest)
 
 # Clear environment
 rm(list = ls())

@@ -4,7 +4,8 @@
 # Code written by Nick J Lyon
 
 # PURPOSE ----
-## Creates all needed publication-quality figures for this project
+## Creates all* needed publication-quality figures for this project
+### * = Not actually "all" because figure 1 is a site map created by "asclepias-map.R"
 
 ## ------------------------------------------------ ##
                   # Housekeeping ----

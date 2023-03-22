@@ -76,8 +76,8 @@ states <- sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)) %>%
                           ## Site order: "GIL" "LTR" "PAW" "PYN" "PYS" 
                           ## "PYW" "RCH" "RIN" "RIS"
                          "x" = c(0, 0, 0, 0.002, 0.003,
-                                 -0.007, 0, 0, -0.007),
-                         "y" = c(0.006, -0.004, 0.005, 0.004, -0.004,
+                                 -0.008, 0, 0, -0.008),
+                         "y" = c(0.006, -0.005, 0.005, 0.004, -0.004,
                                  0, 0.006, 0.005, 0)) )
 
 # Make the site-level map first
@@ -87,17 +87,14 @@ site_map <- sites_actual %>%
   # Add site names (can ignore warning about possibly non-exact text placement)
     geom_sf_text(label = site_nudge$Site, nudge_x = site_nudge$x, nudge_y = site_nudge$y) +
   # Modify axis tick labels
-  scale_x_continuous(limits = c(-94.20, -94.10),
-                     breaks = seq(from = -94.20, to = -94.10, by = 0.05)) +
-  scale_y_continuous(limits = c(40.50, 40.65),
-                     breaks = seq(from = 40.50, to = 40.65, by = 0.05)) +
+  scale_x_continuous(limits = c(-94.2, -94.05),
+                     breaks = seq(from = -94.2, to = -94.1, by = 0.1)) +
+  scale_y_continuous(limits = c(40.5, 40.65),
+                     breaks = seq(from = 40.5, to = 40.65, by = 0.05)) +
   # Handle formatting bits of plot
   supportR::theme_lyon() +
   theme(legend.position = "none",
-        axis.title = element_blank())
-
-# Examine
-site_map
+        axis.title = element_blank()); site_map
 
 # Now make larger regional map
 region_map <- states %>%
@@ -105,30 +102,37 @@ region_map <- states %>%
   geom_sf(fill = NA) +
   # Add in GRG boundary shape
   geom_sf(data = grg, aes(fill = Site)) +
+  # Add text labels
+  geom_text(label = "Grand River Grasslands", x = -93.75, y = 40.85, 
+            size = 3, fontface = "italic") +
+  geom_text(label = "Iowa", x = -93.5, y = 41.9, 
+            size = 5, fontface = "bold") +
+  geom_text(label = "Missouri", x = -93, y = 39.5, 
+            size = 5, fontface = "bold") +
   # Set limits
-  coord_sf(xlim = c(-90, -96), ylim = c(38.75, 42.25), expand = F) +
+  coord_sf(xlim = c(-90, -96), ylim = c(38.8, 42.25), expand = F) +
   # Modify axis tick labels
   scale_x_continuous(limits = c(-96, -90),
-                     breaks = seq(from = -96, to = -90, by = 3)) +
+                     breaks = seq(from = -95, to = -91, by = 3)) +
   scale_y_continuous(limits = c(38.75, 42.25),
                      breaks = seq(from = 39, to = 42, by = 3)) +
-  # scale_y_continuous(limits = c(40.50, 40.65),
-  #                    breaks = seq(from = 40.50, to = 40.65, by = 0.05)) +
-  # Map formatting
+  # Map formatting (plus border outline for inset as a whole)
   supportR::theme_lyon() +
-  theme(legend.position = "none")
-
-# Examine this too
-region_map
+  theme(legend.position = "none",
+        panel.border = element_rect(fill = NA, color = "black"),
+        plot.background = element_rect(fill = "white")); region_map
 
 # Combine graphs beginning with site map
 cowplot::ggdraw(plot = site_map) +
   # And draw in the regional map too
   cowplot::draw_plot({ region_map },
                      # Starting point on left edge (x) and bottom edge (y)
-                     x = 0.58, y = 0.6,
+                     x = 0.515, y = 0.025,
                      # Dimensions of inset plot expressed as proportion of entrire area
                      width = 0.46, height = 0.46)
 
+# Export!
+ggsave(filename = file.path("figures", "Asclepias_Fig1.png"),
+       plot = last_plot(), width = 6, height = 6, unit = "in")
 
 # End ----

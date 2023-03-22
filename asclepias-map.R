@@ -7,7 +7,7 @@
 ## Creates a map of the sites used in this project
 
 ## ------------------------------------------------ ##
-# Housekeeping ----
+                # Housekeeping ----
 ## ------------------------------------------------ ##
 
 # Call any needed libraries here (good to centralize this step)
@@ -68,7 +68,7 @@ states <- sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)) %>%
   dplyr::select(-ID)
 
 ## ------------------------------------------------ ##
-# Map Creation ----
+                    # Map Creation ----
 ## ------------------------------------------------ ##
 
 # Assemble a vector of colors for sites

@@ -377,7 +377,9 @@ mkwd_v7 <- mkwd_v6 %>%
   dplyr::mutate(Site = ifelse(test = is.na(Site),
                               yes = stringr::str_sub(string = Plant.ID,
                                                      start = 1, end = 3),
-                              no = Site))
+                              no = Site)) %>%
+  # Drop unwanted sites
+  dplyr::filter(!Site %in% c("RAT", "RIC"))
 
 # Glimpse this
 dplyr::glimpse(mkwd_v7)

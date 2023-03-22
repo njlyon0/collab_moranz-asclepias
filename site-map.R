@@ -12,7 +12,7 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(tidyverse, magrittr, sf, supportR)
+librarian::shelf(tidyverse, magrittr, sf, supportR, maps)
 
 # Clear environment
 rm(list = ls())
@@ -21,7 +21,7 @@ rm(list = ls())
 stock_colors <- c("None" = "#8073ac", "SLS" = "#fdb863", "IES" = "#b35806")
 
 ## ------------------------------------------------ ##
-# Map Preparation ----
+                # Map Preparation ----
 ## ------------------------------------------------ ##
 
 # Identify which site shapefiles are present
@@ -56,38 +56,47 @@ for(k in 1:nrow(shps)){
 sites_actual <- sites %>%
   sf::st_transform(x = ., crs = 4326)
 
-# Make named vector of colors
-site_colors <- c("GIL" = "#b35806", "LTR" = "#b35806", "PYN" = "#b35806", 
-                 "PYW" = "#fdb863", "RCH" = "#fdb863", "PYS" = "#fdb863", "RIS" = "#fdb863",
-                 "RIN" = "#8073ac",  "PAW" = "#8073ac")
+# Read in the GRG outline and convert it's CRS as well
+grg <- sf::st_read(dsn = file.path("other_shapefiles", "GRG_Boundary.shp")) %>%
+  ## Add "Site" column
+  dplyr::mutate(Site = "GRG") %>%
+  # Pare down to just this + geometry
+  dplyr::select(Site, geometry) %>%
+  # Convert to lat/long
+  sf::st_transform(x = ., crs = 4326)
 
-# Exploratory plot
-sites_actual %>%
+# Read in state data
+states <- sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)) %>%
+  # Drop ID column
+  dplyr::select(-ID)
+
+## ------------------------------------------------ ##
+# Map Creation ----
+## ------------------------------------------------ ##
+
+# Make the site-level map first
+site_map <- sites_actual %>%
   ggplot(aes(fill = Site)) +
   geom_sf() +
-  scale_fill_manual(values = site_colors) +
+  # Handle formatting bits of plot
   supportR::theme_lyon() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "left")
 
+# Examine
+site_map
 
+# Now make larger regional map
+region_map <- states %>%
+  ggplot() +
+  geom_sf(fill = NA) +
+  geom_sf(data = grg, aes(fill = Site)) +
+  coord_sf(xlim = c(-89, -97),
+           ylim = c(37, 43),
+           expand = F)
 
-# Exploratory plot
-# plot(sites_actual, axes = T)
-
-
-
-states <- sf::st_read(dsn = file.path("other_shapefiles", "cb_2015_us_state_500k.shp"))
-plot(states)
-
-# Load in site shapefiles
-for(focal_site in unique(stringr::str_sub(string = shps, start = 1, end = 3))){
-  
-  # Read in file
-  focal_shp <- sf::st_read()
-  
-  
-}
-
+# Examine this too
+region_map
 
 
 

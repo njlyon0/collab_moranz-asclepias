@@ -97,14 +97,20 @@ site_map
 region_map <- states %>%
   ggplot() +
   geom_sf(fill = NA) +
+  # Add in GRG boundary shape
   geom_sf(data = grg, aes(fill = Site)) +
-  coord_sf(xlim = c(-89, -97),
-           ylim = c(37, 43),
-           expand = F)+
+  # Set limits
+  coord_sf(xlim = c(-90, -96), ylim = c(38.75, 42.25), expand = F) +
+  # Modify axis tick labels
+  scale_x_continuous(limits = c(-96, -90),
+                     breaks = seq(from = -96, to = -90, by = 3)) +
+  scale_y_continuous(limits = c(38.75, 42.25),
+                     breaks = seq(from = 39, to = 42, by = 3)) +
+  # scale_y_continuous(limits = c(40.50, 40.65),
+  #                    breaks = seq(from = 40.50, to = 40.65, by = 0.05)) +
   # Map formatting
   supportR::theme_lyon() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")
+  theme(legend.position = "none")
 
 # Examine this too
 region_map
@@ -114,7 +120,7 @@ cowplot::ggdraw(plot = site_map) +
   # And draw in the regional map too
   cowplot::draw_plot({ region_map },
                      # Starting point on left edge (x) and bottom edge (y)
-                     x = 0.58, y = 0,
+                     x = 0.58, y = 0.6,
                      # Dimensions of inset plot expressed as proportion of entrire area
                      width = 0.46, height = 0.46)
 

@@ -148,7 +148,7 @@ sort(unique(mkwd_v4$MonarchImmatures2))
 ## This combines eggs and larvae (caterpillars) but we want them separated
 
 # Let's handle that here
-mkwd_v5 <- mkwd_v4 %>%
+mkwd_v4b <- mkwd_v4 %>%
   # Standardize the format of every qualitative entry
   dplyr::mutate(immatures_simp = dplyr::case_when(
     ## Format is # egg_# larvae_evidence
@@ -234,7 +234,10 @@ mkwd_v5 <- mkwd_v4 %>%
     MonarchImmatures2 == "yes; 2 monarch eggs on buds. 1 monarch larva (2nd instar) in buds. Frass from large 5th instar larva." ~ "2_1_1",
     MonarchImmatures2 == "2 2nd instars on Stem A (eating buds), 1 egg on bud of Stem B, 1 2nd instar and 1 egg on Stem C (on buds)" ~ "2_3_1",
     MonarchImmatures2 == "10 monarch eggs (7 eggs on buds, 3 on leaves)" ~ "10_0_1",
-    TRUE ~ "ISSUE__")) %>%
+    TRUE ~ "ISSUE__"))
+
+# Once that is done, do some additional wrangling
+mkwd_v5 <- mkwd_v4b %>%
   # Split that fixed column apart
   tidyr::separate(col = immatures_simp, sep = "_", remove = T,
                   into = c("eggs", "larvae", "evidence")) %>%

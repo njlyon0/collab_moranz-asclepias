@@ -73,12 +73,22 @@ states <- sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)) %>%
 
 # Make the site-level map first
 site_map <- sites_actual %>%
-  ggplot(aes(fill = Site)) +
+  ggplot(aes(fill = Site, label = Site)) +
   geom_sf() +
+  # Add site names
+  geom_sf_label(fill = "white", position = "jitter") +
+  # geom_text(label = "PYW", x = -94.185, y = 40.5725) +
+  # geom_text(label = "PYN", x = -94.175, y = 40.585) +
+  # geom_text(label = "PYS", x = -94.167, y = 40.569) +
+  # Modify axis tick labels
+  scale_x_continuous(limits = c(-94.20, -94.10),
+                     breaks = seq(from = -94.20, to = -94.10, by = 0.05)) +
+  scale_y_continuous(limits = c(40.50, 40.65),
+                     breaks = seq(from = 40.50, to = 40.65, by = 0.05)) +
   # Handle formatting bits of plot
   supportR::theme_lyon() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "left")
+  theme(legend.position = "none",
+        axis.title = element_blank())
 
 # Examine
 site_map
@@ -99,10 +109,14 @@ region_map <- states %>%
 # Examine this too
 region_map
 
-# Draw together!
+# Combine graphs beginning with site map
 cowplot::ggdraw(plot = site_map) +
+  # And draw in the regional map too
   cowplot::draw_plot({ region_map },
+                     # Starting point on left edge (x) and bottom edge (y)
                      x = 0.58, y = 0,
+                     # Dimensions of inset plot expressed as proportion of entrire area
                      width = 0.46, height = 0.46)
+
 
 # End ----

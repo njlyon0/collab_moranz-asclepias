@@ -71,21 +71,28 @@ states <- sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)) %>%
 # Map Creation ----
 ## ------------------------------------------------ ##
 
+# Assemble a vector of colors for sites
+site_colors <- c("GIL" = "#b35806", "LTR" = "#b35806", "PYN" = "#b35806", 
+                 "PYS" = "#fdb863", "PYW" = "#fdb863", "RCH" = "#fdb863", "RIS" = "#fdb863",
+                 "PAW" = "#8073ac", "RIN" = "#8073ac")
+
 # Bind text nudge y / x to site names
-(site_nudge <- data.frame("Site" = unique(sites_actual$Site),
+site_nudge <- data.frame("Site" = unique(sites_actual$Site),
                           ## Site order: "GIL" "LTR" "PAW" "PYN" "PYS" 
                           ## "PYW" "RCH" "RIN" "RIS"
                          "x" = c(0, 0, 0, 0.002, 0.003,
                                  -0.008, 0, 0, -0.008),
                          "y" = c(0.006, -0.005, 0.005, 0.004, -0.004,
-                                 0, 0.006, 0.005, 0)) )
+                                 0, 0.006, 0.005, 0))
 
 # Make the site-level map first
 site_map <- sites_actual %>%
   ggplot(aes(fill = Site, label = Site)) +
   geom_sf() +
   # Add site names (can ignore warning about possibly non-exact text placement)
-    geom_sf_text(label = site_nudge$Site, nudge_x = site_nudge$x, nudge_y = site_nudge$y) +
+  geom_sf_text(label = site_nudge$Site, nudge_x = site_nudge$x, nudge_y = site_nudge$y) +
+  # Color site shapes by their stocking treatment
+  scale_fill_manual(values = site_colors) +
   # Modify axis tick labels
   scale_x_continuous(limits = c(-94.2, -94.05),
                      breaks = seq(from = -94.2, to = -94.1, by = 0.1)) +
@@ -109,6 +116,8 @@ region_map <- states %>%
             size = 5, fontface = "bold") +
   geom_text(label = "Missouri", x = -93, y = 39.5, 
             size = 5, fontface = "bold") +
+  # Define color of GRG boundary
+  scale_fill_manual(values = "#41b6c4") +
   # Set limits
   coord_sf(xlim = c(-90, -96), ylim = c(38.8, 42.25), expand = F) +
   # Modify axis tick labels
@@ -130,6 +139,9 @@ cowplot::ggdraw(plot = site_map) +
                      x = 0.515, y = 0.025,
                      # Dimensions of inset plot expressed as proportion of entrire area
                      width = 0.46, height = 0.46)
+
+# Create the export folder (if it doesn't already exist)
+dir.create("figures", showWarnings = F)
 
 # Export!
 ggsave(filename = file.path("figures", "Asclepias_Fig1.png"),

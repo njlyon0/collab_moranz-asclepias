@@ -12,25 +12,10 @@
 
 # Call any needed libraries here (good to centralize this step)
 # install.packages("librarian")
-librarian::shelf(tidyverse, magrittr, sf)
+librarian::shelf(tidyverse, magrittr, sf, supportR)
 
 # Clear environment
 rm(list = ls())
-
-# Read in data
-mkwd <- read.csv(file = file.path("tidy_data", "Asclepias-TIDY.csv")) %>%
-  # Pare down columns
-  dplyr::select(Site, Stocking.Type) %>%
-  # Keep only unique rows
-  dplyr::distinct() %>%
-  # Identify stocking type by site
-  dplyr::group_by(Site) %>%
-  dplyr::summarize(Stocking.Type = paste(Stocking.Type, collapse = " / ")) %>%
-  # Arrange by site
-  dplyr::arrange(Site)
-
-# Check this out
-mkwd
 
 # Identify colors (will use these in the map)
 stock_colors <- c("None" = "#8073ac", "SLS" = "#fdb863", "IES" = "#b35806")
@@ -49,14 +34,6 @@ shps <- data.frame("x" = dir(path = file.path("site_shapefiles"))) %>%
 # Make an empty object
 sites <- NULL
 
-# test <- sf::st_read(dsn = file.path("site_shapefiles", shps$x[1]))
-# plot(test)
-# 
-# test2 <- sites %>%
-#   dplyr::bind_rows(test)
-# 
-# plot(test2)
-
 # For each site shapefile
 for(k in 1:nrow(shps)){
   
@@ -73,19 +50,34 @@ for(k in 1:nrow(shps)){
   
   # Bind it onto the sites object
   sites %<>%
-    dplyr::bind_rows(raw_shp)
-  
-}
+    dplyr::bind_rows(raw_shp) }
 
 # Convert the sites coordinates into lat/long
 sites_actual <- sites %>%
   sf::st_transform(x = ., crs = 4326)
 
+# Make named vector of colors
+site_colors <- c("GIL" = "#b35806", "LTR" = "#b35806", "PYN" = "#b35806", 
+                 "PYW" = "#fdb863", "RCH" = "#fdb863", "PYS" = "#fdb863", "RIS" = "#fdb863",
+                 "RIN" = "#8073ac",  "PAW" = "#8073ac")
+
 # Exploratory plot
-plot(sites_actual, axes = T)
+sites_actual %>%
+  ggplot(aes(fill = Site)) +
+  geom_sf() +
+  scale_fill_manual(values = site_colors) +
+  supportR::theme_lyon() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
-st_crs(sites)
+
+# Exploratory plot
+# plot(sites_actual, axes = T)
+
+
+
+states <- sf::st_read(dsn = file.path("other_shapefiles", "cb_2015_us_state_500k.shp"))
+plot(states)
 
 # Load in site shapefiles
 for(focal_site in unique(stringr::str_sub(string = shps, start = 1, end = 3))){

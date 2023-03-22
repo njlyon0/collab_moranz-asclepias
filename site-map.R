@@ -71,15 +71,21 @@ states <- sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)) %>%
 # Map Creation ----
 ## ------------------------------------------------ ##
 
+# Bind text nudge y / x to site names
+(site_nudge <- data.frame("Site" = unique(sites_actual$Site),
+                          ## Site order: "GIL" "LTR" "PAW" "PYN" "PYS" 
+                          ## "PYW" "RCH" "RIN" "RIS"
+                         "x" = c(0, 0, 0, 0.002, 0.003,
+                                 -0.007, 0, 0, -0.007),
+                         "y" = c(0.006, -0.004, 0.005, 0.004, -0.004,
+                                 0, 0.006, 0.005, 0)) )
+
 # Make the site-level map first
 site_map <- sites_actual %>%
   ggplot(aes(fill = Site, label = Site)) +
   geom_sf() +
-  # Add site names
-  geom_sf_label(fill = "white", position = "jitter") +
-  # geom_text(label = "PYW", x = -94.185, y = 40.5725) +
-  # geom_text(label = "PYN", x = -94.175, y = 40.585) +
-  # geom_text(label = "PYS", x = -94.167, y = 40.569) +
+  # Add site names (can ignore warning about possibly non-exact text placement)
+    geom_sf_text(label = site_nudge$Site, nudge_x = site_nudge$x, nudge_y = site_nudge$y) +
   # Modify axis tick labels
   scale_x_continuous(limits = c(-94.20, -94.10),
                      breaks = seq(from = -94.20, to = -94.10, by = 0.05)) +
